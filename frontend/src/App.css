@@ -1,42 +1,71 @@
+@import url(https://fonts.googleapis.com/css?family=Roboto+Slab:100,200,300,regular,500,600);
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  background-color: #b4bcc1;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.login-container, .signup-container {
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+  background-color: #b4bcc1;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  text-align: center;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.login-container img {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  margin-bottom: 20px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.login-form h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 28px;
 }
 
-.card {
-  padding: 2em;
+.input-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
-.read-the-docs {
-  color: #888;
+.input-group input {
+  font-family: "Roboto Slab", sans-serif;
+  padding: 15px;
+  font-size: 1.5rem;
+  font-weight: 500;
+  border: 2px solid #b4b4b4;
+  border-radius: 5px;
+  background-color: #bec7cc;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.input-group input:focus {
+  border-color: #ffffff;
+}
+
+.input-group button {
+  font-family: "Roboto Slab", sans-serif;
+  padding: 20px;
+  font-size: 3rem;
+  background-color: #bec7cc;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.input-group button:hover {
+  background-color: #464646;
 }
