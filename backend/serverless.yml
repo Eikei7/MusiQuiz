@@ -1,0 +1,15 @@
+org: frontenderik
+service: MusiQuiz
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: eu-north-1
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
