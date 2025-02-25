@@ -1,4 +1,4 @@
-import './App.css'
+import './Login.css'
 
 
 function Login() {
@@ -30,6 +30,10 @@ function Login() {
                     </div>
                     <div className="input-group">
                         <button type="submit">Let's GO!</button>
+                    </div>
+                    <div className="login-links">
+                    <span><a href="/register">Register</a></span>
+                    <span><a href="/forgot">Forgot Password?</a></span>
                     </div>
                 </form>
             </div>
