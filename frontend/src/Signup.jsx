@@ -6,7 +6,9 @@ function Signup() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    firstName: '',
+    lastName: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -39,7 +41,7 @@ function Signup() {
     setLoading(true);
     
     try {
-      // Direct API call without userService
+      // Direct API call
       const response = await fetch(ENDPOINT_REGISTER, {
         method: 'POST',
         headers: {
@@ -48,21 +50,25 @@ function Signup() {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          confirmPassword: formData.confirmPassword
+          confirmPassword: formData.confirmPassword,
+          firstName: formData.firstName || '',
+          lastName: formData.lastName || ''
         })
       });
       
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
+        throw new Error(data.error || data.message || 'Registration failed');
       }
       
       setSuccess('Registration successful! You can now log in.');
       setFormData({
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        firstName: '',
+        lastName: ''
       });
     } catch (error) {
       setError(error.message || 'An error occurred during registration');
@@ -114,6 +120,31 @@ function Signup() {
               autoComplete="new-password"
             />
           </div>
+          
+          {/* Optional name fields */}
+          <div className="input-group">
+            <input 
+              type="text" 
+              id="firstName" 
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="First Name (optional)" 
+              autoComplete="given-name"
+            />
+          </div>
+          <div className="input-group">
+            <input 
+              type="text" 
+              id="lastName" 
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Last Name (optional)" 
+              autoComplete="family-name"
+            />
+          </div>
+          
           <div className="input-group">
             <button type="submit" disabled={loading}>
               {loading ? 'Registering...' : 'Register'}

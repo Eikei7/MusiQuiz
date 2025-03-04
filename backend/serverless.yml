@@ -32,14 +32,14 @@ provider:
 functions:
   # Existing functions
   registerUser:
-    handler: handler.registerUser
+    handler: users.registerUser
     events:
       - httpApi:
           path: /register
           method: post
   
   loginUser:
-    handler: handler.loginUser
+    handler: users.loginUser
     events:
       - httpApi:
           path: /login
