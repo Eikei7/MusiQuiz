@@ -1,0 +1,9 @@
+export const ENDPOINT_REGISTER =    'https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/register'; //POST
+export const ENDPOINT_LOGIN =       'https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/login'; //POST
+export const ENDPOINT_USERS =       'https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/users'; //GET
+export const ENDPOINT_ROOMS =       'https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms'; //POST
+export const ENDPOINT_ROOMS_GET =   'https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms'; //GET
+export const ENDPOINT_ROOMS_GET_ONE ='https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms/{roomId}'; //GET
+export const ENDPOINT_ROOMS_DELETE ='https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms/{roomId}'; //DELETE
+export const ENDPOINT_ROOMS_JOIN =  'https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms/{roomId}/join'; //POST
+export const ENDPOINT_ROOMS_LEAVE = 'https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms/{roomId}/leave'; //POST

@@ -5,11 +5,129 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: eu-north-1
+  environment:
+    USERS_TABLE: ${self:service}-users-${sls:stage}
+    ROOMS_TABLE: ${self:service}-rooms-${sls:stage}
+    QUESTIONS_TABLE: ${self:service}-questions-${sls:stage}
+    JWT_SECRET: "ilovemusic"
+
+  httpApi:
+    cors: true
+    
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+          Resource: "*"
+
 
 functions:
-  hello:
-    handler: handler.hello
+  # Existing functions
+  registerUser:
+    handler: handler.registerUser
     events:
       - httpApi:
-          path: /
+          path: /register
+          method: post
+  
+  loginUser:
+    handler: handler.loginUser
+    events:
+      - httpApi:
+          path: /login
+          method: post
+        
+  listUsers:
+    handler: users.listUsers
+    events:
+      - httpApi:
+          path: /users
           method: get
+  
+  createRoom:
+    handler: rooms.createRoom
+    events:
+      - httpApi:
+          path: /rooms
+          method: post
+  
+  deleteRoom:
+    handler: rooms.deleteRoom
+    events:
+      - httpApi:
+          path: /rooms/{roomId}
+          method: delete
+  
+  listRooms:
+    handler: rooms.listRooms
+    events:
+      - httpApi:
+          path: /rooms
+          method: get
+
+  getRoom:
+    handler: rooms.getRoom
+    events:
+      - httpApi:
+          path: /rooms/{roomId}
+          method: get
+  
+  joinRoom:
+    handler: rooms.joinRoom
+    events:
+      - httpApi:
+          path: /rooms/{roomId}/join
+          method: post
+  
+  leaveRoom:
+    handler: rooms.leaveRoom
+    events:
+      - httpApi:
+          path: /rooms/{roomId}/leave
+          method: post
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-users-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    RoomsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-rooms-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: roomId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: roomId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    QuestionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-questions-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST

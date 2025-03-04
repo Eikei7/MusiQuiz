@@ -32,7 +32,7 @@ function Login() {
                         <button type="submit">Let's GO!</button>
                     </div>
                     <div className="login-links">
-                    <span><a href="/register">Register</a></span>
+                    <span><a href="/signup">Sign up</a></span>
                     <span><a href="/forgot">Forgot Password?</a></span>
                     </div>
                 </form>
