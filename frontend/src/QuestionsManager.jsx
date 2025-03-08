@@ -11,30 +11,15 @@ function QuestionsManager() {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  
-  // Sample categories - replace with your actual categories
-  const categories = [
-    { id: 'pop', name: 'Pop Music' },
-    { id: 'rock', name: 'Rock Classics' },
-    { id: '80s', name: '80s Hits' },
-    { id: 'hiphop', name: 'Hip Hop' },
-    { id: 'country', name: 'Country' }
-  ];
 
   useEffect(() => {
     fetchQuestions();
-  }, [token, selectedCategory]);
+  }, [token]);
 
   const fetchQuestions = async () => {
     try {
       setLoading(true);
       let url = ENDPOINT_QUESTIONS;
-      
-      // Add category filter if not showing all
-      if (selectedCategory !== 'all') {
-        url += `?category=${selectedCategory}`;
-      }
       
       const response = await fetch(url, {
         headers: {
@@ -117,28 +102,11 @@ function QuestionsManager() {
         <QuestionForm 
           onQuestionAdded={handleQuestionAdded} 
           token={token}
-          categories={categories}
           editQuestion={editingQuestion}
         />
       )}
 
       <div className="question-filters">
-        <div className="category-filter">
-          <label htmlFor="category-select">Filter by category:</label>
-          <select 
-            id="category-select"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="all">All Categories</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        
         <div className="question-count">
           {!loading && <span>{questions.length} question(s) found</span>}
         </div>
@@ -158,9 +126,6 @@ function QuestionsManager() {
                 <h3>{question.question}</h3>
                 
                 <div className="question-meta">
-                  <span className="question-category">
-                    {categories.find(c => c.id === question.category)?.name || question.category}
-                  </span>
                   <span className="question-date">
                     Created: {new Date(question.createdAt).toLocaleDateString()}
                   </span>

@@ -143,7 +143,7 @@
   }
   
   .choice-item {
-    background-color: #bdbdbd;
+    background-color: #cc8e8e;
     border-radius: 4px;
     padding: 0.75rem;
     display: flex;
@@ -157,7 +157,7 @@
   }
   
   .choice-number {
-    background-color: #ddd;
+    background-color: #c76363;
     width: 24px;
     height: 24px;
     border-radius: 50%;

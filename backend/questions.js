@@ -25,116 +25,104 @@ const headers = {
 
 // Create a new question
 module.exports.createQuestion = async (event) => {
-  try {
-    const body = JSON.parse(event.body);
-    const { question, choices, correctAnswerIndex, category } = body;
-    
-    // Validate required fields
-    if (!question || !choices || correctAnswerIndex === undefined || !category) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ 
-          error: "Question, choices, correctAnswerIndex, and category are required fields" 
-        })
-      };
-    }
-    
-    // Validate choices is an array with at least 2 options
-    if (!Array.isArray(choices) || choices.length < 2) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ 
-          error: "Choices must be an array with at least 2 options" 
-        })
-      };
-    }
-    
-    // Validate correctAnswerIndex is within the choices array bounds
-    if (correctAnswerIndex < 0 || correctAnswerIndex >= choices.length) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ 
-          error: "correctAnswerIndex must be a valid index within the choices array" 
-        })
-      };
-    }
-    
-    // Generate a unique ID for the question
-    const questionId = uuidv4();
-    const timestamp = new Date().toISOString();
-    
-    const params = {
-      TableName: QUESTIONS_TABLE,
-      Item: {
-        id: questionId,
-        question,
-        choices,
-        correctAnswerIndex,
-        category,
-        createdAt: timestamp,
-        updatedAt: timestamp
+    try {
+      const body = JSON.parse(event.body);
+      const { question, choices, correctAnswerIndex } = body;
+      
+      // Validate required fields
+      if (!question || !choices || correctAnswerIndex === undefined) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: "Question, choices, and correctAnswerIndex are required fields" 
+          })
+        };
       }
-    };
-    
-    await docClient.send(new PutCommand(params));
-    
-    return {
-      statusCode: 201,
-      headers,
-      body: JSON.stringify({ 
-        message: "Question created successfully",
-        questionId 
-      })
-    };
-    
-  } catch (error) {
-    console.error('Error creating question:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "Could not create question" })
-    };
-  }
-};
+      
+      // Validate choices is an array with at least 2 options
+      if (!Array.isArray(choices) || choices.length < 2) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: "Choices must be an array with at least 2 options" 
+          })
+        };
+      }
+      
+      // Validate correctAnswerIndex is within the choices array bounds
+      if (correctAnswerIndex < 0 || correctAnswerIndex >= choices.length) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: "correctAnswerIndex must be a valid index within the choices array" 
+          })
+        };
+      }
+      
+      // Generate a unique ID for the question
+      const questionId = uuidv4();
+      const timestamp = new Date().toISOString();
+      
+      const params = {
+        TableName: QUESTIONS_TABLE,
+        Item: {
+          id: questionId,
+          question,
+          choices,
+          correctAnswerIndex,
+          createdAt: timestamp,
+          updatedAt: timestamp
+        }
+      };
+      
+      await docClient.send(new PutCommand(params));
+      
+      return {
+        statusCode: 201,
+        headers,
+        body: JSON.stringify({ 
+          message: "Question created successfully",
+          questionId 
+        })
+      };
+      
+    } catch (error) {
+      console.error('Error creating question:', error);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: "Could not create question" })
+      };
+    }
+  };
 
 // Get all questions
 module.exports.getQuestions = async (event) => {
-  try {
-    const params = {
-      TableName: QUESTIONS_TABLE
-    };
-    
-    // Check for query parameters
-    const queryParams = event.queryStringParameters || {};
-    
-    // Filter by category if provided
-    if (queryParams.category) {
-      params.FilterExpression = "category = :category";
-      params.ExpressionAttributeValues = {
-        ":category": queryParams.category
+    try {
+      const params = {
+        TableName: QUESTIONS_TABLE
+      };
+      
+      const { Items } = await docClient.send(new ScanCommand(params));
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(Items)
+      };
+      
+    } catch (error) {
+      console.error('Error getting questions:', error);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: "Could not retrieve questions" })
       };
     }
-    
-    const { Items } = await docClient.send(new ScanCommand(params));
-    
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify(Items)
-    };
-    
-  } catch (error) {
-    console.error('Error getting questions:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "Could not retrieve questions" })
-    };
-  }
-};
+  };
 
 // Get a single question by ID
 module.exports.getQuestion = async (event) => {
@@ -174,94 +162,89 @@ module.exports.getQuestion = async (event) => {
 
 // Update a question
 module.exports.updateQuestion = async (event) => {
-  try {
-    const questionId = event.pathParameters.id;
-    const body = JSON.parse(event.body);
-    const { question, choices, correctAnswerIndex, category } = body;
-    
-    // Check if question exists
-    const checkParams = {
-      TableName: QUESTIONS_TABLE,
-      Key: { id: questionId }
-    };
-    
-    const { Item } = await docClient.send(new GetCommand(checkParams));
-    
-    if (!Item) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ error: "Question not found" })
+    try {
+      const questionId = event.pathParameters.id;
+      const body = JSON.parse(event.body);
+      const { question, choices, correctAnswerIndex } = body;
+      
+      // Check if question exists
+      const checkParams = {
+        TableName: QUESTIONS_TABLE,
+        Key: { id: questionId }
       };
-    }
-    
-    // Validate correctAnswerIndex if both it and choices are provided
-    if (choices && correctAnswerIndex !== undefined) {
-      if (correctAnswerIndex < 0 || correctAnswerIndex >= choices.length) {
+      
+      const { Item } = await docClient.send(new GetCommand(checkParams));
+      
+      if (!Item) {
         return {
-          statusCode: 400,
+          statusCode: 404,
           headers,
-          body: JSON.stringify({ 
-            error: "correctAnswerIndex must be a valid index within the choices array" 
-          })
+          body: JSON.stringify({ error: "Question not found" })
         };
       }
+      
+      // Validate correctAnswerIndex if both it and choices are provided
+      if (choices && correctAnswerIndex !== undefined) {
+        if (correctAnswerIndex < 0 || correctAnswerIndex >= choices.length) {
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({ 
+              error: "correctAnswerIndex must be a valid index within the choices array" 
+            })
+          };
+        }
+      }
+      
+      // Update the question
+      const timestamp = new Date().toISOString();
+      
+      const updateParams = {
+        TableName: QUESTIONS_TABLE,
+        Key: { id: questionId },
+        UpdateExpression: "set updatedAt = :updatedAt",
+        ExpressionAttributeValues: {
+          ":updatedAt": timestamp
+        },
+        ReturnValues: "ALL_NEW"
+      };
+      
+      // Add optional fields to update expression if provided
+      if (question) {
+        updateParams.UpdateExpression += ", question = :question";
+        updateParams.ExpressionAttributeValues[":question"] = question;
+      }
+      
+      if (choices) {
+        updateParams.UpdateExpression += ", choices = :choices";
+        updateParams.ExpressionAttributeValues[":choices"] = choices;
+      }
+      
+      if (correctAnswerIndex !== undefined) {
+        updateParams.UpdateExpression += ", correctAnswerIndex = :correctAnswerIndex";
+        updateParams.ExpressionAttributeValues[":correctAnswerIndex"] = correctAnswerIndex;
+      }
+      
+      const result = await docClient.send(new UpdateCommand(updateParams));
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ 
+          message: "Question updated successfully",
+          question: result.Attributes
+        })
+      };
+      
+    } catch (error) {
+      console.error('Error updating question:', error);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: "Could not update question" })
+      };
     }
-    
-    // Update the question
-    const timestamp = new Date().toISOString();
-    
-    const updateParams = {
-      TableName: QUESTIONS_TABLE,
-      Key: { id: questionId },
-      UpdateExpression: "set updatedAt = :updatedAt",
-      ExpressionAttributeValues: {
-        ":updatedAt": timestamp
-      },
-      ReturnValues: "ALL_NEW"
-    };
-    
-    // Add optional fields to update expression if provided
-    if (question) {
-      updateParams.UpdateExpression += ", question = :question";
-      updateParams.ExpressionAttributeValues[":question"] = question;
-    }
-    
-    if (choices) {
-      updateParams.UpdateExpression += ", choices = :choices";
-      updateParams.ExpressionAttributeValues[":choices"] = choices;
-    }
-    
-    if (correctAnswerIndex !== undefined) {
-      updateParams.UpdateExpression += ", correctAnswerIndex = :correctAnswerIndex";
-      updateParams.ExpressionAttributeValues[":correctAnswerIndex"] = correctAnswerIndex;
-    }
-    
-    if (category) {
-      updateParams.UpdateExpression += ", category = :category";
-      updateParams.ExpressionAttributeValues[":category"] = category;
-    }
-    
-    const result = await docClient.send(new UpdateCommand(updateParams));
-    
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ 
-        message: "Question updated successfully",
-        question: result.Attributes
-      })
-    };
-    
-  } catch (error) {
-    console.error('Error updating question:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "Could not update question" })
-    };
-  }
-};
+  };
 
 // Delete a question
 module.exports.deleteQuestion = async (event) => {

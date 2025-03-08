@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { ENDPOINT_QUESTIONS } from './endpoints';
 import './QuestionForm.css';
 
-function QuestionForm({ onQuestionAdded, token, categories, editQuestion }) {
+function QuestionForm({ onQuestionAdded, token, editQuestion }) {
   const [formData, setFormData] = useState(editQuestion || {
     question: '',
     choices: ['', '', '', ''],
-    correctAnswerIndex: 0,
-    category: categories?.[0]?.id || 'pop'
+    correctAnswerIndex: 0
   });
   
   const [error, setError] = useState('');
@@ -109,8 +108,7 @@ function QuestionForm({ onQuestionAdded, token, categories, editQuestion }) {
         setFormData({
           question: '',
           choices: ['', '', '', ''],
-          correctAnswerIndex: 0,
-          category: formData.category
+          correctAnswerIndex: 0
         });
       }
       
@@ -145,33 +143,6 @@ function QuestionForm({ onQuestionAdded, token, categories, editQuestion }) {
             placeholder="Enter your question here..."
             rows="3"
           />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="category">Category:</label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-          >
-            {categories ? (
-              categories.map(category => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))
-            ) : (
-              <>
-                <option value="pop">Pop Music</option>
-                <option value="rock">Rock Classics</option>
-                <option value="80s">80s Hits</option>
-                <option value="hiphop">Hip Hop</option>
-                <option value="country">Country</option>
-              </>
-            )}
-          </select>
         </div>
         
         <div className="form-group">
