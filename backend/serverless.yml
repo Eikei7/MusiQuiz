@@ -94,8 +94,44 @@ functions:
           path: /rooms/{roomId}/leave
           method: post
 
+  createQuestion:
+    handler: questions.createQuestion
+    events:
+      - httpApi:
+          path: /questions
+          method: post
+  
+  getQuestions:
+    handler: questions.getQuestions
+    events:
+      - httpApi:
+          path: /questions
+          method: get
+  
+  getQuestion:
+    handler: questions.getQuestion
+    events:
+      - httpApi:
+          path: /questions/{id}
+          method: get
+  
+  updateQuestion:
+    handler: questions.updateQuestion
+    events:
+      - httpApi:
+          path: /questions/{id}
+          method: put
+  
+  deleteQuestion:
+    handler: questions.deleteQuestion
+    events:
+      - httpApi:
+          path: /questions/{id}
+          method: delete
+
 resources:
   Resources:
+  
     UsersTable:
       Type: AWS::DynamoDB::Table
       Properties:

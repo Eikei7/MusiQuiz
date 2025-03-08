@@ -53,6 +53,7 @@ module.exports.listUsers = async (event) => {
     };
   }
 };
+
 module.exports.registerUser = async (event) => {
   const body = JSON.parse(event.body);
   console.log('Parsed body:', JSON.stringify(body));

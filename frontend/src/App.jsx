@@ -7,6 +7,8 @@ import Dashboard from './Dashboard';
 import AdminDashboard from './AdminDashboard';
 import './App.css';
 import Card from './Card';
+import QuestionForm from './QuestionForm';
+import QuestionsManager from './QuestionsManager';
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/card" element={<Card />} />
+          <Route path="/writequestion" element={<QuestionForm />} />
+          <Route path="/allquestions" element={<QuestionsManager />} />
           
           {/* Protected routes for all authenticated users */}
           <Route 
