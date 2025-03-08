@@ -6,6 +6,7 @@ import Signup from './Signup';
 import Dashboard from './Dashboard';
 import AdminDashboard from './AdminDashboard';
 import './App.css';
+import Card from './Card';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           {/* Public routes */}
           <Route path="/" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/card" element={<Card />} />
           
           {/* Protected routes for all authenticated users */}
           <Route 
