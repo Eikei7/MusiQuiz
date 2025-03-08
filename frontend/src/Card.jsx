@@ -17,7 +17,6 @@ const Card = ({
   const audioRef = useRef(null);
 
 
-
   const handleDragStart = () => {
     const cardData = {
       id
@@ -67,13 +66,10 @@ const Card = ({
 
       <div className="card-side card-back">
         <div className="card-header">
-          <p className="artist">{artist}</p>
         </div>
         <div className="card-body">
-          <p className="year">{year}</p>
         </div>
         <div className="card-footer">
-          <p className="songtitle">{track}</p>
         </div>
       </div>
     </motion.div>
