@@ -23,3 +23,7 @@ body {
   min-height: 100vh;
   background-color: #b6bdc2;
 }
+
+a {
+  color: white;
+}

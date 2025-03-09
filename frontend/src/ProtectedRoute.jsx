@@ -1,7 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
-// Component for routes that require authentication
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   
@@ -10,16 +9,16 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
     return <div>Loading...</div>;
   }
   
-  // Check if user is authenticated
+  // Use isAuthenticated as a function - this is the key fix
   if (!isAuthenticated()) {
     return <Navigate to="/" />;
   }
   
-  // Additional check for admin routes
+  // Same for isAdmin
   if (requireAdmin && !isAdmin()) {
     return <Navigate to="/dashboard" />;
   }
-  
+    
   return children;
 };
 

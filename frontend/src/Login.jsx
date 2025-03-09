@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { ENDPOINT_LOGIN } from './endpoints';
+import { useAuth } from './AuthContext';
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,29 +35,15 @@ function Login() {
     setLoading(true);
     
     try {
-      const response = await fetch(ENDPOINT_LOGIN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        })
-      });
+      // Use the context login function instead of your own implementation
+      const result = await login(formData.email, formData.password);
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      if (!result.success) {
+        throw new Error(result.error || 'Login failed');
       }
       
-      // Store token and user data in localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.userData));
-      
-      // Redirect based on user role
-      if (data.userData.role === 'admin') {
+      // Navigate based on user role
+      if (result.userData.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
