@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { ENDPOINT_USERS } from './endpoints';
+import { ENDPOINT_USERS, ENDPOINT_QUESTIONS_GET } from './endpoints';
 import './AdminDashboard.css';
+import QuestionsManager from './QuestionsManager';
 
 function AdminDashboard() {
   const { user, logout, token } = useAuth();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState([]);  // Initialize as empty array
+  const [questions, setQuestions] = useState([]);  // Initialize as empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('users');
 
   useEffect(() => {
     fetchUsers();
+    fetchQuestions();
   }, []);
 
   const fetchUsers = async () => {
@@ -28,13 +31,34 @@ function AdminDashboard() {
       }
 
       const data = await response.json();
-      setUsers(data);
+      // Ensure we're setting an array to the users state
+      setUsers(Array.isArray(data) ? data : (data.users || []));
       setError('');
     } catch (err) {
       setError('Error loading users: ' + err.message);
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await fetch(ENDPOINT_QUESTIONS_GET, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch questions');
+      }
+
+      const data = await response.json();
+      setQuestions(Array.isArray(data) ? data : (data.questions || []));
+    } catch (err) {
+      console.error('Error loading questions:', err.message);
+      // Not setting the main error state to avoid disrupting the UI
     }
   };
 
@@ -47,7 +71,7 @@ function AdminDashboard() {
         <div className="admin-user">
           <div className="admin-avatar">{user?.firstName?.charAt(0) || user?.email?.charAt(0)}</div>
           <div className="admin-user-info">
-            <span className="admin-name">{user?.firstName || user?.email.split('@')[0]}</span>
+            <span className="admin-name">{user?.firstName || user?.email?.split('@')[0]}</span>
             <span className="admin-role">Administrator</span>
           </div>
         </div>
@@ -61,11 +85,6 @@ function AdminDashboard() {
             <li className={activeTab === 'users' ? 'active' : ''}>
               <button onClick={() => setActiveTab('users')}>
                 Users
-              </button>
-            </li>
-            <li className={activeTab === 'quizzes' ? 'active' : ''}>
-              <button onClick={() => setActiveTab('quizzes')}>
-                Quizzes
               </button>
             </li>
             <li className={activeTab === 'questions' ? 'active' : ''}>
@@ -92,7 +111,6 @@ function AdminDashboard() {
           <h1>
             {activeTab === 'dashboard' && 'Admin Dashboard'}
             {activeTab === 'users' && 'User Management'}
-            {activeTab === 'quizzes' && 'Quiz Management'}
             {activeTab === 'questions' && 'Question Bank'}
             {activeTab === 'stats' && 'Statistics & Reports'}
           </h1>
@@ -103,19 +121,11 @@ function AdminDashboard() {
             <div className="admin-overview">
               <div className="stat-card">
                 <h3>Total Users</h3>
-                <p className="stat-value">{users.length}</p>
-              </div>
-              <div className="stat-card">
-                <h3>Quizzes Created</h3>
-                <p className="stat-value">0</p>
+                <p className="stat-value">{Array.isArray(users) ? users.length : 0}</p>
               </div>
               <div className="stat-card">
                 <h3>Questions</h3>
-                <p className="stat-value">0</p>
-              </div>
-              <div className="stat-card">
-                <h3>Completed Quizzes</h3>
-                <p className="stat-value">0</p>
+                <p className="stat-value">{Array.isArray(questions) ? questions.length : 0}</p>
               </div>
             </div>
           )}
@@ -145,19 +155,20 @@ function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => (
-                      <tr key={user.email}>
-                        <td>{user.email}</td>
-                        <td>{user.firstName || '-'}</td>
-                        <td>{user.lastName || '-'}</td>
-                        <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
-                        <td>
-                          <button className="action-button edit-button">Edit</button>
-                          <button className="action-button delete-button">Delete</button>
-                        </td>
-                      </tr>
-                    ))}
-                    {users.length === 0 && (
+                    {Array.isArray(users) && users.length > 0 ? (
+                      users.map((user) => (
+                        <tr key={user.email}>
+                          <td>{user.email}</td>
+                          <td>{user.firstName || '-'}</td>
+                          <td>{user.lastName || '-'}</td>
+                          <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
+                          <td>
+                            <button className="action-button edit-button">Edit</button>
+                            <button className="action-button delete-button">Delete</button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
                         <td colSpan="5" className="no-data">No users found</td>
                       </tr>
@@ -168,17 +179,11 @@ function AdminDashboard() {
             </div>
           )}
 
-          {activeTab === 'quizzes' && (
-            <div className="admin-placeholder">
-              <h2>Quiz Management</h2>
-              <p>This section will allow you to create and manage quizzes.</p>
-            </div>
-          )}
-
           {activeTab === 'questions' && (
             <div className="admin-placeholder">
-              <h2>Question Bank</h2>
-              <p>Here you can add, edit, and categorize quiz questions.</p>
+              {/* <h2>Question Bank</h2>
+              <p>Here you can add, edit, and categorize quiz questions.</p> */}
+              <QuestionsManager/>
             </div>
           )}
 
