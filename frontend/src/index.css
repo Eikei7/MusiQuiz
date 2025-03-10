@@ -21,7 +21,8 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #b6bdc2;
+  /* background-color: #b6bdc2; */
+  background: linear-gradient(135deg, rgba(104,116,125,1) 0%, rgba(182,189,194,1) 100%);
 }
 
 a {

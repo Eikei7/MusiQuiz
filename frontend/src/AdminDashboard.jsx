@@ -460,7 +460,7 @@ function AdminDashboard() {
               </button>
             </div>
             <div className="modal-body">
-              <p>Are you sure you want to delete this room? This action cannot be undone.</p>
+              <p className='warning-text'>Are you sure you want to delete this room? This action cannot be undone.</p>
               <p className="warning-text">
                 All room data will be permanently deleted.
               </p>
