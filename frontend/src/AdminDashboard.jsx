@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { ENDPOINT_USERS, ENDPOINT_QUESTIONS_GET, ENDPOINT_ROOMS_GET } from './endpoints';
+import { 
+  ENDPOINT_USERS, 
+  ENDPOINT_QUESTIONS_GET, 
+  ENDPOINT_ROOMS_GET,
+  ENDPOINT_ROOMS_DELETE 
+} from './endpoints';
 import './AdminDashboard.css';
 import QuestionsManager from './QuestionsManager';
 
 function AdminDashboard() {
   const { user, logout, token } = useAuth();
-  const [users, setUsers] = useState([]);  // Initialize as empty array
-  const [questions, setQuestions] = useState([]);  // Initialize as empty array
-  const [rooms, setRooms] = useState([]);  // Initialize rooms as empty array
+  const [users, setUsers] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('users');
@@ -17,6 +22,10 @@ function AdminDashboard() {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
+  
+  // Room deletion state
+  const [deletingRoomId, setDeletingRoomId] = useState(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -130,6 +139,43 @@ function AdminDashboard() {
       alert(`Failed to create room: ${err.message}`);
     } finally {
       setCreatingRoom(false);
+    }
+  };
+
+  const confirmDeleteRoom = (roomId) => {
+    setDeletingRoomId(roomId);
+    setShowDeleteConfirmation(true);
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!deletingRoomId) return;
+    
+    try {
+      // Make sure the URL format matches what your backend expects
+      // Your backend expects roomId as a path parameter
+      const response = await fetch(`${ENDPOINT_ROOMS_DELETE}/${deletingRoomId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete room');
+      }
+      
+      // Remove the deleted room from the state
+      setRooms(rooms.filter(room => (room.roomId || room.id) !== deletingRoomId));
+      
+      // Close the confirmation modal
+      setShowDeleteConfirmation(false);
+      setDeletingRoomId(null);
+      
+    } catch (err) {
+      console.error('Error deleting room:', err.message);
+      alert(`Failed to delete room: ${err.message}`);
     }
   };
 
@@ -318,7 +364,12 @@ function AdminDashboard() {
                           <td>
                             <button className="action-button view-button">View</button>
                             <button className="action-button edit-button">Edit</button>
-                            <button className="action-button delete-button">Delete</button>
+                            <button 
+                              className="action-button delete-button"
+                              onClick={() => confirmDeleteRoom(room.id || room.roomId)}
+                            >
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -388,6 +439,51 @@ function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmation && (
+        <div className="modal-overlay">
+          <div className="modal-container delete-confirmation">
+            <div className="modal-header">
+              <h2>Confirm Deletion</h2>
+              <button 
+                className="modal-close"
+                onClick={() => {
+                  setShowDeleteConfirmation(false);
+                  setDeletingRoomId(null);
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this room? This action cannot be undone.</p>
+              <p className="warning-text">
+                All room data will be permanently deleted.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowDeleteConfirmation(false);
+                  setDeletingRoomId(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-danger"
+                onClick={handleDeleteRoom}
+              >
+                Delete Room
+              </button>
+            </div>
           </div>
         </div>
       )}
