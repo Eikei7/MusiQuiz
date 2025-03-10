@@ -108,7 +108,7 @@ function QuestionsManager() {
 
       <div className="question-filters">
         <div className="question-count">
-          {!loading && <span>{questions.length} question(s) found</span>}
+          {!loading && <span>{questions.length} question(s) found in database</span>}
         </div>
       </div>
 

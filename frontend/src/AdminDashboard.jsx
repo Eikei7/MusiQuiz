@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { ENDPOINT_USERS, ENDPOINT_QUESTIONS_GET } from './endpoints';
+import { ENDPOINT_USERS, ENDPOINT_QUESTIONS_GET, ENDPOINT_ROOMS_GET } from './endpoints';
 import './AdminDashboard.css';
 import QuestionsManager from './QuestionsManager';
 
@@ -8,13 +8,20 @@ function AdminDashboard() {
   const { user, logout, token } = useAuth();
   const [users, setUsers] = useState([]);  // Initialize as empty array
   const [questions, setQuestions] = useState([]);  // Initialize as empty array
+  const [rooms, setRooms] = useState([]);  // Initialize rooms as empty array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('users');
+  
+  // Room creation state
+  const [showRoomModal, setShowRoomModal] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [creatingRoom, setCreatingRoom] = useState(false);
 
   useEffect(() => {
     fetchUsers();
     fetchQuestions();
+    fetchRooms();
   }, []);
 
   const fetchUsers = async () => {
@@ -62,11 +69,75 @@ function AdminDashboard() {
     }
   };
 
+  const fetchRooms = async () => {
+    try {
+      const response = await fetch(ENDPOINT_ROOMS_GET, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch rooms');
+      }
+
+      const data = await response.json();
+      setRooms(Array.isArray(data) ? data : (data.rooms || []));
+    } catch (err) {
+      console.error('Error loading rooms:', err.message);
+      // Not setting the main error state to avoid disrupting the UI
+    }
+  };
+
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+    
+    if (!newRoomName.trim()) {
+      alert("Please enter a room name");
+      return;
+    }
+    
+    try {
+      setCreatingRoom(true);
+      
+      // Only sending the name since the backend handles roomId, players array, and createdAt
+      const roomData = {
+        name: newRoomName.trim()
+      };
+      
+      const response = await fetch(ENDPOINT_ROOMS_GET, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(roomData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create room');
+      }
+      
+      // Refresh the rooms list
+      fetchRooms();
+      
+      // Reset and close the modal
+      setNewRoomName('');
+      setShowRoomModal(false);
+      
+    } catch (err) {
+      console.error('Error creating room:', err.message);
+      alert(`Failed to create room: ${err.message}`);
+    } finally {
+      setCreatingRoom(false);
+    }
+  };
+
   return (
     <div className="admin-dashboard">
       <aside className="admin-sidebar">
         <div className="admin-logo">
-          <img src="/logo_small.png" alt="MusiQuiz logo" />
+          <h2>MusiQuiz</h2>
         </div>
         <div className="admin-user">
           <div className="admin-avatar">{user?.firstName?.charAt(0) || user?.email?.charAt(0)}</div>
@@ -92,6 +163,11 @@ function AdminDashboard() {
                 Questions
               </button>
             </li>
+            <li className={activeTab === 'rooms' ? 'active' : ''}>
+              <button onClick={() => setActiveTab('rooms')}>
+                Rooms
+              </button>
+            </li>
             <li className={activeTab === 'stats' ? 'active' : ''}>
               <button onClick={() => setActiveTab('stats')}>
                 Statistics
@@ -111,7 +187,8 @@ function AdminDashboard() {
           <h1>
             {activeTab === 'dashboard' && 'Admin Dashboard'}
             {activeTab === 'users' && 'User Management'}
-            {activeTab === 'questions' && 'Question Bank'}
+            {activeTab === 'questions' && 'Quiz Questions'}
+            {activeTab === 'rooms' && 'Room Management'}
             {activeTab === 'stats' && 'Statistics & Reports'}
           </h1>
         </header>
@@ -126,6 +203,10 @@ function AdminDashboard() {
               <div className="stat-card">
                 <h3>Questions</h3>
                 <p className="stat-value">{Array.isArray(questions) ? questions.length : 0}</p>
+              </div>
+              <div className="stat-card">
+                <h3>Rooms</h3>
+                <p className="stat-value">{Array.isArray(rooms) ? rooms.length : 0}</p>
               </div>
             </div>
           )}
@@ -181,9 +262,74 @@ function AdminDashboard() {
 
           {activeTab === 'questions' && (
             <div className="admin-placeholder">
-              {/* <h2>Question Bank</h2>
-              <p>Here you can add, edit, and categorize quiz questions.</p> */}
               <QuestionsManager/>
+            </div>
+          )}
+
+          {activeTab === 'rooms' && (
+            <div className="admin-rooms">
+              <div className="admin-toolbar">
+                <button className="admin-button" onClick={() => setShowRoomModal(true)}>Create New Room</button>
+                <div className="admin-search">
+                  <input type="text" placeholder="Search rooms..." />
+                </div>
+              </div>
+
+              {loading ? (
+                <div className="admin-loading">Loading rooms...</div>
+              ) : (
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Room ID</th>
+                      <th>Name</th>
+                      <th>Players</th>
+                      <th>Status</th>
+                      <th>Created By</th>
+                      <th>Created At</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.isArray(rooms) && rooms.length > 0 ? (
+                      rooms.map((room) => (
+                        <tr key={room.id || room.roomId}>
+                          <td>{room.id || room.roomId}</td>
+                          <td>{room.name || '-'}</td>
+                          <td>
+                            {Array.isArray(room.players) && room.players.length > 0 ? (
+                              <div className="player-list">
+                                <span className="player-count">{room.players.length}</span>
+                                <div className="player-tooltip">
+                                  <ul>
+                                    {room.players.map((player, index) => (
+                                      <li key={index}>{player.name || player.email || player}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="no-players">No players</span>
+                            )}
+                          </td>
+                          <td><span className={`status-badge ${room.status?.toLowerCase() || 'inactive'}`}>{room.status || 'Inactive'}</span></td>
+                          <td>{room.createdBy || '-'}</td>
+                          <td>{room.createdAt ? new Date(room.createdAt).toLocaleString() : '-'}</td>
+                          <td>
+                            <button className="action-button view-button">View</button>
+                            <button className="action-button edit-button">Edit</button>
+                            <button className="action-button delete-button">Delete</button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="no-data">No rooms found</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 
@@ -195,6 +341,56 @@ function AdminDashboard() {
           )}
         </div>
       </main>
+
+      {/* Room Creation Modal */}
+      {showRoomModal && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <h2>Create New Room</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowRoomModal(false)}
+              >
+                &times;
+              </button>
+            </div>
+            <form onSubmit={handleCreateRoom}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label htmlFor="roomName">Room Name</label>
+                  <input
+                    type="text"
+                    id="roomName"
+                    value={newRoomName}
+                    onChange={(e) => setNewRoomName(e.target.value)}
+                    placeholder="Enter room name"
+                    required
+                  />
+                </div>
+                <p className="help-text">A new room will be created with no players initially.</p>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => setShowRoomModal(false)}
+                  disabled={creatingRoom}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={creatingRoom}
+                >
+                  {creatingRoom ? 'Creating...' : 'Create Room'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

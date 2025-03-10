@@ -1,10 +1,15 @@
 @import url(https://fonts.googleapis.com/css?family=Fira+Sans:100,200,300,400,500,600);
-@import url(https://fonts.googleapis.com/css?family=Roboto:100,200,300,regular,500,600,700,800,900,100italic,200italic,300italic,italic,500italic,600italic,700italic,800italic,900italic);
+@import url(https://fonts.googleapis.com/css?family=Roboto:100,200,300,regular,500,600);
 
 .admin-dashboard {
     display: flex;
     min-height: 100vh;
     font-family: 'Fira Sans', sans-serif;
+    font-weight: 400;
+    width: 100vw;
+    position: absolute;
+    left: 0;
+    top: 0;
   }
   
   .admin-sidebar {
@@ -18,6 +23,7 @@
   .admin-logo {
     padding: 1.5rem;
     text-align: center;
+    font-size: 30px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
   
@@ -31,6 +37,11 @@
     align-items: center;
     gap: 0.75rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .admin-users {
+    width: 100%;
+    /* margin: 0 100px; */
   }
   
   .admin-avatar {
@@ -278,3 +289,151 @@
   .admin-placeholder p {
     color: #666;
   }
+
+  /* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 500px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 16px;
+}
+
+.modal-footer {
+  padding: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #eee;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 80%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #e2e2e2;
+  color: #333;
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Player list styles */
+.player-list {
+  position: relative;
+  display: inline-block;
+}
+
+.player-count {
+  background-color: #4a90e2;
+  color: white;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.player-tooltip {
+  display: none;
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 8px;
+  z-index: 100;
+  min-width: 150px;
+  left: 0;
+  top: 100%;
+}
+
+.player-list:hover .player-tooltip {
+  display: block;
+}
+
+.player-tooltip ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.player-tooltip li {
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+
+.no-players {
+  color: #999;
+  font-style: italic;
+}
+
+.help-text {
+  color: #666;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
