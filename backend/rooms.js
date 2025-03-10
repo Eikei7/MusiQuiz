@@ -7,7 +7,6 @@ const {
   UpdateCommand,
   DeleteCommand,
 } = require("@aws-sdk/lib-dynamodb");
-const { v4: uuidv4 } = require("uuid");
 const jwt = require('jsonwebtoken');
 
 const ROOMS_TABLE = process.env.ROOMS_TABLE;
@@ -28,6 +27,9 @@ async function isAdmin(event) {
 }
 
 module.exports.createRoom = async (event) => {
+  // Dynamically import nanoid
+  const { nanoid } = await import('nanoid');
+  
   const body = JSON.parse(event.body);
   const { name } = body;
 
@@ -38,7 +40,8 @@ module.exports.createRoom = async (event) => {
     };
   }
 
-  const roomId = `room-${uuidv4()}`;
+  // Generate a shorter ID using nanoid
+  const roomId = `room-${nanoid(10)}`;
   const createdAt = new Date().toISOString();
 
   const params = {
