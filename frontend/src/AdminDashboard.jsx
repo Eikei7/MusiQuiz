@@ -16,7 +16,7 @@ function AdminDashboard() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('dashboard');
   
   // Room creation state
   const [showRoomModal, setShowRoomModal] = useState(false);
