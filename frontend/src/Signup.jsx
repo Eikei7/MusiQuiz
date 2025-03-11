@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import './Signup.css';
+import './Login-Signup.css';
 import { ENDPOINT_REGISTER } from './endpoints';
 
 function Signup() {

@@ -22,7 +22,6 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  /* background: linear-gradient(135deg, rgba(104,116,125,1) 0%, rgb(74, 139, 185) 100%); */
   background: linear-gradient(135deg, rgba(255,194,94,1) 0%, rgba(157,255,227,1) 32%, rgba(238,161,255,1) 65%, rgba(156,170,255,1) 100%);
   background-size: 400% 400%;
   animation: gradient 35s ease infinite;
