@@ -41,7 +41,6 @@ function Signup() {
     setLoading(true);
     
     try {
-      // Direct API call
       const response = await fetch(ENDPOINT_REGISTER, {
         method: 'POST',
         headers: {
@@ -78,8 +77,8 @@ function Signup() {
   };
 
   return (
-    <>
-      <img src="/logo_big_2.png" alt="MusiQuiz logo" />
+    <div className='container'>
+      <img src="/logo_text_clear.png" alt="MusiQuiz logo" />
       <div className="signup-container">
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
@@ -155,7 +154,7 @@ function Signup() {
           </div>
         </form>
       </div>
-    </>
+    </div>
   );
 }
 

@@ -57,7 +57,7 @@ function Login() {
   };
 
   return (
-    <>
+    <div className='container'>
       <img src="/logo_text_clear.png" alt="MusiQuiz logo" />
       <div className="login-container">
         {error && <div className="error-message">{error}</div>}
@@ -97,7 +97,7 @@ function Login() {
           </div>
         </form>
       </div>
-    </>
+    </div>
   );
 }
 

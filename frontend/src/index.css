@@ -19,11 +19,13 @@ body {
   margin: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background: linear-gradient(135deg, rgba(104,116,125,1) 0%, rgba(182,189,194,1) 100%);
+  /* background: linear-gradient(135deg, rgba(104,116,125,1) 0%, rgb(74, 139, 185) 100%); */
+  background: linear-gradient(135deg, rgba(255,194,94,1) 0%, rgba(157,255,227,1) 32%, rgba(238,161,255,1) 65%, rgba(156,170,255,1) 100%);
+  background-size: 400% 400%;
+  animation: gradient 35s ease infinite;
 }
 
 a {
@@ -32,4 +34,16 @@ a {
 
 button {
   font-family: 'Roboto Slab', sans-serif;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
