@@ -178,15 +178,6 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
               </button>
             </div>
           ))}
-          
-          <button 
-            type="button" 
-            className="add-choice"
-            onClick={addChoice}
-            disabled={formData.choices.length >= 8}
-          >
-            + Add Another Choice
-          </button>
         </div>
         
         <div className="form-actions">
