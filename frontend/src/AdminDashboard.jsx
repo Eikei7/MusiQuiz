@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { 
-  ENDPOINT_USERS, 
+  ENDPOINT_USERS,
+  ENDPOINT_USERS_DELETE, 
   ENDPOINT_QUESTIONS_GET, 
   ENDPOINT_ROOMS_GET,
   ENDPOINT_ROOMS_DELETE 
@@ -26,6 +27,10 @@ function AdminDashboard() {
   // Room deletion state
   const [deletingRoomId, setDeletingRoomId] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+  // User deletion state
+  const [deletingUserEmail, setDeletingUserEmail] = useState(null);
+  const [showDeleteUserConfirmation, setShowDeleteUserConfirmation] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -55,6 +60,44 @@ function AdminDashboard() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const confirmDeleteUser = (email) => {
+    setDeletingUserEmail(email);
+    setShowDeleteUserConfirmation(true);
+  };
+  
+  const handleDeleteUser = async () => {
+    if (!deletingUserEmail) return;
+    
+    try {
+      // Replace the hardcoded URL with your endpoint constant
+      // and replace {email} with the actual email value
+      const url = ENDPOINT_USERS_DELETE.replace('{email}', encodeURIComponent(deletingUserEmail));
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+      
+      // Remove the deleted user from the state
+      setUsers(users.filter(user => user.email !== deletingUserEmail));
+      
+      // Close the confirmation modal
+      setShowDeleteUserConfirmation(false);
+      setDeletingUserEmail(null);
+      
+    } catch (err) {
+      console.error('Error deleting user:', err.message);
+      alert(`Failed to delete user: ${err.message}`);
     }
   };
 
@@ -291,7 +334,7 @@ function AdminDashboard() {
                           <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
                           <td>
                             <button className="action-button edit-button">Edit</button>
-                            <button className="action-button delete-button">Delete</button>
+                            <button className="action-button delete-button" onClick={() => confirmDeleteUser(user.email)}>Delete</button>
                           </td>
                         </tr>
                       ))
@@ -362,8 +405,6 @@ function AdminDashboard() {
                           <td>{room.createdBy || '-'}</td>
                           <td>{room.createdAt ? new Date(room.createdAt).toLocaleString() : '-'}</td>
                           <td>
-                            <button className="action-button view-button">View</button>
-                            <button className="action-button edit-button">Edit</button>
                             <button 
                               className="action-button delete-button"
                               onClick={() => confirmDeleteRoom(room.id || room.roomId)}
@@ -393,6 +434,50 @@ function AdminDashboard() {
         </div>
       </main>
 
+      {/* Delete User Confirmation Modal */}
+{showDeleteUserConfirmation && (
+  <div className="modal-overlay">
+    <div className="modal-container delete-confirmation">
+      <div className="modal-header">
+        <h2>Confirm User Deletion</h2>
+        <button 
+          className="modal-close"
+          onClick={() => {
+            setShowDeleteUserConfirmation(false);
+            setDeletingUserEmail(null);
+          }}
+        >
+          &times;
+        </button>
+      </div>
+      <div className="modal-body">
+        <p className='warning-text'>Are you sure you want to delete the user with email: <strong>{deletingUserEmail}</strong>?</p>
+        <p className="warning-text">
+          This action cannot be undone. All user data will be permanently deleted.
+        </p>
+      </div>
+      <div className="modal-footer">
+        <button 
+          type="button" 
+          className="btn btn-secondary"
+          onClick={() => {
+            setShowDeleteUserConfirmation(false);
+            setDeletingUserEmail(null);
+          }}
+        >
+          Cancel
+        </button>
+        <button 
+          type="button" 
+          className="btn btn-danger"
+          onClick={handleDeleteUser}
+        >
+          Delete User
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       {/* Room Creation Modal */}
       {showRoomModal && (
         <div className="modal-overlay">
@@ -443,7 +528,7 @@ function AdminDashboard() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Room Confirmation Modal */}
       {showDeleteConfirmation && (
         <div className="modal-overlay">
           <div className="modal-container delete-confirmation">

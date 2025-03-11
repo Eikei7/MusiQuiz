@@ -51,6 +51,13 @@ functions:
       - httpApi:
           path: /users
           method: get
+
+  deleteUser:
+    handler: users.deleteUser
+    events:
+      - httpApi:
+          path: /users/{email}
+          method: delete
   
   createRoom:
     handler: rooms.createRoom

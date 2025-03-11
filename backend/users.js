@@ -4,7 +4,8 @@ const {
   DynamoDBDocumentClient, 
   ScanCommand, 
   GetCommand, 
-  PutCommand } = require("@aws-sdk/lib-dynamodb");
+  PutCommand,
+  DeleteCommand } = require("@aws-sdk/lib-dynamodb");
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -193,6 +194,60 @@ module.exports.loginUser = async (event) => {
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Could not log in." }),
+    };
+  }
+};
+
+module.exports.deleteUser = async (event) => {
+  // Check if requester is admin
+  const admin = await isAdmin(event);
+  if (!admin) {
+    return {
+      statusCode: 403,
+      body: JSON.stringify({ error: "Access denied. Admin only." }),
+    };
+  }
+
+  // Get email from path parameters
+  const { email } = event.pathParameters;
+  if (!email) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Email is required." }),
+    };
+  }
+
+  const params = {
+    TableName: USERS_TABLE,
+    Key: { email },
+  };
+
+  try {
+    // First, check if the user exists
+    const { Item } = await docClient.send(new GetCommand(params));
+    if (!Item) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: "User not found." }),
+      };
+    }
+
+    // Delete the user
+    await docClient.send(new DeleteCommand(params));
+    
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+      },
+      body: JSON.stringify({ message: "User deleted successfully." }),
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Could not delete user." }),
     };
   }
 };
