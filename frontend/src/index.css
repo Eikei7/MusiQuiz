@@ -27,3 +27,7 @@ body {
 a {
   color: white;
 }
+
+button {
+  font-family: 'Roboto Slab', sans-serif;
+}
