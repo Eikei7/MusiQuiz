@@ -13,7 +13,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
-    background-color: #434366;
+    background-color: #494949;
     color: white; 
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
@@ -46,20 +46,17 @@
   .dashboard-main {
     flex: 1;
     padding: 2rem;
-    background: linear-gradient(135deg, rgba(104,116,125,1) 0%, rgba(182,189,194,1) 100%);
   }
   
   /* Room selection section */
 .room-selection {
-  background-color: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   padding: 2rem;
 }
 
 .room-selection h2 {
   margin-top: 0;
-  color: #333;
+  color: #ffffff;
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
 }
@@ -69,7 +66,7 @@
 }
 
 .room-list h3 {
-  color: #555;
+  color: #ffffff;
   font-weight: 500;
   margin-bottom: 1rem;
 }
@@ -86,12 +83,13 @@
 .room-card {
   position: relative;
   background-color: #fff;
-  border: 1px solid #e0e0e0;
+  /* border: 1px solid #e0e0e0; */
   border-radius: 8px;
   padding: 1.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); */
+  box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
   display: flex;
   flex-direction: column;
 }
