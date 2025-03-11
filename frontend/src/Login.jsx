@@ -58,7 +58,7 @@ function Login() {
 
   return (
     <>
-      <img src="/logo_big_2.png" alt="MusiQuiz logo" />
+      <img src="/logo_text_clear.png" alt="MusiQuiz logo" />
       <div className="login-container">
         {error && <div className="error-message">{error}</div>}
         <form className="login-form" onSubmit={handleSubmit}>
