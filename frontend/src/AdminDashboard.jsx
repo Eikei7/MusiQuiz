@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { 
   ENDPOINT_USERS,
@@ -31,6 +31,9 @@ function AdminDashboard() {
   // User deletion state
   const [deletingUserEmail, setDeletingUserEmail] = useState(null);
   const [showDeleteUserConfirmation, setShowDeleteUserConfirmation] = useState(false);
+
+  // User search state
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -100,6 +103,18 @@ function AdminDashboard() {
       alert(`Failed to delete user: ${err.message}`);
     }
   };
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return users.filter(user => 
+      user.email.toLowerCase().includes(query) ||
+      (user.firstName && user.firstName.toLowerCase().includes(query)) ||
+      (user.lastName && user.lastName.toLowerCase().includes(query)) ||
+      (user.role && user.role.toLowerCase().includes(query))
+    );
+  }, [users, searchQuery]);
 
   const fetchQuestions = async () => {
     try {
@@ -305,8 +320,22 @@ function AdminDashboard() {
               <div className="admin-toolbar">
                 <button className="admin-button">Add New User</button>
                 <div className="admin-search">
-                  <input type="text" placeholder="Search users..." />
-                </div>
+  <input 
+    type="text" 
+    placeholder="Search users..." 
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+  />
+  {searchQuery && (
+    <button 
+      className="search-clear-button"
+      onClick={() => setSearchQuery('')}
+    >
+      ×
+    </button>
+  )}
+</div>
+
               </div>
 
               {loading ? (
@@ -325,24 +354,26 @@ function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Array.isArray(users) && users.length > 0 ? (
-                      users.map((user) => (
-                        <tr key={user.email}>
-                          <td>{user.email}</td>
-                          <td>{user.firstName || '-'}</td>
-                          <td>{user.lastName || '-'}</td>
-                          <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
-                          <td>
-                            <button className="action-button edit-button">Edit</button>
-                            <button className="action-button delete-button" onClick={() => confirmDeleteUser(user.email)}>Delete</button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="5" className="no-data">No users found</td>
-                      </tr>
-                    )}
+                  {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
+  filteredUsers.map((user) => (
+    <tr key={user.email}>
+      <td>{user.email}</td>
+      <td>{user.firstName || '-'}</td>
+      <td>{user.lastName || '-'}</td>
+      <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
+      <td>
+        <button className="action-button edit-button">Edit</button>
+        <button className="action-button delete-button" onClick={() => confirmDeleteUser(user.email)}>Delete</button>
+      </td>
+    </tr>
+  ))
+) : (
+  <tr>
+    <td colSpan="5" className="no-data">
+      {searchQuery ? 'No matching users found' : 'No users found'}
+    </td>
+  </tr>
+)}
                   </tbody>
                 </table>
               )}
