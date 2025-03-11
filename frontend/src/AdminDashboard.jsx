@@ -355,25 +355,25 @@ function AdminDashboard() {
                   </thead>
                   <tbody>
                   {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
-  filteredUsers.map((user) => (
-    <tr key={user.email}>
-      <td>{user.email}</td>
-      <td>{user.firstName || '-'}</td>
-      <td>{user.lastName || '-'}</td>
-      <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
-      <td>
-        <button className="action-button edit-button">Edit</button>
-        <button className="action-button delete-button" onClick={() => confirmDeleteUser(user.email)}>Delete</button>
-      </td>
-    </tr>
-  ))
-) : (
-  <tr>
-    <td colSpan="5" className="no-data">
-      {searchQuery ? 'No matching users found' : 'No users found'}
-    </td>
-  </tr>
-)}
+                    filteredUsers.map((user) => (
+                    <tr key={user.email}>
+                    <td>{user.email}</td>
+                    <td>{user.firstName || '-'}</td>
+                    <td>{user.lastName || '-'}</td>
+                    <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
+                    <td>
+                      <button className="action-button edit-button">Edit</button>
+                      <button className="action-button delete-button" onClick={() => confirmDeleteUser(user.email)}>Delete</button>
+                    </td>
+                    </tr>
+                    ))
+                    ) : (
+                  <tr>
+                    <td colSpan="5" className="no-data">
+                     {searchQuery ? 'No matching users found' : 'No users found'}
+                  </td>
+                  </tr>
+                    )}
                   </tbody>
                 </table>
               )}

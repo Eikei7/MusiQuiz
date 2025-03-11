@@ -84,7 +84,6 @@ function QuestionsManager() {
   return (
     <div className="questions-manager">
       <div className="question-header">
-        <h1>Quiz Questions</h1>
         <button 
           className="add-question-btn"
           onClick={() => {
