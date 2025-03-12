@@ -9,6 +9,7 @@ provider:
     USERS_TABLE: ${self:service}-users-${sls:stage}
     ROOMS_TABLE: ${self:service}-rooms-${sls:stage}
     QUESTIONS_TABLE: ${self:service}-questions-${sls:stage}
+    CONNECTIONS_TABLE: ${self:service}-connections-${sls:stage}
     JWT_SECRET: "ilovemusic"
 
   httpApi:
@@ -26,6 +27,7 @@ provider:
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
             - dynamodb:BatchGetItem
+            - execute-api:ManageConnections
           Resource: "*"
 
 
@@ -135,6 +137,24 @@ functions:
       - httpApi:
           path: /questions/{id}
           method: delete
+  
+  connect:
+    handler: chat.connectHandler
+    events:
+      - websocket:
+          route: $connect
+  
+  disconnect:
+    handler: chat.disconnectHandler
+    events:
+      - websocket:
+          route: $disconnect
+  
+  default:
+    handler: chat.defaultHandler
+    events:
+      - websocket:
+          route: $default
 
 resources:
   Resources:
@@ -174,3 +194,15 @@ resources:
           - AttributeName: id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-connections-${sls:stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH

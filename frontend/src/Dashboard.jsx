@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import './Dashboard.css';
 import { ENDPOINT_ROOMS } from './endpoints';
+import Chat from './Chat';
 
 function Dashboard() {
   const { user, logout, token } = useAuth();
@@ -139,6 +140,20 @@ function Dashboard() {
             </div>
             
             <div className="room-content">
+              <div className="room-main-area">
+                <div className="quiz-placeholder">
+                  <h3>Quiz Will Start Soon</h3>
+                  <p>Waiting for the quiz to begin. The host will start the quiz once enough players have joined.</p>
+                  <p>Get ready to test your music knowledge!</p>
+                </div>
+                
+                {/* Chat Component integrated here */}
+                <div className="room-chat">
+                  <h3>Chat</h3>
+                  <Chat />
+                </div>
+              </div>
+              
               <div className="players-section">
                 <h3>Players in Room</h3>
                 <ul className="players-list">
@@ -156,12 +171,6 @@ function Dashboard() {
                     {user?.firstName || user?.email?.split('@')[0]} (You)
                   </li>
                 </ul>
-              </div>
-              
-              <div className="quiz-placeholder">
-                <h3>Quiz Will Start Soon</h3>
-                <p>Waiting for the quiz to begin. The host will start the quiz once enough players have joined.</p>
-                <p>Get ready to test your music knowledge!</p>
               </div>
             </div>
           </section>

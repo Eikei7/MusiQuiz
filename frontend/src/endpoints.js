@@ -15,3 +15,5 @@ export const ENDPOINT_QUESTIONS_GET =    `${API_BASE}/questions`; //GET
 export const ENDPOINT_QUESTIONS_GET_ONE =`${API_BASE}/questions/{id}`; //GET
 export const ENDPOINT_QUESTIONS_DELETE = `${API_BASE}/questions/{id}`; //DELETE
 export const ENDPOINT_QUESTIONS_UPDATE = `${API_BASE}/questions/{id}`; //PUT
+
+export const ENDPOINT_CHAT =            'wss://2rd7r2g07b.execute-api.eu-north-1.amazonaws.com/dev'; //POST
