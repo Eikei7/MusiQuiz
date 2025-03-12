@@ -178,17 +178,34 @@ module.exports.joinRoom = async (event) => {
 module.exports.leaveRoom = async (event) => {
   const { roomId } = event.pathParameters;
   const body = JSON.parse(event.body);
-  const { email } = body;
+  const { token } = body;
+  
+  // Get token from Authorization header if not in body
+  const authHeader = event.headers.Authorization || event.headers.authorization;
+  const tokenFromHeader = authHeader ? authHeader.replace('Bearer ', '') : null;
+  
+  // Use token from body or header
+  const userToken = token || tokenFromHeader;
 
-  if (!email) {
+  if (!userToken) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: "Email is required to leave a room." }),
+      body: JSON.stringify({ error: "Authentication token is required to leave a room." }),
     };
   }
 
- 
   try {
+    // Decode the token to get the email
+    const decoded = jwt.verify(userToken, process.env.JWT_SECRET);
+    const email = decoded.email;
+
+    if (!email) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Valid email not found in token." }),
+      };
+    }
+
     const getParams = {
       TableName: ROOMS_TABLE,
       Key: { roomId }
@@ -224,6 +241,22 @@ module.exports.leaveRoom = async (event) => {
     };
   } catch (error) {
     console.error(error);
+    
+    // Provide more detailed error for token verification failures
+    if (error.name === 'JsonWebTokenError') {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: "Invalid token." }),
+      };
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: "Token expired." }),
+      };
+    }
+    
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Could not leave room." }),

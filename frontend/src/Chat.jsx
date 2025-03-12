@@ -41,25 +41,51 @@ const Chat = () => {
 
   useEffect(() => {
     const websocket = new WebSocket('wss://4nymssc2pg.execute-api.eu-north-1.amazonaws.com/dev');
-
+  
     websocket.onopen = () => {
       console.log('WebSocket connection established');
       setConnectionStatus('connected');
     };
+    
     websocket.onmessage = (event) => {
-      const { message, timestamp, displayName } = JSON.parse(event.data);
-      setMessages((prev) => [...prev, { message, timestamp, displayName }]);
+      console.log('WebSocket message received:', event.data);
+      
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === "roomUpdate" && selectedRoom && data.roomId === selectedRoom.roomId) {
+            console.log('Room update received:', data.room);
+            // Update room data when room update notification is received
+            setSelectedRoom(data.room);
+          } else if (data.type === "message" || (!data.type && data.message)) {
+          // Handle chat messages - works with both new format (with type) 
+          // and existing format (without type)
+          console.log('Chat message received:', data);
+          setMessages((prev) => [...prev, { 
+            message: data.message, 
+            timestamp: data.timestamp, 
+            displayName: data.displayName 
+          }]);
+        } else {
+          console.log('Unhandled message type:', data);
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
     };
+    
     websocket.onclose = () => {
       console.log('WebSocket connection closed');
       setConnectionStatus('disconnected');
     };
+    
     websocket.onerror = (error) => {
       console.error('WebSocket error:', error);
       setConnectionStatus('error');
     };
+    
     setWs(websocket);
-
+  
     return () => websocket.close();
   }, []);
 

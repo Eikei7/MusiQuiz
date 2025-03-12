@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import './Dashboard.css';
-import { ENDPOINT_ROOMS } from './endpoints';
+import { ENDPOINT_ROOMS, ENDPOINT_ROOMS_LEAVE } from './endpoints';
 import Chat from './Chat';
 
 function Dashboard() {
@@ -42,21 +42,82 @@ function Dashboard() {
     }
   };
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     if (!selectedRoom) {
       alert('Please select a room to join.');
       return;
     }
     
-    // Here you would typically make an API call to join the room
-    // For now, we'll just simulate joining
-    setRoomJoined(true);
+    try {
+      const response = await fetch(`https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms/${selectedRoom.roomId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ token })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to join room');
+      }
+  
+      const updatedRoom = await response.json();
+      
+      // Update the selected room with the latest data
+      setSelectedRoom(updatedRoom);
+      
+      // Update the room in the rooms list
+      setRooms(prevRooms => prevRooms.map(room => 
+        room.roomId === updatedRoom.roomId ? updatedRoom : room
+      ));
+      
+      // Set room joined state
+      setRoomJoined(true);
+    } catch (error) {
+      console.error('Error joining room:', error);
+      alert('Failed to join room. Please try again.');
+    }
   };
 
-  const handleLeaveRoom = () => {
-    if (confirm('Are you sure you want to leave this room?')) {
-      // Here you would make an API call to leave the room
+  const handleLeaveRoom = async () => {
+    if (!confirm('Are you sure you want to leave this room?')) {
+      return;
+    }
+    
+    try {
+      // Log for debugging
+      console.log('Attempting to leave room:', selectedRoom.roomId);
+      
+      const response = await fetch(`https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms/${selectedRoom.roomId}/leave`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        // No need to send token in body since it's already in headers
+        body: JSON.stringify({}) 
+      });
+  
+      // Log the response for debugging
+      console.log('Leave room response status:', response.status);
+      
+      // For more detailed error information
+      const responseData = await response.json().catch(() => ({}));
+      console.log('Response data:', responseData);
+  
+      if (!response.ok) {
+        throw new Error(`Failed to leave room: ${responseData.error || response.statusText}`);
+      }
+  
+      // Update rooms list
+      fetchRooms();
+      
+      // Reset room joined state
       setRoomJoined(false);
+    } catch (error) {
+      console.error('Error leaving room:', error);
+      alert(`Failed to leave room: ${error.message}`);
     }
   };
 
@@ -142,9 +203,9 @@ function Dashboard() {
             <div className="room-content">
               <div className="room-main-area">
                 <div className="quiz-placeholder">
-                  <h3>Quiz Will Start Soon</h3>
-                  <p>Waiting for the quiz to begin. The host will start the quiz once enough players have joined.</p>
-                  <p>Get ready to test your music knowledge!</p>
+                  <h3>The quiz will start soon</h3>
+                  <p>As soon as two players have joined the room, the quiz is ready to start.</p>
+                  <p>Press the button below to begin:</p>
                 </div>
                 
                 {/* Chat Component integrated here */}
@@ -155,23 +216,41 @@ function Dashboard() {
               </div>
               
               <div className="players-section">
-                <h3>Players in Room</h3>
-                <ul className="players-list">
-                  {Array.isArray(selectedRoom?.players) && selectedRoom.players.length > 0 ? (
-                    selectedRoom.players.map((player, index) => (
-                      <li key={index} className="player-item">
-                        {typeof player === 'object' ? player.name || player.email : player}
-                      </li>
-                    ))
-                  ) : (
-                    <li className="no-players">Waiting for other players to join...</li>
-                  )}
-                  {/* Current user is always shown */}
-                  <li className="player-item current-user">
-                    {user?.firstName || user?.email?.split('@')[0]} (You)
-                  </li>
-                </ul>
-              </div>
+  <h3>Players in Room</h3>
+  <ul className="players-list">
+    {Array.isArray(selectedRoom?.players) && selectedRoom.players.length > 0 ? (
+      selectedRoom.players.map((player, index) => {
+        // Get email for comparison
+        const playerEmail = typeof player === 'object' ? player.email : player;
+        // Check if this player is the current user
+        const isCurrentUser = playerEmail === user?.email;
+        
+        // Display name logic - use firstName for current user
+        let displayName;
+        if (isCurrentUser) {
+          displayName = user?.firstName || user?.email?.split('@')[0];
+        } else {
+          // For other players, try to format the email nicely
+          if (typeof player === 'object') {
+            displayName = player.name || player.firstName || player.email;
+          } else {
+            // If it's just a string (email), get the part before @
+            displayName = player.split('@')[0];
+          }
+        }
+        
+        return (
+          <li key={index} className={`player-item ${isCurrentUser ? 'current-user' : ''}`}>
+            {displayName}
+            {isCurrentUser && ' (You)'}
+          </li>
+        );
+      })
+    ) : (
+      <li className="no-players">Waiting for other players to join...</li>
+    )}
+  </ul>
+</div>
             </div>
           </section>
         )}
