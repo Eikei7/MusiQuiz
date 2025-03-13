@@ -13,7 +13,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
-    background-color: #0000004b;
+    background-color: #00000034;
     color: white; 
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
@@ -181,8 +181,8 @@
 .refresh-button {
   padding: 0.75rem 1.5rem;
   background-color: transparent;
-  color: #4a90e2;
-  border: 1px solid #4a90e2;
+  color: #ffffff;
+  border: 1px solid #ffffff;
   border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
@@ -464,8 +464,8 @@
   
   .dashboard-footer {
     padding: 1rem;
-    background-color: #0000004b;
-    color: rgba(255, 255, 255, 0.7);
+    background-color: #00000034;
+    color: white;
     text-align: center;
     font-size: 0.9rem;
   }
