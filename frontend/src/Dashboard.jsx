@@ -58,25 +58,37 @@ function Dashboard() {
         body: JSON.stringify({ token })
       });
   
+      // Parse the JSON response first, so we can check for specific error messages
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to join room');
+        // Special case: User is already in the room
+        if (response.status === 400 && data.error === "You are already in this room." && data.room) {
+          console.log('User is already in this room, proceeding with existing room data');
+          // User is already in the room, so we can just join with the returned room data
+          setSelectedRoom(data.room);
+          setRoomJoined(true);
+          return;
+        }
+        
+        // Handle other errors
+        throw new Error(data.error || 'Failed to join room');
       }
   
-      const updatedRoom = await response.json();
-      
+      // If we got here, the join was successful
       // Update the selected room with the latest data
-      setSelectedRoom(updatedRoom);
+      setSelectedRoom(data);
       
       // Update the room in the rooms list
       setRooms(prevRooms => prevRooms.map(room => 
-        room.roomId === updatedRoom.roomId ? updatedRoom : room
+        room.roomId === data.roomId ? data : room
       ));
       
       // Set room joined state
       setRoomJoined(true);
     } catch (error) {
       console.error('Error joining room:', error);
-      alert('Failed to join room. Please try again.');
+      alert(`Failed to join room: ${error.message}`);
     }
   };
 
@@ -225,18 +237,17 @@ function Dashboard() {
         // Check if this player is the current user
         const isCurrentUser = playerEmail === user?.email;
         
-        // Display name logic - use firstName for current user
+        // Display name - handle both new and old format
         let displayName;
-        if (isCurrentUser) {
-          displayName = user?.firstName || user?.email?.split('@')[0];
+        if (typeof player === 'object' && player.firstName) {
+          displayName = player.firstName;
+        } else if (typeof player === 'object' && player.email) {
+          displayName = player.email.split('@')[0];
+        } else if (typeof player === 'string') {
+          // Legacy format - just email
+          displayName = player.split('@')[0];
         } else {
-          // For other players, try to format the email nicely
-          if (typeof player === 'object') {
-            displayName = player.name || player.firstName || player.email;
-          } else {
-            // If it's just a string (email), get the part before @
-            displayName = player.split('@')[0];
-          }
+          displayName = "Unknown Player";
         }
         
         return (

@@ -10,6 +10,7 @@ const {
 const jwt = require('jsonwebtoken');
 
 const ROOMS_TABLE = process.env.ROOMS_TABLE;
+const USERS_TABLE = process.env.USERS_TABLE;
 const JWT_SECRET = process.env.JWT_SECRET;
 const client = new DynamoDBClient();
 const docClient = DynamoDBDocumentClient.from(client);
@@ -142,14 +143,65 @@ module.exports.joinRoom = async (event) => {
   }
 
   try {
-    // Decode the token to get the email
+    // Decode the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const email = decoded.email;
-    const firstName = decoded.firstName || email.split('@')[0];
+    
+    // First check if the room exists and if user is already in the room
+    const roomParams = {
+      TableName: ROOMS_TABLE,
+      Key: { roomId }
+    };
+    
+    const { Item } = await docClient.send(new GetCommand(roomParams));
+    
+    if (!Item) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: "Room not found." }),
+      };
+    }
+    
+    // Check if user is already in the room
+    const players = Item.players || [];
+    const isUserInRoom = players.some(player => {
+      if (typeof player === 'object') {
+        return player.email === email;
+      }
+      return player === email;
+    });
+    
+    if (isUserInRoom) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ 
+          error: "You are already in this room.",
+          room: Item
+        }),
+      };
+    }
+    
+    // Check if the user exists in your USERS_TABLE
+    const userParams = {
+      TableName: USERS_TABLE,
+      Key: { email }
+    };
+    
+    const userResult = await docClient.send(new GetCommand(userParams));
+    
+    // Use firstName from users table if available, otherwise fallback
+    let firstName;
+    if (userResult.Item && userResult.Item.firstName) {
+      firstName = userResult.Item.firstName;
+    } else {
+      // Fallback options
+      firstName = decoded.firstName || email.split('@')[0]; 
+    }
 
+    // Store player as an object with both email and firstName
     const playerInfo = { email, firstName };
-
-    const params = {
+    
+    const updateParams = {
       TableName: ROOMS_TABLE,
       Key: { roomId },
       UpdateExpression: "SET players = list_append(if_not_exists(players, :empty_list), :newPlayer)",
@@ -160,7 +212,7 @@ module.exports.joinRoom = async (event) => {
       ReturnValues: "ALL_NEW"
     };
 
-    const { Attributes } = await docClient.send(new UpdateCommand(params));
+    const { Attributes } = await docClient.send(new UpdateCommand(updateParams));
     return {
       statusCode: 200,
       headers: {
@@ -221,7 +273,12 @@ module.exports.leaveRoom = async (event) => {
       };
     }
 
-    const updatedPlayers = Item.players.filter(p => p !== email);
+    const updatedPlayers = Item.players.filter(player => {
+      if (typeof player === 'object') {
+        return player.email !== email;
+      }
+      return player !== email;
+    });
 
     const updateParams = {
       TableName: ROOMS_TABLE,
