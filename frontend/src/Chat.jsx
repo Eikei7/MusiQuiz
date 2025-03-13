@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { useAuth } from './AuthContext'; // Import your Auth context
+import { useAuth } from './AuthContext';
 import './Chat.css';
+import { ENDPOINT_CHAT } from './endpoints';
 
-const Chat = () => {
-  const { user } = useAuth(); // Get user from your Auth context
+const Chat = ({ ws: externalWs, selectedRoom }) => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [ws, setWs] = useState(null);
@@ -15,13 +16,11 @@ const Chat = () => {
   // Set display name based on user info from Auth context
   useEffect(() => {
     if (user) {
-      // Use firstName if available, otherwise use first part of email
       const name = user.firstName || 
                    (user.email ? user.email.split('@')[0] : 'User');
       
       setDisplayName(name);
     } else {
-      // Fallback to JWT token if Auth context doesn't have user info
       const token = localStorage.getItem('token');
       if (token) {
         try {
@@ -39,27 +38,79 @@ const Chat = () => {
     }
   }, [user]);
 
+  // Use external WebSocket if provided, otherwise create our own
   useEffect(() => {
-    const websocket = new WebSocket('wss://4nymssc2pg.execute-api.eu-north-1.amazonaws.com/dev');
-  
-    websocket.onopen = () => {
-      console.log('WebSocket connection established');
-      setConnectionStatus('connected');
-    };
+    if (externalWs) {
+      console.log('Using external WebSocket connection');
+      setWs(externalWs);
+      setConnectionStatus(externalWs.readyState === WebSocket.OPEN ? 'connected' : 'connecting');
+      
+      const handleOpen = () => {
+        console.log('External WebSocket connection opened');
+        setConnectionStatus('connected');
+      };
+      
+      const handleClose = () => {
+        console.log('External WebSocket connection closed');
+        setConnectionStatus('disconnected');
+      };
+      
+      const handleError = (error) => {
+        console.error('External WebSocket error:', error);
+        setConnectionStatus('error');
+      };
+      
+      // Add listeners to external WebSocket
+      if (externalWs.readyState !== WebSocket.OPEN) {
+        externalWs.addEventListener('open', handleOpen);
+      }
+      externalWs.addEventListener('close', handleClose);
+      externalWs.addEventListener('error', handleError);
+      
+      return () => {
+        // Remove listeners from external WebSocket
+        externalWs.removeEventListener('open', handleOpen);
+        externalWs.removeEventListener('close', handleClose);
+        externalWs.removeEventListener('error', handleError);
+      };
+    } else {
+      // Create our own WebSocket if none is provided
+      console.log('Creating new WebSocket connection');
+      const websocket = new WebSocket(ENDPOINT_CHAT);
+      
+      websocket.onopen = () => {
+        console.log('WebSocket connection established');
+        setConnectionStatus('connected');
+      };
+      
+      websocket.onclose = () => {
+        console.log('WebSocket connection closed');
+        setConnectionStatus('disconnected');
+      };
+      
+      websocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setConnectionStatus('error');
+      };
+      
+      setWs(websocket);
+      
+      return () => websocket.close();
+    }
+  }, [externalWs]);
+
+  // Handle incoming messages
+  useEffect(() => {
+    if (!ws) return;
     
-    websocket.onmessage = (event) => {
+    const handleMessage = (event) => {
       console.log('WebSocket message received:', event.data);
       
       try {
         const data = JSON.parse(event.data);
         
-        if (data.type === "roomUpdate" && selectedRoom && data.roomId === selectedRoom.roomId) {
-            console.log('Room update received:', data.room);
-            // Update room data when room update notification is received
-            setSelectedRoom(data.room);
-          } else if (data.type === "message" || (!data.type && data.message)) {
-          // Handle chat messages - works with both new format (with type) 
-          // and existing format (without type)
+        // Only handle chat messages, not room updates
+        if (data.type === "message" || (!data.type && data.message)) {
           console.log('Chat message received:', data);
           setMessages((prev) => [...prev, { 
             message: data.message, 
@@ -67,27 +118,19 @@ const Chat = () => {
             displayName: data.displayName 
           }]);
         } else {
-          console.log('Unhandled message type:', data);
+          console.log('Message not handled by Chat component:', data);
         }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
       }
     };
     
-    websocket.onclose = () => {
-      console.log('WebSocket connection closed');
-      setConnectionStatus('disconnected');
-    };
+    ws.addEventListener('message', handleMessage);
     
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setConnectionStatus('error');
+    return () => {
+      ws.removeEventListener('message', handleMessage);
     };
-    
-    setWs(websocket);
-  
-    return () => websocket.close();
-  }, []);
+  }, [ws]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -97,8 +140,13 @@ const Chat = () => {
   }, [messages]);
 
   const sendMessage = () => {
-    if (ws && input) {
-      ws.send(JSON.stringify({ action: 'sendmessage', message: input, displayName }));
+    if (ws && ws.readyState === WebSocket.OPEN && input.trim()) {
+      ws.send(JSON.stringify({ 
+        action: 'sendmessage', 
+        message: input, 
+        displayName,
+        roomId: selectedRoom?.roomId // Include roomId if available
+      }));
       setInput('');
     }
   };
@@ -129,7 +177,7 @@ const Chat = () => {
           <div className="empty-chat-message">No messages yet. Start the conversation!</div>
         ) : (
           messages.map((msg, index) => (
-            <div className="message" key={index}>
+            <div className="message" key={`msg-${index}-${Date.now()}`}>
               <strong>{msg.displayName} {new Date(msg.timestamp).toLocaleTimeString()}:</strong> 
               {msg.message}
             </div>
@@ -137,16 +185,16 @@ const Chat = () => {
         )}
       </div>
       <div className='input-send'>
-      <input
-        className="message-input"
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-        placeholder="Type a message..."
-      />
-      <button className="send-button" onClick={sendMessage}>Send</button>
-    </div>
+        <input
+          className="message-input"
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Type a message..."
+        />
+        <button className="send-button" onClick={sendMessage}>Send</button>
+      </div>
     </div>
   );
 };

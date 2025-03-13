@@ -7,10 +7,12 @@ const {
   UpdateCommand,
   DeleteCommand,
 } = require("@aws-sdk/lib-dynamodb");
+const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require("@aws-sdk/client-apigatewaymanagementapi");
 const jwt = require('jsonwebtoken');
 
 const ROOMS_TABLE = process.env.ROOMS_TABLE;
 const USERS_TABLE = process.env.USERS_TABLE;
+const CONNECTIONS_TABLE = process.env.CONNECTIONS_TABLE; // Add this
 const JWT_SECRET = process.env.JWT_SECRET;
 const client = new DynamoDBClient();
 const docClient = DynamoDBDocumentClient.from(client);
@@ -213,6 +215,59 @@ module.exports.joinRoom = async (event) => {
     };
 
     const { Attributes } = await docClient.send(new UpdateCommand(updateParams));
+    
+    // Inside your try block after updating the DynamoDB table
+try {
+  // Get all connected WebSocket clients
+  const connectionsParams = {
+    TableName: CONNECTIONS_TABLE,
+    ProjectionExpression: "connectionId"
+  };
+  
+  const connectionData = await docClient.send(new ScanCommand(connectionsParams));
+  
+  if (connectionData.Items && connectionData.Items.length > 0) {
+    // Create message to broadcast
+    const broadcastMessage = {
+      type: "roomUpdate",
+      roomId: roomId,
+      room: Attributes,
+      action: "join",
+      user: { email, firstName }
+    };
+    
+    // Create API Gateway management API client
+    const apiGwClient = new ApiGatewayManagementApiClient({
+      endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`
+    });
+    
+    // Send to each connection
+    const sendPromises = connectionData.Items.map(async ({ connectionId }) => {
+      try {
+        await apiGwClient.send(new PostToConnectionCommand({
+          ConnectionId: connectionId,
+          Data: JSON.stringify(broadcastMessage)
+        }));
+      } catch (e) {
+        // Handle stale connections
+        if (e.$metadata?.httpStatusCode === 410) {
+          await docClient.send(new DeleteCommand({
+            TableName: CONNECTIONS_TABLE,
+            Key: { connectionId }
+          }));
+        } else {
+          console.error(`Error sending to ${connectionId}:`, e);
+        }
+      }
+    });
+    
+    await Promise.all(sendPromises);
+  }
+} catch (broadcastError) {
+  console.error("Error broadcasting room update:", broadcastError);
+  // Don't fail the request if broadcasting fails
+}
+    
     return {
       statusCode: 200,
       headers: {
@@ -273,6 +328,14 @@ module.exports.leaveRoom = async (event) => {
       };
     }
 
+    // Find the player's info before removing them (for the broadcast)
+    let leavingPlayer = { email };
+    Item.players.forEach(player => {
+      if (typeof player === 'object' && player.email === email) {
+        leavingPlayer = player;
+      }
+    });
+
     const updatedPlayers = Item.players.filter(player => {
       if (typeof player === 'object') {
         return player.email !== email;
@@ -291,6 +354,59 @@ module.exports.leaveRoom = async (event) => {
     };
 
     const { Attributes } = await docClient.send(new UpdateCommand(updateParams));
+    
+    // Inside your try block after updating the DynamoDB table
+try {
+  // Get all connected WebSocket clients
+  const connectionsParams = {
+    TableName: CONNECTIONS_TABLE,
+    ProjectionExpression: "connectionId"
+  };
+  
+  const connectionData = await docClient.send(new ScanCommand(connectionsParams));
+  
+  if (connectionData.Items && connectionData.Items.length > 0) {
+    // Create message to broadcast
+    const broadcastMessage = {
+      type: "roomUpdate",
+      roomId: roomId,
+      room: Attributes,
+      action: "leave", // or "leave" for leaveRoom
+      user: { leavingPlayer } // or leavingPlayer for leaveRoom
+    };
+    
+    // Create API Gateway management API client
+    const apiGwClient = new ApiGatewayManagementApiClient({
+      endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`
+    });
+    
+    // Send to each connection
+    const sendPromises = connectionData.Items.map(async ({ connectionId }) => {
+      try {
+        await apiGwClient.send(new PostToConnectionCommand({
+          ConnectionId: connectionId,
+          Data: JSON.stringify(broadcastMessage)
+        }));
+      } catch (e) {
+        // Handle stale connections
+        if (e.$metadata?.httpStatusCode === 410) {
+          await docClient.send(new DeleteCommand({
+            TableName: CONNECTIONS_TABLE,
+            Key: { connectionId }
+          }));
+        } else {
+          console.error(`Error sending to ${connectionId}:`, e);
+        }
+      }
+    });
+    
+    await Promise.all(sendPromises);
+  }
+} catch (broadcastError) {
+  console.error("Error broadcasting room update:", broadcastError);
+  // Don't fail the request if broadcasting fails
+}
+    
     return {
       statusCode: 200,
       headers: {

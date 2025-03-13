@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import './Dashboard.css';
-import { ENDPOINT_ROOMS, ENDPOINT_ROOMS_LEAVE } from './endpoints';
+import { ENDPOINT_ROOMS, ENDPOINT_ROOM_CONNECTIONS } from './endpoints';
 import Chat from './Chat';
 
 function Dashboard() {
@@ -11,11 +11,92 @@ function Dashboard() {
   const [roomJoined, setRoomJoined] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [ws, setWs] = useState(null);
 
   useEffect(() => {
     document.title = 'MusiQuiz - Dashboard';
     fetchRooms();
   }, []);
+
+  useEffect(() => {
+    if (!roomJoined || !selectedRoom) return;
+    
+    const roomUpdateWs = new WebSocket(ENDPOINT_ROOM_CONNECTIONS);
+    
+    roomUpdateWs.onopen = () => {
+      console.log('Room update WebSocket connected');
+    };
+    
+    roomUpdateWs.onmessage = (event) => {
+      try {
+        console.log('WebSocket message received in Dashboard:', event.data);
+        const data = JSON.parse(event.data);
+        
+        // Only handle room update messages
+        if (data.type === "roomUpdate" && data.roomId === selectedRoom.roomId) {
+          console.log('Room update received:', data);
+          
+          // Make sure data.room contains the updated room information
+          if (data.room) {
+            console.log('Updating selected room with:', data.room);
+            
+            // Update the selected room with the new data
+            setSelectedRoom(data.room);
+            
+            // Also update this room in the rooms list
+            setRooms(prevRooms => prevRooms.map(room => 
+              room.roomId === data.roomId ? data.room : room
+            ));
+            
+            // Add a notification (optional)
+            if (data.action === "join" && data.user) {
+              const userName = data.user.firstName || data.user.email?.split('@')[0] || "Someone";
+              console.log(`${userName} joined the room`);
+            }
+          } else {
+            console.error('Room update missing room data:', data);
+          }
+        }
+      } catch (error) {
+        console.error('Error processing room update:', error);
+      }
+    };
+    
+    roomUpdateWs.onerror = (error) => {
+      console.error('Room update WebSocket error:', error);
+    };
+    
+    return () => {
+      console.log('Closing room update WebSocket');
+      roomUpdateWs.close();
+    };
+  }, [roomJoined, selectedRoom?.roomId]);
+
+  // Add this effect for polling room data as a fallback
+useEffect(() => {
+  if (!roomJoined || !selectedRoom) return;
+  
+  // Poll for room updates every 5 seconds as a fallback
+  const intervalId = setInterval(async () => {
+    try {
+      const response = await fetch(`${ENDPOINT_ROOMS}/${selectedRoom.roomId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const roomData = await response.json();
+        console.log('Polling received updated room data:', roomData);
+        setSelectedRoom(roomData);
+      }
+    } catch (error) {
+      console.error('Error polling room data:', error);
+    }
+  }, 5000); // 5 seconds
+  
+  return () => clearInterval(intervalId);
+}, [roomJoined, selectedRoom?.roomId, token]);
 
   const fetchRooms = async () => {
     try {
@@ -222,7 +303,7 @@ function Dashboard() {
                 
                 {/* Chat Component integrated here */}
                 <div className="room-chat">
-                  <h3>Chat</h3>
+                  <h3>Room Chat</h3>
                   <Chat />
                 </div>
               </div>
