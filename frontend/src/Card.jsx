@@ -3,17 +3,17 @@ import { motion } from 'framer-motion';
 import './Card.css';
 import { ENDPOINT_QUESTIONS_GET } from './endpoints';
 
-const Card = ({ 
+const Card = ({
   id,
-  isDropped, 
-  onDragEnd, 
-  flipped, 
+  isDropped,
+  onDragEnd,
   locked,
   token // Add token for API authorization
 }) => {
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState('');
 
   useEffect(() => {
     // Function to fetch a random question
@@ -21,7 +21,7 @@ const Card = ({
       try {
         setLoading(true);
         setError(null);
-        
+
         // Fetch all questions first
         const response = await fetch(ENDPOINT_QUESTIONS_GET, {
           headers: {
@@ -34,7 +34,7 @@ const Card = ({
         }
 
         const questions = await response.json();
-        
+
         // If no questions available
         if (!questions || questions.length === 0) {
           setError('No questions available');
@@ -45,7 +45,7 @@ const Card = ({
         // Select a random question
         const randomIndex = Math.floor(Math.random() * questions.length);
         const randomQuestion = questions[randomIndex];
-        
+
         setQuestion(randomQuestion);
       } catch (err) {
         console.error('Error fetching random question:', err);
@@ -55,8 +55,16 @@ const Card = ({
       }
     };
 
-    // Call the function when the component mounts
+    // Generate a random background color with minimum brightness
+    const generateRandomColor = () => {
+      const getRandomComponent = () => Math.floor(Math.random() * 200 + 55); // Ensure minimum brightness
+      const randomColor = `rgb(${getRandomComponent()}, ${getRandomComponent()}, ${getRandomComponent()})`;
+      setBackgroundColor(randomColor);
+    };
+
+    // Call the functions when the component mounts
     fetchRandomQuestion();
+    generateRandomColor();
   }, [token]);
 
   const handleDragStart = () => {
@@ -64,7 +72,7 @@ const Card = ({
       id,
       questionId: question?.id // Include the question ID in the drag data
     };
-    
+
     const event = new Event('dragstart');
     event.dataTransfer = {
       setData: () => {},
@@ -74,13 +82,14 @@ const Card = ({
 
   return (
     <motion.div
-      className={`card ${flipped ? 'flipped' : ''} ${isDropped ? 'dropped' : ''}`}
+      className={`card ${isDropped ? 'dropped' : ''}`}
       drag={!locked}
       dragMomentum={false}
       whileDrag={{ scale: 0.7 }}
       whileHover={{ scale: isDropped ? 1 : 1.05 }}
       style={{
         cursor: isDropped ? (locked ? 'default' : 'pointer') : 'grab',
+        backgroundColor: backgroundColor // Apply the random background color
       }}
       onDragStart={handleDragStart}
       onDragEnd={(event, info) => {
@@ -92,7 +101,7 @@ const Card = ({
         }
       }}
     >
-      <div className="card-side card-front">
+      <div className="card-front">
         <div className="card-content">
           {loading ? (
             <p className="loading-text">Loading...</p>
@@ -104,9 +113,9 @@ const Card = ({
               {question && (
                 <div className="choices-container">
                   {question.choices.map((choice, index) => (
-                    <div 
-                      key={index} 
-                      className={`choice-item ${isDropped && index === question.correctAnswerIndex ? 'correct' : ''}`}
+                    <div
+                      key={index}
+                      className={`card-choice-item ${isDropped && index === question.correctAnswerIndex ? 'correct' : ''}`}
                     >
                       <span className="choice-marker">{String.fromCharCode(65 + index)}.</span>
                       <span className="choice-text">{choice}</span>
