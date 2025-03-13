@@ -34,7 +34,7 @@ body {
    rgba(131,255,120,1) 80%,
    rgba(255,228,123,1) 90%,
    rgba(252,122,122,1) 100%);
-  background-size: 400% 400%;
+  background-size: 200% 200%;
   animation: gradient 25s ease infinite;
 }
 

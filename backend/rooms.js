@@ -132,7 +132,7 @@ module.exports.getRoom = async (event) => {
 module.exports.joinRoom = async (event) => {
   const { roomId } = event.pathParameters;
   const body = JSON.parse(event.body);
-  const { token } = body; // Changed from email to token
+  const { token } = body;
 
   if (!token) {
     return {
@@ -145,13 +145,16 @@ module.exports.joinRoom = async (event) => {
     // Decode the token to get the email
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const email = decoded.email;
+    const firstName = decoded.firstName || email.split('@')[0];
+
+    const playerInfo = { email, firstName };
 
     const params = {
       TableName: ROOMS_TABLE,
       Key: { roomId },
       UpdateExpression: "SET players = list_append(if_not_exists(players, :empty_list), :newPlayer)",
       ExpressionAttributeValues: {
-        ":newPlayer": [email],
+        ":newPlayer": [playerInfo],
         ":empty_list": []
       },
       ReturnValues: "ALL_NEW"
