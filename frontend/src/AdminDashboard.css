@@ -116,7 +116,7 @@
   }
   
   .admin-header {
-    background-color: white;
+    background-color: #00000034;
     padding: 1.5rem 2rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
@@ -124,7 +124,7 @@
   .admin-header h1 {
     margin: 0;
     font-size: 1.5rem;
-    color: #333;
+    color: white;
   }
   
   .admin-content {
@@ -270,11 +270,10 @@
   }
   
   .admin-placeholder {
-    background-color: white;
     border-radius: 8px;
     padding: 2rem;
     text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); */
   }
   
   .admin-placeholder h2 {

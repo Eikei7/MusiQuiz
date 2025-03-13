@@ -4,7 +4,7 @@
   
   .question-header {
     display: flex;
-    justify-content: right;
+    justify-content: left;
     align-items: center;
     margin-bottom: 1.5rem;
   }
