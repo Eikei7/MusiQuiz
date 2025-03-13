@@ -57,3 +57,23 @@ button {
     background-position: 0% 50%;
   }
 }
+@media (max-width: 1270px) {
+  body {
+    min-height: 113vh;
+  }
+}
+@media (max-width: 966px) {
+  body {
+    height: 158vh;
+  }
+}
+@media (max-width: 768px) {
+  body {
+    height: 162vh;
+  }
+}
+@media (max-width: 480px) {
+  body {
+    height: 169vh;
+  }
+}
