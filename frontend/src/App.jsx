@@ -5,6 +5,7 @@ import Login from './Login';
 import Signup from './Signup';
 import Dashboard from './Dashboard';
 import AdminDashboard from './AdminDashboard';
+import QuizTime from './QuizTime';
 import './App.css';
 import Card from './Card';
 import QuestionsManager from './QuestionsManager';
@@ -19,6 +20,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/card" element={<Card />} />
           <Route path="/allquestions" element={<QuestionsManager />} />
+          <Route path="/game" element={<QuizTime />} />
           
           {/* Protected routes for all authenticated users */}
           <Route 
