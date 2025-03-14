@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import QuestionForm from './QuestionForm';
 import { ENDPOINT_QUESTIONS } from './endpoints';
@@ -11,6 +11,7 @@ function QuestionsManager() {
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchQuestions();
@@ -41,6 +42,16 @@ function QuestionsManager() {
       setLoading(false);
     }
   };
+
+  const filteredQuestions = useMemo(() => {
+    if (!searchQuery.trim()) return questions;
+    
+    const query = searchQuery.toLowerCase().trim();
+    return questions.filter(question => 
+      question.question?.toLowerCase().includes(query) ||
+      question.choices?.some(choice => choice.toLowerCase().includes(query))
+    );
+  }, [questions, searchQuery]);
 
   const handleQuestionAdded = () => {
     fetchQuestions();
@@ -83,17 +94,38 @@ function QuestionsManager() {
 
   return (
     <div className="questions-manager">
-      <div className="question-header">
-        <button 
-          className="add-question-btn"
-          onClick={() => {
-            setEditingQuestion(null);
-            setShowForm(!showForm);
-          }}
-        >
-          {showForm ? 'Cancel' : 'Add New Question'}
-        </button>
-      </div>
+      <div className="admin-toolbar">
+  <button 
+    className="add-question-btn"
+    onClick={() => {
+      setEditingQuestion(null);
+      setShowForm(!showForm);
+    }}
+  >
+    {showForm ? 'Cancel' : 'Add New Question'}
+  </button>
+
+  <div className="question-count">
+    <span>{!loading && (filteredQuestions.length + " question(s) found")}</span>
+  </div>
+
+  <div className="admin-search">
+    <input 
+      type="text" 
+      placeholder="Search questions..." 
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+    />
+    {searchQuery && (
+      <button 
+        className="search-clear-button"
+        onClick={() => setSearchQuery('')}
+      >
+        ×
+      </button>
+    )}
+  </div>
+</div>
       
       {error && <div className="questions-error">{error}</div>}
 
@@ -105,64 +137,56 @@ function QuestionsManager() {
         />
       )}
 
-      <div className="question-filters">
-        <div className="question-count">
-          {!loading && <span>{questions.length} question(s) found in database</span>}
-        </div>
-      </div>
+      
 
       {loading ? (
         <div className="questions-loading">Loading questions...</div>
-      ) : questions.length === 0 ? (
+      ) : filteredQuestions.length === 0 ? (
         <div className="no-questions">
-          <p>No questions found. Add your first question to get started!</p>
+          <p>{searchQuery ? 'No matching questions found.' : 'No questions found. Add your first question to get started!'}</p>
         </div>
       ) : (
-        <div className="question-list">
-          {questions.map((question) => (
-            <div key={question.id} className="question-card">
-              <div className="question-content">
-                <h3>{question.question}</h3>
-                
-                <div className="question-meta">
-                  <span className="question-date">
-                    Created: {new Date(question.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                
-                <div className="choices-list">
-                  {question.choices.map((choice, index) => (
-                    <div 
-                      key={index} 
-                      className={`choice-item ${index === question.correctAnswerIndex ? 'correct' : ''}`}
-                    >
-                      <span className="choice-number">{index + 1}</span>
-                      <span className="choice-text">{choice}</span>
-                      {index === question.correctAnswerIndex && (
-                        <span className="correct-badge">Correct</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="question-actions">
-                <button 
-                  className="edit-question"
-                  onClick={() => handleEdit(question)}
-                >
-                  Edit
-                </button>
-                <button 
-                  className="delete-question"
-                  onClick={() => handleDelete(question.id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <table className="questions-table">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Option A</th>
+              <th>Option B</th>
+              <th>Option C</th>
+              <th>Option D</th>
+              <th>Correct Answer</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredQuestions.map((question) => (
+              <tr key={question.id}>
+                <td className="question-text-table">{question.question}</td>
+                <td>{question.choices[0] || '-'}</td>
+                <td>{question.choices[1] || '-'}</td>
+                <td>{question.choices[2] || '-'}</td>
+                <td>{question.choices[3] || '-'}</td>
+                <td className="correct-answer">
+                  {question.choices[question.correctAnswerIndex] || '-'}
+                </td>
+                <td>
+                  <button 
+                    className="action-button edit-button"
+                    onClick={() => handleEdit(question)}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    className="action-button delete-button"
+                    onClick={() => handleDelete(question.id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

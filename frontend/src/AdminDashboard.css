@@ -117,12 +117,12 @@
   
   .admin-header {
     background-color: #00000034;
-    padding: 1.5rem 2rem;
+    padding: 2rem 2rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   }
   
   .admin-header h1 {
-    margin: 0;
+    /* margin: 0; */
     font-size: 1.5rem;
     color: white;
   }
@@ -162,10 +162,11 @@
   .admin-toolbar {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 1.5rem;
   }
   
-  .admin-button {
+  .admin-button, .add-question-btn {
     padding: 0.75rem 1.5rem;
     background-color: #4c84ff;
     color: white;
@@ -173,9 +174,10 @@
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
+    flex: 0 0 auto;
   }
   
-  .admin-search input {
+  .admin-search input, .questions-search {
     padding: 0.75rem 1rem;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -192,7 +194,7 @@
   }
   
   .admin-table th,
-  .admin-table td {
+  .admin-table td, .questions-table th, .questions-table td {
     padding: 1rem;
     text-align: left;
     border-bottom: 1px solid #eee;
@@ -200,7 +202,7 @@
     font-size: 0.9rem;
   }
   
-  .admin-table th {
+  .admin-table th, .questions-table th {
     background-color: #e3e9ee;
     font-weight: bold;
     color: #333;
@@ -271,7 +273,7 @@
   
   .admin-placeholder {
     border-radius: 8px;
-    padding: 2rem;
+    /* padding: 2rem; */
     text-align: center;
     /* box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); */
   }

@@ -320,22 +320,21 @@ function AdminDashboard() {
               <div className="admin-toolbar">
                 <button className="admin-button">Add New User</button>
                 <div className="admin-search">
-  <input 
-    type="text" 
-    placeholder="Search users..." 
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-  />
-  {searchQuery && (
-    <button 
-      className="search-clear-button"
-      onClick={() => setSearchQuery('')}
-    >
-      ×
-    </button>
-  )}
-</div>
-
+                  <input 
+                    type="text" 
+                    placeholder="Search users..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                   <button 
+                    className="search-clear-button"
+                    onClick={() => setSearchQuery('')}
+                    >
+                    ×
+                    </button>
+                    )}
+                </div>
               </div>
 
               {loading ? (
@@ -458,8 +457,6 @@ function AdminDashboard() {
 
           {activeTab === 'stats' && (
             <div className="admin-placeholder">
-              <h2>Statistics & Reports</h2>
-              <p>View analytics and generate reports on quiz performance.</p>
             </div>
           )}
         </div>
