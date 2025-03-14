@@ -169,7 +169,7 @@ function QuestionsManager() {
                 <td className="correct-answer">
                   {question.choices[question.correctAnswerIndex] || '-'}
                 </td>
-                <td>
+                <td className='edit-delete-btns'>
                   <button 
                     className="action-button edit-button"
                     onClick={() => handleEdit(question)}

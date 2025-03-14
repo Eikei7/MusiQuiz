@@ -30,34 +30,34 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
     });
   };
 
-  const addChoice = () => {
-    if (formData.choices.length < 8) { // Limit to 8 choices
-      setFormData({
-        ...formData,
-        choices: [...formData.choices, '']
-      });
-    }
-  };
+  // const addChoice = () => {
+  //   if (formData.choices.length < 8) { // Limit to 8 choices
+  //     setFormData({
+  //       ...formData,
+  //       choices: [...formData.choices, '']
+  //     });
+  //   }
+  // };
 
-  const removeChoice = (index) => {
-    if (formData.choices.length > 2) { // Maintain at least 2 choices
-      const updatedChoices = formData.choices.filter((_, i) => i !== index);
+  // const removeChoice = (index) => {
+  //   if (formData.choices.length > 2) { // Maintain at least 2 choices
+  //     const updatedChoices = formData.choices.filter((_, i) => i !== index);
       
-      // Update correctAnswerIndex if needed
-      let updatedCorrectIndex = formData.correctAnswerIndex;
-      if (index === formData.correctAnswerIndex) {
-        updatedCorrectIndex = 0;
-      } else if (index < formData.correctAnswerIndex) {
-        updatedCorrectIndex--;
-      }
+  //     // Update correctAnswerIndex if needed
+  //     let updatedCorrectIndex = formData.correctAnswerIndex;
+  //     if (index === formData.correctAnswerIndex) {
+  //       updatedCorrectIndex = 0;
+  //     } else if (index < formData.correctAnswerIndex) {
+  //       updatedCorrectIndex--;
+  //     }
       
-      setFormData({
-        ...formData,
-        choices: updatedChoices,
-        correctAnswerIndex: updatedCorrectIndex
-      });
-    }
-  };
+  //     setFormData({
+  //       ...formData,
+  //       choices: updatedChoices,
+  //       correctAnswerIndex: updatedCorrectIndex
+  //     });
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -167,15 +167,6 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
                   required
                 />
               </div>
-              
-              <button 
-                type="button" 
-                className="remove-choice"
-                onClick={() => removeChoice(index)}
-                disabled={formData.choices.length <= 2}
-              >
-                &times;
-              </button>
             </div>
           ))}
         </div>
