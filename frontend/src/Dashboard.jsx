@@ -298,7 +298,17 @@ useEffect(() => {
                 <div className="quiz-placeholder">
                   <h3>The quiz will start soon</h3>
                   <p>As soon as two players have joined the room, the quiz is ready to start.</p>
-                  <p>Press the button below to begin:</p>
+  
+                  {Array.isArray(selectedRoom?.players) && selectedRoom.players.length >= 2 ? (
+                  <div className="start-quiz-container">
+                  <p>All set! You can now start the quiz.</p>
+                  <button className="start-quiz-button" onClick={() => handleStartQuiz()}>
+                    Start Quiz
+                  </button>
+                  </div>
+                  ) : (
+                  <p>Waiting for one more player to join...</p>
+                  )}
                 </div>
                 
                 {/* Chat Component integrated here */}
