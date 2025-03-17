@@ -225,68 +225,91 @@ useEffect(() => {
       </header>
 
       <main className="dashboard-main">
-        {!roomJoined ? (
-          <section className="room-selection">
-            <h2>Join a Quiz Room</h2>
-            
-            {loading ? (
-              <div className="loading-message">Loading rooms...</div>
-            ) : error ? (
-              <div className="error-message">{error}</div>
-            ) : (
-              <>
-                <div className="room-list">
-                  <h3>Available Rooms:</h3>
-                  
-                  {rooms.length > 0 ? (
-                    <div className="rooms-grid">
-                      {rooms.map(room => (
-                        <div 
-                          key={room.roomId || room.id}
-                          className={`room-card ${selectedRoom?.roomId === (room.roomId || room.id) ? 'selected' : ''}`}
-                          onClick={() => setSelectedRoom(room)}
-                        >
-                          <h4>{room.name}</h4>
-                          <div className="room-info">
-                            <span className="player-count">
-                              {Array.isArray(room.players) ? room.players.length : 0} players
-                            </span>
-                            {room.status && <span className="room-status">{room.status}</span>}
-                          </div>
-                          <div className="room-footer">
-                            <span className="creation-date">
-                              {room.createdAt ? new Date(room.createdAt).toLocaleDateString() : ''}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="empty-rooms">
-                      <p>No rooms available. Try again later or ask an admin to create a room.</p>
-                    </div>
-                  )}
+      {!roomJoined ? (
+  <section className="room-selection">
+    <h2>Join a Quiz Room</h2>
+    
+    {loading ? (
+      <div className="loading-message">Loading rooms...</div>
+    ) : error ? (
+      <div className="error-message">{error}</div>
+    ) : (
+      <>
+        <div className="room-list">
+          <h3>Available Rooms:</h3>
+          
+          {rooms.length > 0 ? (
+            <div className="rooms-grid">
+              {rooms.map(room => (
+                <div 
+                  key={room.roomId || room.id}
+                  className={`room-card ${selectedRoom?.roomId === (room.roomId || room.id) ? 'selected' : ''}`}
+                  onClick={() => setSelectedRoom(room)}
+                >
+                  <h4>{room.name}</h4>
+                  <div className="room-info">
+                    <span className="player-count">
+                      {Array.isArray(room.players) ? room.players.length : 0} players
+                    </span>
+                    {room.status && <span className="room-status">{room.status}</span>}
+                  </div>
+                  <div className="room-footer">
+                    <span className="creation-date">
+                      {room.createdAt ? new Date(room.createdAt).toLocaleDateString() : ''}
+                    </span>
+                  </div>
                 </div>
-                
-                <div className="room-actions">
-                  <button 
-                    className="join-room-button"
-                    onClick={handleJoinRoom}
-                    disabled={!selectedRoom}
-                  >
-                    Join Room
-                  </button>
-                  <button 
-                    className="refresh-button"
-                    onClick={fetchRooms}
-                  >
-                    Refresh Rooms
-                  </button>
-                </div>
-              </>
-            )}
-          </section>
-        ) : (
+              ))}
+            </div>
+          ) : (
+            <div className="empty-rooms">
+              <p>No rooms available. Try again later or ask an admin to create a room.</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="room-actions">
+          <button 
+            className="join-room-button"
+            onClick={handleJoinRoom}
+            disabled={!selectedRoom}
+          >
+            Join Room
+          </button>
+          <button 
+            className="refresh-button"
+            onClick={fetchRooms}
+          >
+            Refresh Rooms
+          </button>
+        </div>
+        
+        {/* New User Stats Section */}
+        <div className="user-stats-section">
+          <h2>Your Stats</h2>
+          <div className="stats-container">
+            <div className="stat-card">
+              <div className="stat-value">0</div>
+              <div className="stat-label">Total Quizzes Played</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">0</div>
+              <div className="stat-label">Times Won</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">0</div>
+              <div className="stat-label">Times Lost</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">0%</div>
+              <div className="stat-label">Win Rate</div>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </section>
+) : (
           <section className="quiz-container">
             <div className="quiz-header">
               <h2>Room: {selectedRoom?.name}</h2>
