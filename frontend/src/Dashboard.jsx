@@ -217,7 +217,7 @@ useEffect(() => {
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <img src="/logo_small.png" alt="MusiQuiz logo" className="header-logo" />
+        <img src="/logo_text_clear.png" alt="MusiQuiz logo" className="header-logo" />
         <div className="user-info">
           <span>Welcome, {user?.firstName || user?.email?.split('@')[0]}!</span>
           <button onClick={logout} className="logout-button">Logout</button>

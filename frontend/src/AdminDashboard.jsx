@@ -5,7 +5,8 @@ import {
   ENDPOINT_USERS_DELETE, 
   ENDPOINT_QUESTIONS_GET, 
   ENDPOINT_ROOMS_GET,
-  ENDPOINT_ROOMS_DELETE 
+  ENDPOINT_ROOMS_DELETE,
+  ENDPOINT_REGISTER 
 } from './endpoints';
 import './AdminDashboard.css';
 import QuestionsManager from './QuestionsManager';
@@ -27,6 +28,19 @@ function AdminDashboard() {
   // Room deletion state
   const [deletingRoomId, setDeletingRoomId] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
+  // User creation state
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    role: 'user' // Default role
+  });
+  const [addUserError, setAddUserError] = useState('');
+  const [addingUser, setAddingUser] = useState(false);
 
   // User deletion state
   const [deletingUserEmail, setDeletingUserEmail] = useState(null);
@@ -65,6 +79,76 @@ function AdminDashboard() {
       setLoading(false);
     }
   };
+
+  const handleUserInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewUserData({
+      ...newUserData,
+      [name]: value
+    });
+  };
+  
+  // Add this function to handle form submission
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    setAddUserError('');
+
+    // Validate form
+  if (!newUserData.email || !newUserData.password || !newUserData.confirmPassword) {
+    setAddUserError('Email and password are required');
+    return;
+  }
+  
+  if (newUserData.password !== newUserData.confirmPassword) {
+    setAddUserError('Passwords do not match');
+    return;
+  }
+  
+  setAddingUser(true);
+  
+  try {
+    const response = await fetch(ENDPOINT_REGISTER, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // Include admin token
+      },
+      body: JSON.stringify({
+        email: newUserData.email,
+        password: newUserData.password,
+        confirmPassword: newUserData.confirmPassword,
+        firstName: newUserData.firstName || '',
+        lastName: newUserData.lastName || '',
+        role: newUserData.role
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Failed to add user');
+    }
+
+    // Refresh the users list
+    fetchUsers();
+    
+    // Reset form and close modal
+    setNewUserData({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      firstName: '',
+      lastName: '',
+      role: 'user'
+    });
+    setShowAddUserModal(false);
+    
+  } catch (error) {
+    setAddUserError(error.message || 'An error occurred while adding the user');
+  } finally {
+    setAddingUser(false);
+  }
+};
 
   const confirmDeleteUser = (email) => {
     setDeletingUserEmail(email);
@@ -318,7 +402,123 @@ function AdminDashboard() {
           {activeTab === 'users' && (
             <div className="admin-users">
               <div className="admin-toolbar">
-                <button className="admin-button">Add New User</button>
+              <button 
+              className="admin-button"
+              onClick={() => setShowAddUserModal(true)}
+              >
+              Add New User
+              </button>
+              {/* Add User Modal */}
+{showAddUserModal && (
+  <div className="modal-overlay">
+    <div className="modal-container">
+      <div className="modal-header">
+        <h2>Add New User</h2>
+        <button 
+          className="modal-close"
+          onClick={() => setShowAddUserModal(false)}
+        >
+          &times;
+        </button>
+      </div>
+      
+      <form onSubmit={handleAddUser}>
+        <div className="modal-body">
+          {addUserError && <div className="error-message">{addUserError}</div>}
+          
+          <div className="form-group">
+            <label htmlFor="email">Email (required)</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={newUserData.email}
+              onChange={handleUserInputChange}
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="password">Password (required)</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={newUserData.password}
+              onChange={handleUserInputChange}
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm Password (required)</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={newUserData.confirmPassword}
+              onChange={handleUserInputChange}
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="firstName">First Name</label>
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={newUserData.firstName}
+              onChange={handleUserInputChange}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="lastName">Last Name</label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={newUserData.lastName}
+              onChange={handleUserInputChange}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="role">Role</label>
+            <select
+              id="role"
+              name="role"
+              value={newUserData.role}
+              onChange={handleUserInputChange}
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        
+        <div className="modal-footer">
+          <button 
+            type="button" 
+            className="btn btn-secondary"
+            onClick={() => setShowAddUserModal(false)}
+            disabled={addingUser}
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            className="btn btn-primary"
+            disabled={addingUser}
+          >
+            {addingUser ? 'Adding...' : 'Add User'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
                 <div className="admin-search">
                   <input 
                     type="text" 
@@ -404,7 +604,6 @@ function AdminDashboard() {
                       <th>Name</th>
                       <th>Players</th>
                       <th>Status</th>
-                      <th>Created By</th>
                       <th>Created At</th>
                       <th>Actions</th>
                     </tr>
@@ -432,7 +631,6 @@ function AdminDashboard() {
                             )}
                           </td>
                           <td><span className={`status-badge ${room.status?.toLowerCase() || 'inactive'}`}>{room.status || 'Inactive'}</span></td>
-                          <td>{room.createdBy || '-'}</td>
                           <td>{room.createdAt ? new Date(room.createdAt).toLocaleString() : '-'}</td>
                           <td>
                             <button 

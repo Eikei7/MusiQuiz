@@ -20,6 +20,7 @@
   
   .header-logo {
     height: 40px;
+    width: auto;
   }
   
   .user-info {
@@ -474,7 +475,7 @@
     margin-top: 20px;
     text-align: center;
   }
-  
+
   .start-quiz-button {
     background-color: #4caf50;
     color: white;
