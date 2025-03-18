@@ -34,9 +34,16 @@
 
 .card.dropped {
   position: relative;
+  bottom: 20px;
   pointer-events: auto !important;
-  transform: scale(0.5) !important;
+  transform: scale(0.6) !important;
   margin: -55% -85%;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+
+.card.locked {
+  cursor: default !important;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 .question-text {

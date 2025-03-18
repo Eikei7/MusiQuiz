@@ -11,6 +11,7 @@
   --button-red: #e74c3c;
   --button-red-hover: #c0392b;
   --button-red-active: #d32f2f;
+  --half-transparent-black: rgba(0, 0, 0, 0.3);
 
   color-scheme: light;
   color: rgba(255, 255, 255, 0.87);

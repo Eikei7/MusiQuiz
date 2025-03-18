@@ -8,7 +8,8 @@ const Card = ({
   isDropped,
   onDragEnd,
   locked,
-  token // Add token for API authorization
+  token,
+  setDroppedCardInfo
 }) => {
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,15 @@ const Card = ({
         const randomQuestion = questions[randomIndex];
 
         setQuestion(randomQuestion);
+        
+        // Update the parent component with the question info
+        if (setDroppedCardInfo) {
+          setDroppedCardInfo({
+            id,
+            questionId: randomQuestion.id,
+            correctAnswerIndex: randomQuestion.correctAnswerIndex
+          });
+        }
       } catch (err) {
         console.error('Error fetching random question:', err);
         setError('Could not load question');
@@ -65,41 +75,32 @@ const Card = ({
     // Call the functions when the component mounts
     fetchRandomQuestion();
     generateRandomColor();
-  }, [token]);
+  }, [token, id, setDroppedCardInfo]);
 
-  const handleDragStart = () => {
-    const cardData = {
-      id,
-      questionId: question?.id // Include the question ID in the drag data
-    };
-
-    const event = new Event('dragstart');
-    event.dataTransfer = {
-      setData: () => {},
-      getData: () => JSON.stringify(cardData)
-    };
+  const handleDragEnd = (event, info) => {
+    if (onDragEnd && question) {
+      onDragEnd(event, info, {
+        id,
+        questionId: question.id,
+        correctAnswerIndex: question.correctAnswerIndex
+      });
+    }
   };
 
   return (
     <motion.div
-      className={`card ${isDropped ? 'dropped' : ''}`}
+      className={`card ${isDropped ? 'dropped' : ''} ${locked ? 'locked' : ''}`}
       drag={!locked}
+      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      dragElastic={0.8}
       dragMomentum={false}
-      whileDrag={{ scale: 0.7 }}
-      whileHover={{ scale: isDropped ? 1 : 1.05 }}
+      whileDrag={{ scale: 0.5, zIndex: 10 }}
+      whileHover={{ scale: isDropped || locked ? 1 : 1.05 }}
       style={{
-        cursor: isDropped ? (locked ? 'default' : 'pointer') : 'grab',
-        backgroundColor: backgroundColor // Apply the random background color
+        cursor: locked ? 'default' : (isDropped ? 'pointer' : 'grab'),
+        backgroundColor
       }}
-      onDragStart={handleDragStart}
-      onDragEnd={(event, info) => {
-        if (onDragEnd) {
-          onDragEnd(event, info, {
-            id,
-            questionId: question?.id
-          });
-        }
-      }}
+      onDragEnd={handleDragEnd}
     >
       <div className="card-front">
         <div className="card-content">
@@ -115,7 +116,7 @@ const Card = ({
                   {question.choices.map((choice, index) => (
                     <div
                       key={index}
-                      className={`card-choice-item ${isDropped && index === question.correctAnswerIndex ? 'correct' : ''}`}
+                      className={`card-choice-item ${locked && index === question.correctAnswerIndex ? 'correct' : ''}`}
                     >
                       <span className="choice-marker">{String.fromCharCode(65 + index)}.</span>
                       <span className="choice-text">{choice}</span>
