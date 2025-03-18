@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import './Dashboard.css';
-import { ENDPOINT_ROOMS, ENDPOINT_ROOM_CONNECTIONS } from './endpoints';
+import { ENDPOINT_ROOMS, ENDPOINT_ROOM_CONNECTIONS, ENDPOINT_USERS_UPDATE } from './endpoints';
 import Chat from './Chat';
 
 function Dashboard() {
@@ -12,6 +12,81 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ws, setWs] = useState(null);
+  const [showUserSettings, setShowUserSettings] = useState(false);
+  const [userSettings, setUserSettings] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: ''
+  });
+const [updateError, setUpdateError] = useState('');
+const [updateSuccess, setUpdateSuccess] = useState('');
+const [updating, setUpdating] = useState(false);
+
+const handleSettingsChange = (e) => {
+  const { name, value } = e.target;
+  setUserSettings({
+    ...userSettings,
+    [name]: value
+  });
+};
+
+const handleUpdateUser = async (e) => {
+  e.preventDefault();
+  setUpdateError('');
+  setUpdateSuccess('');
+  
+  // Basic validation
+  if (userSettings.newPassword && userSettings.newPassword !== userSettings.confirmNewPassword) {
+    setUpdateError('New passwords do not match');
+    return;
+  }
+  
+  setUpdating(true);
+  
+  try {
+    // Assuming you have an endpoint for updating user information
+    const response = await fetch(ENDPOINT_USERS_UPDATE, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        firstName: userSettings.firstName,
+        lastName: userSettings.lastName,
+        currentPassword: userSettings.currentPassword,
+        newPassword: userSettings.newPassword || undefined
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to update user information');
+    }
+    
+    // Update local user information
+    // This depends on how your auth context works
+    // You might need to call a function from your useAuth hook
+    
+    setUpdateSuccess('Your information has been updated successfully');
+    
+    // Clear password fields
+    setUserSettings({
+      ...userSettings,
+      currentPassword: '',
+      newPassword: '',
+      confirmNewPassword: ''
+    });
+    
+  } catch (error) {
+    setUpdateError(error.message || 'An error occurred while updating your information');
+  } finally {
+    setUpdating(false);
+  }
+};
   
 
   useEffect(() => {
@@ -383,6 +458,107 @@ useEffect(() => {
             </div>
           </section>
         )}
+        {showUserSettings && (
+  <div className="modal-overlay">
+    <div className="modal-container">
+      <div className="modal-header">
+        <h2>User Settings</h2>
+        <button 
+          className="modal-close"
+          onClick={() => setShowUserSettings(false)}
+        >
+          &times;
+        </button>
+      </div>
+      
+      <form onSubmit={handleUpdateUser}>
+        <div className="modal-body">
+          {updateError && <div className="error-message">{updateError}</div>}
+          {updateSuccess && <div className="success-message">{updateSuccess}</div>}
+          
+          <div className="form-group">
+            <label htmlFor="firstName">First Name</label>
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              value={userSettings.firstName}
+              onChange={handleSettingsChange}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="lastName">Last Name</label>
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              value={userSettings.lastName}
+              onChange={handleSettingsChange}
+            />
+          </div>
+          
+          <div className="password-section">
+            <h3>Change Password</h3>
+            
+            <div className="form-group">
+  <label htmlFor="currentPassword">Current Password</label>
+  <input
+    type="password"
+    id="currentPassword"
+    name="currentPassword"
+    value={userSettings.currentPassword}
+    onChange={handleSettingsChange}
+    autoComplete="current-password"
+  />
+</div>
+
+<div className="form-group">
+  <label htmlFor="newPassword">New Password</label>
+  <input
+    type="password"
+    id="newPassword"
+    name="newPassword"
+    value={userSettings.newPassword}
+    onChange={handleSettingsChange}
+    autoComplete="new-password"
+  />
+</div>
+
+<div className="form-group">
+  <label htmlFor="confirmNewPassword">Confirm New Password</label>
+  <input
+    type="password"
+    id="confirmNewPassword"
+    name="confirmNewPassword"
+    value={userSettings.confirmNewPassword}
+    onChange={handleSettingsChange}
+    autoComplete="new-password"
+  />
+</div>
+          </div>
+        </div>
+        
+        <div className="modal-footer">
+          <button 
+            type="button" 
+            className="btn btn-secondary"
+            onClick={() => setShowUserSettings(false)}
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            className="btn btn-primary"
+            disabled={updating}
+          >
+            {updating ? 'Updating...' : 'Save Changes'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
       </main>
 
       <footer className="dashboard-footer">
