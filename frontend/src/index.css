@@ -5,7 +5,14 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
+  --button-blue: #4a90e2;
+  --button-blue-hover: #3a80d2;
+  --button-blue-active: #283593;
+  --button-red: #e74c3c;
+  --button-red-hover: #c0392b;
+  --button-red-active: #d32f2f;
+
+  color-scheme: light;
   color: rgba(255, 255, 255, 0.87);
   background-color: #b4bcc1;
 
@@ -13,7 +20,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
+} 
 
 body {
   margin: 0;
@@ -44,6 +51,11 @@ a {
 
 button {
   font-family: 'Roboto Slab', sans-serif;
+}
+
+input {
+  color: black;
+  background-color: white;
 }
 
 @keyframes gradient {

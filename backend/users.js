@@ -5,7 +5,8 @@ const {
   ScanCommand, 
   GetCommand, 
   PutCommand,
-  DeleteCommand } = require("@aws-sdk/lib-dynamodb");
+  DeleteCommand,
+  UpdateCommand } = require("@aws-sdk/lib-dynamodb");
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -248,6 +249,170 @@ module.exports.deleteUser = async (event) => {
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Could not delete user." }),
+    };
+  }
+};
+
+module.exports.updateUser = async (event) => {
+  // Verify the user is authenticated
+  const authHeader = event.headers.Authorization || event.headers.authorization;
+  if (!authHeader) {
+    return {
+      statusCode: 401,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: "Authentication required." }),
+    };
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  let userEmail;
+  
+  try {
+    // Decode the token to get the user's email
+    const decoded = jwt.verify(token, JWT_SECRET);
+    userEmail = decoded.email;
+  } catch (error) {
+    return {
+      statusCode: 401,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: "Invalid token." }),
+    };
+  }
+
+  const body = JSON.parse(event.body);
+  console.log('Parsed body:', JSON.stringify(body));
+  const { firstName, lastName, currentPassword, newPassword } = body;
+
+  // First, get the current user data to verify the current password if needed
+  const getUserParams = {
+    TableName: USERS_TABLE,
+    Key: { email: userEmail }
+  };
+
+  try {
+    const { Item: user } = await docClient.send(new GetCommand(getUserParams));
+    
+    if (!user) {
+      return {
+        statusCode: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': true,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ error: "User not found." }),
+      };
+    }
+
+    // If user is trying to change password, verify current password
+    if (newPassword) {
+      if (!currentPassword) {
+        return {
+          statusCode: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': true,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ error: "Current password is required to set a new password." }),
+        };
+      }
+
+      const passwordValid = await bcrypt.compare(currentPassword, user.password);
+      if (!passwordValid) {
+        return {
+          statusCode: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': true,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ error: "Current password is incorrect." }),
+        };
+      }
+    }
+
+    // Prepare update expression and attribute values
+    let updateExpression = "SET ";
+    const expressionAttributeValues = {};
+    const expressionAttributeNames = {};
+    
+    if (firstName !== undefined) {
+      updateExpression += "#fn = :firstName, ";
+      expressionAttributeValues[":firstName"] = firstName;
+      expressionAttributeNames["#fn"] = "firstName";
+    }
+    
+    if (lastName !== undefined) {
+      updateExpression += "#ln = :lastName, ";
+      expressionAttributeValues[":lastName"] = lastName;
+      expressionAttributeNames["#ln"] = "lastName";
+    }
+    
+    if (newPassword) {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      updateExpression += "#pw = :password, ";
+      expressionAttributeValues[":password"] = hashedPassword;
+      expressionAttributeNames["#pw"] = "password";
+    }
+
+    // Remove trailing comma and space
+    updateExpression = updateExpression.slice(0, -2);
+    
+    // If nothing to update, return early
+    if (Object.keys(expressionAttributeValues).length === 0) {
+      return {
+        statusCode: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': true,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ error: "No fields to update." }),
+      };
+    }
+
+    const updateParams = {
+      TableName: USERS_TABLE,
+      Key: { email: userEmail },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ReturnValues: "UPDATED_NEW"
+    };
+
+    const result = await docClient.send(new UpdateCommand(updateParams));
+
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ 
+        message: "User updated successfully.",
+        updatedAttributes: result.Attributes
+      }),
+    };
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: "Could not update user information." }),
     };
   }
 };

@@ -220,12 +220,12 @@ useEffect(() => {
       <header className="dashboard-header">
         <img src="/logo_text_clear.png" alt="MusiQuiz logo" className="header-logo" />
         <div className="user-info">
-  <span>Welcome, {user?.firstName || user?.email?.split('@')[0]}!</span>
-  <button onClick={() => setShowUserSettings(true)} className="settings-button">
-    Settings
-  </button>
-  <button onClick={logout} className="logout-button">Logout</button>
-</div>
+          <span>Welcome, {user?.firstName || user?.email?.split('@')[0]}!</span>
+            <button onClick={() => setShowUserSettings(true)} className="settings-button">
+            Settings
+            </button>
+            <button onClick={logout} className="logout-button">Logout</button>
+        </div>
       </header>
 
       <main className="dashboard-main">

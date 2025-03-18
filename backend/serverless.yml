@@ -60,6 +60,13 @@ functions:
       - httpApi:
           path: /users/{email}
           method: delete
+
+  updateUser:
+    handler: users.updateUser
+    events:
+      - httpApi:
+          path: /users/update
+          method: put
   
   createRoom:
     handler: rooms.createRoom

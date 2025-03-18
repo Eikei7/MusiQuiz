@@ -53,6 +53,8 @@
     font-size: 0.95rem;
     outline: none;
     width: 70%;
+    /* background-color: white;
+    color: black; */
   }
   
   .message-input:focus {
