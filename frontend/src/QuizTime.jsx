@@ -11,7 +11,7 @@ const QuizTime = () => {
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(null);
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(15);
+  const [timeLeft, setTimeLeft] = useState(30);
   const [isTimerActive, setIsTimerActive] = useState(true);
   const [cardKey, setCardKey] = useState(0);
   const timerRef = useRef(null);
@@ -84,7 +84,7 @@ const QuizTime = () => {
     setDroppedCardInfo(null);
     setSelectedAnswer(null);
     setIsAnswerCorrect(null);
-    setTimeLeft(15);
+    setTimeLeft(30);
     setIsTimerActive(true);
     
     // Force card reload by updating a key
