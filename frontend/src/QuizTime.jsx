@@ -4,14 +4,20 @@ import { useParams, useNavigate } from "react-router-dom";
 import Card from "./Card";
 import QuizFooter from "./QuizFooter";
 import "./QuizTime.css";
+import { ENDPOINT_ROOMS } from "./endpoints";
 
-const QuizTime = ({ roomData }) => {
+const QuizTime = ({ roomData: propRoomData }) => {
   const { token, user } = useAuth();
   const navigate = useNavigate();
   const { roomId } = useParams();
   
+  // Room data state (if not provided via props)
+  const [roomData, setRoomData] = useState(propRoomData || null);
+  const [loading, setLoading] = useState(!propRoomData);
+  const [error, setError] = useState("");
+  
   // Game state
-  const [players, setPlayers] = useState(roomData?.players || []);
+  const [players, setPlayers] = useState(propRoomData?.players || []);
   const [currentTurn, setCurrentTurn] = useState(0); // Index of player whose turn it is
   const [currentRound, setCurrentRound] = useState(1);
   const [maxRounds, setMaxRounds] = useState(5); // Each player gets 5 turns
@@ -29,6 +35,37 @@ const QuizTime = ({ roomData }) => {
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
   const [isTimerActive, setIsTimerActive] = useState(true);
   const timerRef = useRef(null);
+
+  // Fetch room data if not provided via props
+  useEffect(() => {
+    if (!propRoomData && roomId) {
+      const fetchRoomData = async () => {
+        try {
+          setLoading(true);
+          const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch room data');
+          }
+          
+          const data = await response.json();
+          setRoomData(data);
+          setPlayers(data.players || []);
+          setLoading(false);
+        } catch (err) {
+          console.error("Error fetching room data:", err);
+          setError(err.message || "Could not load game data");
+          setLoading(false);
+        }
+      };
+      
+      fetchRoomData();
+    }
+  }, [roomId, token, propRoomData]);
 
   // Initialize scores when players are loaded
   useEffect(() => {
@@ -161,6 +198,30 @@ const QuizTime = ({ roomData }) => {
     navigate(`/rooms/${roomId}`);
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="quiz-time-container">
+        <div className="loading-screen">
+          <h2>Loading game...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="quiz-time-container">
+        <div className="error-screen">
+          <h2>Error</h2>
+          <p>{error}</p>
+          <button onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
+        </div>
+      </div>
+    );
+  }
+
   if (gameEnded) {
     return (
       <div className="quiz-time-container">
@@ -232,7 +293,7 @@ const QuizTime = ({ roomData }) => {
         <div className="turn-indicator">
           <span className="turn-label">Turn:</span>
           <span className="current-player">
-            {isMyTurn() ? 'Your Turn' : `${getCurrentPlayerName()}'s Turn`}
+            {isMyTurn() ? 'Your Turn' : ` ${getCurrentPlayerName()}'s turn`}
           </span>
         </div>
         

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import Login from './Login';
@@ -21,7 +21,6 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/card" element={<Card />} />
           <Route path="/allquestions" element={<QuestionsManager />} />
-          <Route path="/game" element={<QuizTime />} />
           
           {/* Protected routes for all authenticated users */}
           <Route 
@@ -40,6 +39,14 @@ function App() {
             </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/game/:roomId" 
+            element={
+            <ProtectedRoute>
+            <QuizTime />
+            </ProtectedRoute>
+            } 
+          />
           
           {/* Protected routes for admin users */}
           <Route 
@@ -50,6 +57,7 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route path="*" element={<Navigate replace to="/" />} />
         </Routes>
       </AuthProvider>
     </Router>

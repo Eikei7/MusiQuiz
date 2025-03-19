@@ -166,7 +166,6 @@ function Room() {
 
   const handleStartQuiz = async () => {
     try {
-      // Send a message to the server to start the quiz for this room
       const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}/start`, {
         method: 'POST',
         headers: {
@@ -179,8 +178,8 @@ function Room() {
         throw new Error("Failed to start quiz");
       }
       
-      // Set quiz started state
-      setQuizStarted(true);
+      // Navigate to the game route instead of just changing state
+      navigate(`/game/${roomId}`);
     } catch (error) {
       console.error("Error starting quiz:", error);
       alert("Failed to start the quiz: " + error.message);

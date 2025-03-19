@@ -199,12 +199,13 @@
   
 .game-info {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
   width: 100%;
   max-width: 600px;
   margin: 0 auto 20px;
   padding: 10px;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
 }
 
@@ -296,7 +297,7 @@
 
 .current-player {
   font-weight: bold;
-  color: #4a90e2;
+  color: #ffffff;
 }
 
   @keyframes pulse {
