@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import './Dashboard.css';
 import { ENDPOINT_ROOMS, ENDPOINT_ROOM_CONNECTIONS, ENDPOINT_USERS_UPDATE } from './endpoints';
 import Chat from './Chat';
 
 function Dashboard() {
+  const navigate = useNavigate();
   const { user, logout, token } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -149,7 +151,7 @@ const handleUpdateUser = async (e) => {
   }, [roomJoined, selectedRoom?.roomId]);
 
   // Add this effect for polling room data as a fallback
-useEffect(() => {
+  useEffect(() => {
   if (!roomJoined || !selectedRoom) return;
   
   // Poll for room updates every 5 seconds as a fallback
@@ -288,6 +290,14 @@ useEffect(() => {
       console.error('Error leaving room:', error);
       alert(`Failed to leave room: ${error.message}`);
     }
+  };
+
+  const handleStartQuiz = () => {
+    // If you need to perform any actions before navigation,
+    // such as sending data to the backend that the quiz is starting
+    
+    // Navigate to the game route
+    navigate('/game');
   };
 
   return (
