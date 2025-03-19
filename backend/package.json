@@ -4,6 +4,7 @@
     "aws-sdk": "^2.1692.0",
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.2",
-    "nanoid": "^5.1.5"
+    "nanoid": "^5.1.5",
+    "wscat": "^6.0.1"
   }
 }
