@@ -149,7 +149,9 @@ module.exports.joinRoom = async (event) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const email = decoded.email;
     
-    // First check if the room exists and if user is already in the room
+    console.log(`Join room request for ${email} in room ${roomId}`);
+    
+    // First check if the room exists
     const roomParams = {
       TableName: ROOMS_TABLE,
       Key: { roomId }
@@ -164,16 +166,23 @@ module.exports.joinRoom = async (event) => {
       };
     }
     
+    // Get the current player list
+    const currentPlayers = Item.players || [];
+    console.log('Current players in room:', JSON.stringify(currentPlayers));
+    
     // Check if user is already in the room
-    const players = Item.players || [];
-    const isUserInRoom = players.some(player => {
+    const isUserInRoom = currentPlayers.some(player => {
       if (typeof player === 'object') {
         return player.email === email;
       }
       return player === email;
     });
     
+    console.log('Is user in room?', isUserInRoom);
+    
     if (isUserInRoom) {
+      // User is already in the room - return the room data
+      console.log(`User ${email} is already in room ${roomId}`);
       return {
         statusCode: 400,
         body: JSON.stringify({ 
@@ -203,70 +212,83 @@ module.exports.joinRoom = async (event) => {
     // Store player as an object with both email and firstName
     const playerInfo = { email, firstName };
     
+    // Filter out any existing entries for this user (just to be safe)
+    const uniquePlayers = currentPlayers.filter(player => {
+      if (typeof player === 'object') {
+        return player.email !== email;
+      }
+      return player !== email;
+    });
+    
+    // Add the player to the unique player list
+    const updatedPlayers = [...uniquePlayers, playerInfo];
+    
+    console.log(`Adding user ${email} to room ${roomId}`);
+    console.log('Updated players list:', JSON.stringify(updatedPlayers));
+    
     const updateParams = {
       TableName: ROOMS_TABLE,
       Key: { roomId },
-      UpdateExpression: "SET players = list_append(if_not_exists(players, :empty_list), :newPlayer)",
+      UpdateExpression: "SET players = :players",
       ExpressionAttributeValues: {
-        ":newPlayer": [playerInfo],
-        ":empty_list": []
+        ":players": updatedPlayers
       },
       ReturnValues: "ALL_NEW"
     };
 
     const { Attributes } = await docClient.send(new UpdateCommand(updateParams));
     
-    // Inside your try block after updating the DynamoDB table
-try {
-  // Get all connected WebSocket clients
-  const connectionsParams = {
-    TableName: CONNECTIONS_TABLE,
-    ProjectionExpression: "connectionId"
-  };
-  
-  const connectionData = await docClient.send(new ScanCommand(connectionsParams));
-  
-  if (connectionData.Items && connectionData.Items.length > 0) {
-    // Create message to broadcast
-    const broadcastMessage = {
-      type: "roomUpdate",
-      roomId: roomId,
-      room: Attributes,
-      action: "join",
-      user: { email, firstName }
-    };
-    
-    // Create API Gateway management API client
-    const apiGwClient = new ApiGatewayManagementApiClient({
-      endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`
-    });
-    
-    // Send to each connection
-    const sendPromises = connectionData.Items.map(async ({ connectionId }) => {
-      try {
-        await apiGwClient.send(new PostToConnectionCommand({
-          ConnectionId: connectionId,
-          Data: JSON.stringify(broadcastMessage)
-        }));
-      } catch (e) {
-        // Handle stale connections
-        if (e.$metadata?.httpStatusCode === 410) {
-          await docClient.send(new DeleteCommand({
-            TableName: CONNECTIONS_TABLE,
-            Key: { connectionId }
-          }));
-        } else {
-          console.error(`Error sending to ${connectionId}:`, e);
-        }
+    // Broadcast the room update to all connected clients
+    try {
+      // Get all connected WebSocket clients
+      const connectionsParams = {
+        TableName: CONNECTIONS_TABLE,
+        ProjectionExpression: "connectionId"
+      };
+      
+      const connectionData = await docClient.send(new ScanCommand(connectionsParams));
+      
+      if (connectionData.Items && connectionData.Items.length > 0) {
+        // Create message to broadcast
+        const broadcastMessage = {
+          type: "roomUpdate",
+          roomId: roomId,
+          room: Attributes,
+          action: "join",
+          user: { email, firstName }
+        };
+        
+        // Create API Gateway management API client
+        const apiGwClient = new ApiGatewayManagementApiClient({
+          endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`
+        });
+        
+        // Send to each connection
+        const sendPromises = connectionData.Items.map(async ({ connectionId }) => {
+          try {
+            await apiGwClient.send(new PostToConnectionCommand({
+              ConnectionId: connectionId,
+              Data: JSON.stringify(broadcastMessage)
+            }));
+          } catch (e) {
+            // Handle stale connections
+            if (e.$metadata?.httpStatusCode === 410) {
+              await docClient.send(new DeleteCommand({
+                TableName: CONNECTIONS_TABLE,
+                Key: { connectionId }
+              }));
+            } else {
+              console.error(`Error sending to ${connectionId}:`, e);
+            }
+          }
+        });
+        
+        await Promise.all(sendPromises);
       }
-    });
-    
-    await Promise.all(sendPromises);
-  }
-} catch (broadcastError) {
-  console.error("Error broadcasting room update:", broadcastError);
-  // Don't fail the request if broadcasting fails
-}
+    } catch (broadcastError) {
+      console.error("Error broadcasting room update:", broadcastError);
+      // Don't fail the request if broadcasting fails
+    }
     
     return {
       statusCode: 200,

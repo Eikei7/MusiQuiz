@@ -208,43 +208,8 @@ const handleUpdateUser = async (e) => {
     }
     
     try {
-      const response = await fetch(`https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms/${selectedRoom.roomId}/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ token })
-      });
-  
-      // Parse the JSON response first, so we can check for specific error messages
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Special case: User is already in the room
-        if (response.status === 400 && data.error === "You are already in this room." && data.room) {
-          console.log('User is already in this room, proceeding with existing room data');
-          // User is already in the room, so we can just join with the returned room data
-          setSelectedRoom(data.room);
-          setRoomJoined(true);
-          return;
-        }
-        
-        // Handle other errors
-        throw new Error(data.error || 'Failed to join room');
-      }
-  
-      // If we got here, the join was successful
-      // Update the selected room with the latest data
-      setSelectedRoom(data);
-      
-      // Update the room in the rooms list
-      setRooms(prevRooms => prevRooms.map(room => 
-        room.roomId === data.roomId ? data : room
-      ));
-      
-      // Set room joined state
-      setRoomJoined(true);
+      // Navigate to the room page - the room component will handle joining
+      navigate(`/rooms/${selectedRoom.roomId}`);
     } catch (error) {
       console.error('Error joining room:', error);
       alert(`Failed to join room: ${error.message}`);

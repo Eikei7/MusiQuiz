@@ -9,6 +9,7 @@ import QuizTime from './QuizTime';
 import './App.css';
 import Card from './Card';
 import QuestionsManager from './QuestionsManager';
+import Room from './Room';
 
 function App() {
   return (
@@ -29,6 +30,14 @@ function App() {
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/rooms/:roomId" 
+            element={
+              <ProtectedRoute>
+                <Room />
+            </ProtectedRoute>
             } 
           />
           

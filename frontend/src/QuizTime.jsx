@@ -4,7 +4,7 @@ import Card from "./Card";
 import "./QuizTime.css";
 import QuizFooter from "./QuizFooter";
 
-const QuizTime = () => {
+const QuizTime = ({ roomData }) => {
   const { token } = useAuth();
   const [droppedCardInfo, setDroppedCardInfo] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -127,11 +127,13 @@ const QuizTime = () => {
             </button>
           </div>
         )}
+        <div className="score-and-timer">
         <div className="score-display">
           Your score: {score}/{questionCount}
         </div>
         <div className={`timer ${timeLeft <= 5 ? 'timer-warning' : ''}`}>
           Time: {timeLeft} s
+        </div>
         </div>
       </div>
       
