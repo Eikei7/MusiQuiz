@@ -239,58 +239,6 @@ module.exports.joinRoom = async (event) => {
 
     const { Attributes } = await docClient.send(new UpdateCommand(updateParams));
     
-    // Broadcast the room update to all connected clients
-    try {
-      // Get all connected WebSocket clients
-      const connectionsParams = {
-        TableName: CONNECTIONS_TABLE,
-        ProjectionExpression: "connectionId"
-      };
-      
-      const connectionData = await docClient.send(new ScanCommand(connectionsParams));
-      
-      if (connectionData.Items && connectionData.Items.length > 0) {
-        // Create message to broadcast
-        const broadcastMessage = {
-          type: "roomUpdate",
-          roomId: roomId,
-          room: Attributes,
-          action: "join",
-          user: { email, firstName }
-        };
-        
-        // Create API Gateway management API client
-        const apiGwClient = new ApiGatewayManagementApiClient({
-          endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`
-        });
-        
-        // Send to each connection
-        const sendPromises = connectionData.Items.map(async ({ connectionId }) => {
-          try {
-            await apiGwClient.send(new PostToConnectionCommand({
-              ConnectionId: connectionId,
-              Data: JSON.stringify(broadcastMessage)
-            }));
-          } catch (e) {
-            // Handle stale connections
-            if (e.$metadata?.httpStatusCode === 410) {
-              await docClient.send(new DeleteCommand({
-                TableName: CONNECTIONS_TABLE,
-                Key: { connectionId }
-              }));
-            } else {
-              console.error(`Error sending to ${connectionId}:`, e);
-            }
-          }
-        });
-        
-        await Promise.all(sendPromises);
-      }
-    } catch (broadcastError) {
-      console.error("Error broadcasting room update:", broadcastError);
-      // Don't fail the request if broadcasting fails
-    }
-    
     return {
       statusCode: 200,
       headers: {

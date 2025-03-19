@@ -227,9 +227,7 @@ const QuizTime = ({ roomData }) => {
   }
 
   return (
-    <div className="quiz-time-container">
-      <h1>Quiz Time!</h1>
-      
+    <div className="quiz-time-container">     
       <div className="game-info">
         <div className="turn-indicator">
           <span className="turn-label">Turn:</span>

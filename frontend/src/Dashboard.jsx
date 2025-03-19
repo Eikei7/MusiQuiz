@@ -2,18 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import './Dashboard.css';
-import { ENDPOINT_ROOMS, ENDPOINT_ROOM_CONNECTIONS, ENDPOINT_USERS_UPDATE } from './endpoints';
-import Chat from './Chat';
+import { ENDPOINT_ROOMS, ENDPOINT_USERS_UPDATE } from './endpoints';
 
 function Dashboard() {
   const navigate = useNavigate();
   const { user, logout, token } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [roomJoined, setRoomJoined] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [ws, setWs] = useState(null);
+  const [joiningRoom, setJoiningRoom] = useState(false);
   const [showUserSettings, setShowUserSettings] = useState(false);
   const [userSettings, setUserSettings] = useState({
     firstName: user?.firstName || '',
@@ -22,159 +20,73 @@ function Dashboard() {
     newPassword: '',
     confirmNewPassword: ''
   });
-const [updateError, setUpdateError] = useState('');
-const [updateSuccess, setUpdateSuccess] = useState('');
-const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState('');
+  const [updateSuccess, setUpdateSuccess] = useState('');
+  const [updating, setUpdating] = useState(false);
 
-const handleSettingsChange = (e) => {
-  const { name, value } = e.target;
-  setUserSettings({
-    ...userSettings,
-    [name]: value
-  });
-};
-
-const handleUpdateUser = async (e) => {
-  e.preventDefault();
-  setUpdateError('');
-  setUpdateSuccess('');
-  
-  // Basic validation
-  if (userSettings.newPassword && userSettings.newPassword !== userSettings.confirmNewPassword) {
-    setUpdateError('New passwords do not match');
-    return;
-  }
-  
-  setUpdating(true);
-  
-  try {
-    // Assuming you have an endpoint for updating user information
-    const response = await fetch(ENDPOINT_USERS_UPDATE, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        firstName: userSettings.firstName,
-        lastName: userSettings.lastName,
-        currentPassword: userSettings.currentPassword,
-        newPassword: userSettings.newPassword || undefined
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to update user information');
-    }
-    
-    // Update local user information
-    // This depends on how your auth context works
-    // You might need to call a function from your useAuth hook
-    
-    setUpdateSuccess('Your information has been updated successfully');
-    
-    // Clear password fields
+  const handleSettingsChange = (e) => {
+    const { name, value } = e.target;
     setUserSettings({
       ...userSettings,
-      currentPassword: '',
-      newPassword: '',
-      confirmNewPassword: ''
+      [name]: value
     });
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setUpdateError('');
+    setUpdateSuccess('');
     
-  } catch (error) {
-    setUpdateError(error.message || 'An error occurred while updating your information');
-  } finally {
-    setUpdating(false);
-  }
-};
-  
+    // Basic validation
+    if (userSettings.newPassword && userSettings.newPassword !== userSettings.confirmNewPassword) {
+      setUpdateError('New passwords do not match');
+      return;
+    }
+    
+    setUpdating(true);
+    
+    try {
+      const response = await fetch(ENDPOINT_USERS_UPDATE, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firstName: userSettings.firstName,
+          lastName: userSettings.lastName,
+          currentPassword: userSettings.currentPassword,
+          newPassword: userSettings.newPassword || undefined
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update user information');
+      }
+      
+      setUpdateSuccess('Your information has been updated successfully');
+      
+      // Clear password fields
+      setUserSettings({
+        ...userSettings,
+        currentPassword: '',
+        newPassword: '',
+        confirmNewPassword: ''
+      });
+      
+    } catch (error) {
+      setUpdateError(error.message || 'An error occurred while updating your information');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   useEffect(() => {
     document.title = 'MusiQuiz - Dashboard';
     fetchRooms();
   }, []);
-
-  useEffect(() => {
-    if (!roomJoined || !selectedRoom) return;
-    
-    const roomUpdateWs = new WebSocket(ENDPOINT_ROOM_CONNECTIONS);
-    
-    roomUpdateWs.onopen = () => {
-      console.log('Room update WebSocket connected');
-    };
-    
-    roomUpdateWs.onmessage = (event) => {
-      try {
-        console.log('WebSocket message received in Dashboard:', event.data);
-        const data = JSON.parse(event.data);
-        
-        // Only handle room update messages
-        if (data.type === "roomUpdate" && data.roomId === selectedRoom.roomId) {
-          console.log('Room update received:', data);
-          
-          // Make sure data.room contains the updated room information
-          if (data.room) {
-            console.log('Updating selected room with:', data.room);
-            
-            // Update the selected room with the new data
-            setSelectedRoom(data.room);
-            
-            // Also update this room in the rooms list
-            setRooms(prevRooms => prevRooms.map(room => 
-              room.roomId === data.roomId ? data.room : room
-            ));
-            
-            // Add a notification (optional)
-            if (data.action === "join" && data.user) {
-              const userName = data.user.firstName || data.user.email?.split('@')[0] || "Someone";
-              console.log(`${userName} joined the room`);
-            }
-          } else {
-            console.error('Room update missing room data:', data);
-          }
-        }
-      } catch (error) {
-        console.error('Error processing room update:', error);
-      }
-    };
-    
-    roomUpdateWs.onerror = (error) => {
-      console.error('Room update WebSocket error:', error);
-    };
-    
-    return () => {
-      console.log('Closing room update WebSocket');
-      roomUpdateWs.close();
-    };
-  }, [roomJoined, selectedRoom?.roomId]);
-
-  // Add this effect for polling room data as a fallback
-  useEffect(() => {
-  if (!roomJoined || !selectedRoom) return;
-  
-  // Poll for room updates every 5 seconds as a fallback
-  const intervalId = setInterval(async () => {
-    try {
-      const response = await fetch(`${ENDPOINT_ROOMS}/${selectedRoom.roomId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const roomData = await response.json();
-        console.log('Polling received updated room data:', roomData);
-        setSelectedRoom(roomData);
-      }
-    } catch (error) {
-      console.error('Error polling room data:', error);
-    }
-  }, 5000); // 5 seconds
-  
-  return () => clearInterval(intervalId);
-}, [roomJoined, selectedRoom?.roomId, token]);
 
   const fetchRooms = async () => {
     try {
@@ -208,61 +120,34 @@ const handleUpdateUser = async (e) => {
     }
     
     try {
-      // Navigate to the room page - the room component will handle joining
-      navigate(`/rooms/${selectedRoom.roomId}`);
-    } catch (error) {
-      console.error('Error joining room:', error);
-      alert(`Failed to join room: ${error.message}`);
-    }
-  };
-
-  const handleLeaveRoom = async () => {
-    if (!confirm('Are you sure you want to leave this room?')) {
-      return;
-    }
-    
-    try {
-      // Log for debugging
-      console.log('Attempting to leave room:', selectedRoom.roomId);
+      setJoiningRoom(true);
       
-      const response = await fetch(`https://6jdz3s8jrh.execute-api.eu-north-1.amazonaws.com/rooms/${selectedRoom.roomId}/leave`, {
+      // Make the API call to join the room
+      const response = await fetch(`${ENDPOINT_ROOMS}/${selectedRoom.roomId}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        // No need to send token in body since it's already in headers
-        body: JSON.stringify({}) 
+        body: JSON.stringify({ token })
       });
-  
-      // Log the response for debugging
-      console.log('Leave room response status:', response.status);
       
-      // For more detailed error information
-      const responseData = await response.json().catch(() => ({}));
-      console.log('Response data:', responseData);
-  
-      if (!response.ok) {
-        throw new Error(`Failed to leave room: ${responseData.error || response.statusText}`);
+      const data = await response.json();
+      
+      // Check if the response is successful or the user is already in the room
+      if (response.ok || (response.status === 400 && data.error === "You are already in this room.")) {
+        // Navigate to the room page
+        navigate(`/rooms/${selectedRoom.roomId}`);
+      } else {
+        throw new Error(data.error || 'Failed to join room');
       }
-  
-      // Update rooms list
-      fetchRooms();
       
-      // Reset room joined state
-      setRoomJoined(false);
     } catch (error) {
-      console.error('Error leaving room:', error);
-      alert(`Failed to leave room: ${error.message}`);
+      console.error('Error joining room:', error);
+      alert(`Failed to join room: ${error.message}`);
+    } finally {
+      setJoiningRoom(false);
     }
-  };
-
-  const handleStartQuiz = () => {
-    // If you need to perform any actions before navigation,
-    // such as sending data to the backend that the quiz is starting
-    
-    // Navigate to the game route
-    navigate('/game');
   };
 
   return (
@@ -271,269 +156,200 @@ const handleUpdateUser = async (e) => {
         <img src="/logo_text_clear.png" alt="MusiQuiz logo" className="header-logo" />
         <div className="user-info">
           <span>Welcome, {user?.firstName || user?.email?.split('@')[0]}!</span>
-            <button onClick={() => setShowUserSettings(true)} className="settings-button">
+          <button onClick={() => setShowUserSettings(true)} className="settings-button">
             Settings
-            </button>
-            <button onClick={logout} className="logout-button">Logout</button>
+          </button>
+          <button onClick={logout} className="logout-button">Logout</button>
         </div>
       </header>
 
       <main className="dashboard-main">
-      {!roomJoined ? (
-  <section className="room-selection">
-    <h2>Join a Quiz Room</h2>
-    
-    {loading ? (
-      <div className="loading-message">Loading rooms...</div>
-    ) : error ? (
-      <div className="error-message">{error}</div>
-    ) : (
-      <>
-        <div className="room-list">
-          <h3>Available Rooms:</h3>
+        <section className="room-selection">
+          <h2>Join a Quiz Room</h2>
           
-          {rooms.length > 0 ? (
-            <div className="rooms-grid">
-              {rooms.map(room => (
-                <div 
-                  key={room.roomId || room.id}
-                  className={`room-card ${selectedRoom?.roomId === (room.roomId || room.id) ? 'selected' : ''}`}
-                  onClick={() => setSelectedRoom(room)}
-                >
-                  <h4>{room.name}</h4>
-                  <div className="room-info">
-                    <span className="player-count">
-                      {Array.isArray(room.players) ? room.players.length : 0} players
-                    </span>
-                    {room.status && <span className="room-status">{room.status}</span>}
-                  </div>
-                  <div className="room-footer">
-                    <span className="creation-date">
-                      {room.createdAt ? new Date(room.createdAt).toLocaleDateString() : ''}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {loading ? (
+            <div className="loading-message">Loading rooms...</div>
+          ) : error ? (
+            <div className="error-message">{error}</div>
           ) : (
-            <div className="empty-rooms">
-              <p>No rooms available. Try again later or ask an admin to create a room.</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="room-actions">
-          <button 
-            className="join-room-button"
-            onClick={handleJoinRoom}
-            disabled={!selectedRoom}
-          >
-            Join Room
-          </button>
-          <button 
-            className="refresh-button"
-            onClick={fetchRooms}
-          >
-            Refresh Rooms
-          </button>
-        </div>
-        
-        {/* New User Stats Section */}
-        <div className="user-stats-section">
-          <h2>Your Stats</h2>
-          <div className="stats-container">
-            <div className="stat-card">
-              <div className="stat-value">0</div>
-              <div className="stat-label">Total Quizzes Played</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">0</div>
-              <div className="stat-label">Times Won</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">0</div>
-              <div className="stat-label">Times Lost</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">0%</div>
-              <div className="stat-label">Win Rate</div>
-            </div>
-          </div>
-        </div>
-      </>
-    )}
-  </section>
-) : (
-          <section className="quiz-container">
-            <div className="quiz-header">
-              <h2>Room: {selectedRoom?.name}</h2>
-              <button onClick={handleLeaveRoom} className="leave-button">Leave Room</button>
-            </div>
-            
-            <div className="room-content">
-              <div className="room-main-area">
-                <div className="quiz-placeholder">
-                  <h3>The quiz will start soon</h3>
-                  <p>As soon as two players have joined the room, the quiz is ready to start.</p>
-  
-                  {Array.isArray(selectedRoom?.players) && selectedRoom.players.length >= 2 ? (
-                  <div className="start-quiz-container">
-                  <p>All set! You can now start the quiz.</p>
-                  <button className="start-quiz-button" onClick={() => handleStartQuiz()}>
-                    Start Quiz
-                  </button>
-                  </div>
-                  ) : (
-                  <p>Waiting for one more player to join...</p>
-                  )}
-                </div>
+            <>
+              <div className="room-list">
+                <h3>Available Rooms:</h3>
                 
-                {/* Chat Component integrated here */}
-                <div className="room-chat">
-                  <h3>Room Chat</h3>
-                  <Chat />
-                </div>
+                {rooms.length > 0 ? (
+                  <div className="rooms-grid">
+                    {rooms.map(room => (
+                      <div 
+                        key={room.roomId || room.id}
+                        className={`room-card ${selectedRoom?.roomId === (room.roomId || room.id) ? 'selected' : ''}`}
+                        onClick={() => setSelectedRoom(room)}
+                      >
+                        <h4>{room.name}</h4>
+                        <div className="room-info">
+                          <span className="player-count">
+                            {Array.isArray(room.players) ? room.players.length : 0} players
+                          </span>
+                          {room.status && <span className="room-status">{room.status}</span>}
+                        </div>
+                        <div className="room-footer">
+                          <span className="creation-date">
+                            {room.createdAt ? new Date(room.createdAt).toLocaleDateString() : ''}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-rooms">
+                    <p>No rooms available. Try again later or ask an admin to create a room.</p>
+                  </div>
+                )}
               </div>
               
-              <div className="players-section">
-  <h3>Players in Room</h3>
-  <ul className="players-list">
-    {Array.isArray(selectedRoom?.players) && selectedRoom.players.length > 0 ? (
-      selectedRoom.players.map((player, index) => {
-        // Get email for comparison
-        const playerEmail = typeof player === 'object' ? player.email : player;
-        // Check if this player is the current user
-        const isCurrentUser = playerEmail === user?.email;
-        
-        // Display name - handle both new and old format
-        let displayName;
-        if (typeof player === 'object' && player.firstName) {
-          displayName = player.firstName;
-        } else if (typeof player === 'object' && player.email) {
-          displayName = player.email.split('@')[0];
-        } else if (typeof player === 'string') {
-          // Legacy format - just email
-          displayName = player.split('@')[0];
-        } else {
-          displayName = "Unknown Player";
-        }
-        
-        return (
-          <li key={index} className={`player-item ${isCurrentUser ? 'current-user' : ''}`}>
-            {displayName}
-            {isCurrentUser && ' (You)'}
-          </li>
-        );
-      })
-    ) : (
-      <li className="no-players">Waiting for other players to join...</li>
-    )}
-  </ul>
-</div>
-            </div>
-          </section>
-        )}
+              <div className="room-actions">
+                <button 
+                  className="join-room-button"
+                  onClick={handleJoinRoom}
+                  disabled={!selectedRoom || joiningRoom}
+                >
+                  {joiningRoom ? 'Joining...' : 'Join Room'}
+                </button>
+                <button 
+                  className="refresh-button"
+                  onClick={fetchRooms}
+                  disabled={loading}
+                >
+                  {loading ? 'Refreshing...' : 'Refresh Rooms'}
+                </button>
+              </div>
+              
+              {/* User Stats Section */}
+              <div className="user-stats-section">
+                <h2>Your Stats</h2>
+                <div className="stats-container">
+                  <div className="stat-card">
+                    <div className="stat-value">0</div>
+                    <div className="stat-label">Total Quizzes Played</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-value">0</div>
+                    <div className="stat-label">Times Won</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-value">0</div>
+                    <div className="stat-label">Times Lost</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-value">0%</div>
+                    <div className="stat-label">Win Rate</div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+
         {showUserSettings && (
-  <div className="modal-overlay">
-    <div className="modal-container">
-      <div className="modal-header">
-        <h2>User Settings</h2>
-        <button 
-          className="modal-close"
-          onClick={() => setShowUserSettings(false)}
-        >
-          &times;
-        </button>
-      </div>
-      
-      <form onSubmit={handleUpdateUser}>
-        <div className="modal-body">
-          {updateError && <div className="error-message">{updateError}</div>}
-          {updateSuccess && <div className="success-message">{updateSuccess}</div>}
-          
-          <div className="form-group">
-            <label htmlFor="firstName">First Name</label>
-            <input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={userSettings.firstName}
-              onChange={handleSettingsChange}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="lastName">Last Name</label>
-            <input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={userSettings.lastName}
-              onChange={handleSettingsChange}
-            />
-          </div>
-          
-          <div className="password-section">
-            <h3>Change Password</h3>
-            
-            <div className="form-group">
-  <label htmlFor="currentPassword">Current Password</label>
-  <input
-    type="password"
-    id="currentPassword"
-    name="currentPassword"
-    value={userSettings.currentPassword}
-    onChange={handleSettingsChange}
-    autoComplete="current-password"
-  />
-</div>
+          <div className="modal-overlay">
+            <div className="modal-container">
+              <div className="modal-header">
+                <h2>User Settings</h2>
+                <button 
+                  className="modal-close"
+                  onClick={() => setShowUserSettings(false)}
+                >
+                  &times;
+                </button>
+              </div>
+              
+              <form onSubmit={handleUpdateUser}>
+                <div className="modal-body">
+                  {updateError && <div className="error-message">{updateError}</div>}
+                  {updateSuccess && <div className="success-message">{updateSuccess}</div>}
+                  
+                  <div className="form-group">
+                    <label htmlFor="firstName">First Name</label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={userSettings.firstName}
+                      onChange={handleSettingsChange}
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="lastName">Last Name</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={userSettings.lastName}
+                      onChange={handleSettingsChange}
+                    />
+                  </div>
+                  
+                  <div className="password-section">
+                    <h3>Change Password</h3>
+                    
+                    <div className="form-group">
+                      <label htmlFor="currentPassword">Current Password</label>
+                      <input
+                        type="password"
+                        id="currentPassword"
+                        name="currentPassword"
+                        value={userSettings.currentPassword}
+                        onChange={handleSettingsChange}
+                        autoComplete="current-password"
+                      />
+                    </div>
 
-<div className="form-group">
-  <label htmlFor="newPassword">New Password</label>
-  <input
-    type="password"
-    id="newPassword"
-    name="newPassword"
-    value={userSettings.newPassword}
-    onChange={handleSettingsChange}
-    autoComplete="new-password"
-  />
-</div>
+                    <div className="form-group">
+                      <label htmlFor="newPassword">New Password</label>
+                      <input
+                        type="password"
+                        id="newPassword"
+                        name="newPassword"
+                        value={userSettings.newPassword}
+                        onChange={handleSettingsChange}
+                        autoComplete="new-password"
+                      />
+                    </div>
 
-<div className="form-group">
-  <label htmlFor="confirmNewPassword">Confirm New Password</label>
-  <input
-    type="password"
-    id="confirmNewPassword"
-    name="confirmNewPassword"
-    value={userSettings.confirmNewPassword}
-    onChange={handleSettingsChange}
-    autoComplete="new-password"
-  />
-</div>
+                    <div className="form-group">
+                      <label htmlFor="confirmNewPassword">Confirm New Password</label>
+                      <input
+                        type="password"
+                        id="confirmNewPassword"
+                        name="confirmNewPassword"
+                        value={userSettings.confirmNewPassword}
+                        onChange={handleSettingsChange}
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="modal-footer">
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary"
+                    onClick={() => setShowUserSettings(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary"
+                    disabled={updating}
+                  >
+                    {updating ? 'Updating...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-        
-        <div className="modal-footer">
-          <button 
-            type="button" 
-            className="btn btn-secondary"
-            onClick={() => setShowUserSettings(false)}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={updating}
-          >
-            {updating ? 'Updating...' : 'Save Changes'}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
+        )}
       </main>
 
       <footer className="dashboard-footer">

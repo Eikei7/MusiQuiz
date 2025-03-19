@@ -29,6 +29,12 @@
     /* max-height: calc(28vh - 115px); */
   }
   
+  .empty-chat-message {
+    font-size: 0.9rem;
+    color: #555;
+    text-align: left;
+  }
+
   .message {
     font-size: 0.9rem;
     padding: 0 12px;
