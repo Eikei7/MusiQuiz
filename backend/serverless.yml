@@ -163,6 +163,13 @@ functions:
       - websocket:
           route: $default
 
+  startGame:
+    handler: rooms.startGame
+    events:
+      - httpApi:
+         path: /rooms/{roomId}/start
+         method: post
+
 resources:
   Resources:
   

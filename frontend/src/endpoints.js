@@ -6,6 +6,7 @@ export const ENDPOINT_USERS =            `${API_BASE}/users`;               //GE
 export const ENDPOINT_USERS_UPDATE =     `${API_BASE}/users/update`;        //GET
 export const ENDPOINT_USERS_DELETE =     `${API_BASE}/users/{email}`;       //DELETE
 export const ENDPOINT_ROOMS =            `${API_BASE}/rooms`;               //POST
+export const ENDPOINT_ROOMS_START =      `${API_BASE}/rooms/{roomId}/start`;//POST
 export const ENDPOINT_ROOMS_GET =        `${API_BASE}/rooms`;               //GET
 export const ENDPOINT_ROOMS_GET_ONE =    `${API_BASE}/rooms/{roomId}`;      //GET
 export const ENDPOINT_ROOMS_DELETE =     `${API_BASE}/rooms/`;              //DELETE
@@ -19,3 +20,4 @@ export const ENDPOINT_QUESTIONS_UPDATE = `${API_BASE}/questions/{id}`;      //PU
 
 export const ENDPOINT_ROOM_CONNECTIONS = 'wss://2rd7r2g07b.execute-api.eu-north-1.amazonaws.com/dev';
 export const ENDPOINT_CHAT =             'wss://4nymssc2pg.execute-api.eu-north-1.amazonaws.com/dev';
+

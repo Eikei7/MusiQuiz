@@ -27,30 +27,35 @@ function Room() {
     };
     
     roomUpdateWs.onmessage = (event) => {
-      try {
-        console.log('WebSocket message received in Room:', event.data);
-        const data = JSON.parse(event.data);
-        
-        // Only handle room update messages for this room
-        if (data.type === "roomUpdate" && data.roomId === roomId) {
-          console.log('Room update received:', data);
+        try {
+          console.log('WebSocket message received in Room:', event.data);
+          const data = JSON.parse(event.data);
           
-          // Make sure data.room contains the updated room information
-          if (data.room) {
-            console.log('Updating room with:', data.room);
-            setRoom(data.room);
+          // Handle game start messages
+          if (data.type === "gameStart" && data.roomId === roomId) {
+            console.log('Game starting!');
+            setQuizStarted(true);
+          } 
+          // Handle room updates (your existing code)
+          else if (data.type === "roomUpdate" && data.roomId === roomId) {
+            console.log('Room update received:', data);
             
-            // Add a notification (optional)
-            if (data.action === "join" && data.user) {
-              const userName = data.user.firstName || data.user.email?.split('@')[0] || "Someone";
-              console.log(`${userName} joined the room`);
+            // Make sure data.room contains the updated room information
+            if (data.room) {
+              console.log('Updating room with:', data.room);
+              setRoom(data.room);
+              
+              // Add a notification (optional)
+              if (data.action === "join" && data.user) {
+                const userName = data.user.firstName || data.user.email?.split('@')[0] || "Someone";
+                console.log(`${userName} joined the room`);
+              }
             }
           }
+        } catch (error) {
+          console.error('Error processing room update:', error);
         }
-      } catch (error) {
-        console.error('Error processing room update:', error);
-      }
-    };
+      };
     
     roomUpdateWs.onerror = (error) => {
       console.error('Room update WebSocket error:', error);
@@ -170,8 +175,36 @@ function Room() {
     }
   }, [room?.players]);
 
-  const handleStartQuiz = () => {
-    setQuizStarted(true);
+  const amIFirstPlayer = () => {
+    if (!room?.players || room.players.length === 0) return false;
+    
+    const firstPlayer = room.players[0];
+    const firstPlayerEmail = typeof firstPlayer === 'object' ? firstPlayer.email : firstPlayer;
+    
+    return firstPlayerEmail === user.email;
+  };
+
+  const handleStartQuiz = async () => {
+    try {
+      // Send a message to the server to start the quiz for this room
+      const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to start quiz");
+      }
+      
+      // Navigate the host to the quiz (other players will be notified via WebSocket)
+      setQuizStarted(true);
+    } catch (error) {
+      console.error("Error starting quiz:", error);
+      alert("Failed to start the quiz: " + error.message);
+    }
   };
 
   if (loading) {
@@ -220,15 +253,18 @@ function Room() {
             <p>As soon as two players have joined the room, the quiz is ready to start.</p>
             
             {Array.isArray(room?.players) && room.players.length >= 2 ? (
-              <div className="start-quiz-container">
-                <p>All set! You can now start the quiz.</p>
-                <button className="start-quiz-button" onClick={handleStartQuiz}>
-                  Start Quiz
-                </button>
-              </div>
-            ) : (
-              <p>Waiting for at least one more player to join...</p>
-            )}
+  <div className="start-quiz-container">
+    <p>All set! {amIFirstPlayer() ? 'You can now start the quiz.' : 'Waiting for the host to start the quiz.'}</p>
+    
+    {amIFirstPlayer() && (
+      <button className="start-quiz-button" onClick={handleStartQuiz}>
+        Start Quiz
+      </button>
+    )}
+  </div>
+) : (
+  <p>Waiting for at least one more player to join...</p>
+)}
           </div>
           
           <div className="room-chat">

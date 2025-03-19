@@ -12,8 +12,9 @@ const jwt = require('jsonwebtoken');
 
 const ROOMS_TABLE = process.env.ROOMS_TABLE;
 const USERS_TABLE = process.env.USERS_TABLE;
-const CONNECTIONS_TABLE = process.env.CONNECTIONS_TABLE; // Add this
+const CONNECTIONS_TABLE = process.env.CONNECTIONS_TABLE;
 const JWT_SECRET = process.env.JWT_SECRET;
+const WS_ENDPOINT = 'wss://2rd7r2g07b.execute-api.eu-north-1.amazonaws.com/dev';
 const client = new DynamoDBClient();
 const docClient = DynamoDBDocumentClient.from(client);
 
@@ -495,6 +496,70 @@ module.exports.deleteRoom = async (event) => {
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Could not delete room." }),
+    };
+  }
+};
+
+module.exports.startGame = async (event) => {
+  const { roomId } = event.pathParameters;
+
+  try {
+    // Verify the room exists
+    const roomParams = {
+      TableName: ROOMS_TABLE,
+      Key: { roomId }
+    };
+
+    const { Item } = await docClient.send(new GetCommand(roomParams));
+
+    if (!Item) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: "Room not found." }),
+      };
+    }
+
+    // Send WebSocket message to all clients that the game is starting
+    try {
+      // Get all connected WebSocket clients
+      const connectionsParams = {
+        TableName: CONNECTIONS_TABLE,
+        ProjectionExpression: "connectionId"
+      };
+
+      const connectionData = await docClient.send(new ScanCommand(connectionsParams));
+
+      if (connectionData.Items && connectionData.Items.length > 0) {
+        const apiGatewayClient = new ApiGatewayManagementApiClient({ endpoint: WS_ENDPOINT });
+
+        // Create message to broadcast
+        const broadcastMessage = JSON.stringify({
+          type: "gameStart",
+          roomId: roomId,
+          room: Item
+        });
+
+        // Send to each connection
+        for (const connection of connectionData.Items) {
+          await apiGatewayClient.send(new PostToConnectionCommand({
+            ConnectionId: connection.connectionId,
+            Data: broadcastMessage
+          }));
+        }
+      }
+    } catch (broadcastError) {
+      console.error("Error broadcasting game start:", broadcastError);
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: "Game started successfully" }),
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Could not start game." }),
     };
   }
 };
