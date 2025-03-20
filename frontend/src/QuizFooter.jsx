@@ -20,7 +20,7 @@ const QuizFooter = ({ selectedHotspot, isAnswerCorrect, disabled }) => {
             >
               <span className="hotspot-letter">{option}</span>
               <span className="hotspot-instruction">
-                {disabled ? '' : 'Drop answer here'}
+                {disabled ? '' : ''}
               </span>
             </div>
           ))}
