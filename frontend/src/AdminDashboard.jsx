@@ -10,6 +10,7 @@ import {
 } from './endpoints';
 import './AdminDashboard.css';
 import QuestionsManager from './QuestionsManager';
+import AdminStats from './AdminStats';
 
 function AdminDashboard() {
   const { user, logout, token } = useAuth();
@@ -377,7 +378,7 @@ function AdminDashboard() {
             {activeTab === 'users' && 'User Management'}
             {activeTab === 'questions' && 'Quiz Questions'}
             {activeTab === 'rooms' && 'Room Management'}
-            {activeTab === 'stats' && 'Statistics & Reports'}
+            {activeTab === 'stats' && 'Game Statistics'}
           </h1>
         </header>
 
@@ -654,8 +655,7 @@ function AdminDashboard() {
           )}
 
           {activeTab === 'stats' && (
-            <div className="admin-placeholder">
-            </div>
+              <AdminStats/>
           )}
         </div>
       </main>

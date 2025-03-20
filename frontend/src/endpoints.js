@@ -6,6 +6,7 @@ export const ENDPOINT_USERS =             `${API_BASE}/users`;               //G
 export const ENDPOINT_USERS_UPDATE =      `${API_BASE}/users/update`;        //GET
 export const ENDPOINT_USERS_DELETE =      `${API_BASE}/users/{email}`;       //DELETE
 export const ENDPOINT_USERS_STATS =       `https://zdju8ilmp1.execute-api.eu-north-1.amazonaws.com/dev/users/stats`;         //GET
+export const ENDPOINT_USERS_STATS_ALL =   `https://zdju8ilmp1.execute-api.eu-north-1.amazonaws.com/dev/users/stats/all`; //GET
 export const ENDPOINT_USERS_STATS_UPDATE =`https://zdju8ilmp1.execute-api.eu-north-1.amazonaws.com/dev/users/stats/update`;  //POST
 export const ENDPOINT_ROOMS =             `${API_BASE}/rooms`;               //POST
 export const ENDPOINT_ROOMS_START =       `${API_BASE}/rooms/{roomId}/start`;//POST
