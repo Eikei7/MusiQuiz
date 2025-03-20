@@ -175,6 +175,18 @@ module.exports.loginUser = async (event) => {
       };
     }
 
+    // Update the lastLogin timestamp
+    const updateParams = {
+      TableName: USERS_TABLE,
+      Key: { email },
+      UpdateExpression: "set lastLogin = :lastLogin",
+      ExpressionAttributeValues: {
+        ":lastLogin": new Date().toISOString()
+      }
+    };
+
+    await docClient.send(new UpdateCommand(updateParams));
+
     const token = jwt.sign({
       email: Item.email,
       id: Item.id,
@@ -619,7 +631,7 @@ module.exports.getAllUserStats = async (event) => {
     // Scan the users table to get all users
     const params = {
       TableName: USERS_TABLE,
-      ProjectionExpression: "email, firstName, lastName, stats, #role",
+      ProjectionExpression: "email, firstName, lastName, stats, lastLogin, #role",
       ExpressionAttributeNames: {
         "#role": "role" // 'role' is a reserved word in DynamoDB
       }

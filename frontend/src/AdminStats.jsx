@@ -11,6 +11,28 @@ const AdminStats = () => {
   const [sortField, setSortField] = useState('email');
   const [sortDirection, setSortDirection] = useState('asc');
 
+  const formatLastLogin = (timestamp) => {
+    if (!timestamp) return 'Never logged in';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) {
+      return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (diffInDays === 1) {
+      return `Yesterday at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (diffInDays < 7) {
+      return `${diffInDays} days ago`;
+    } else {
+      return date.toLocaleDateString([], { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  };
+
   useEffect(() => {
     const fetchAllUserStats = async () => {
       try {
@@ -128,6 +150,9 @@ const AdminStats = () => {
               <th onClick={() => handleSort('stats.winRate')}>
                 Win Rate{renderSortIcon('stats.winRate')}
               </th>
+              <th onClick={() => handleSort('lastLogin')}>
+                Last Login{renderSortIcon('lastLogin')}
+            </th>
             </tr>
           </thead>
           <tbody>
@@ -139,6 +164,7 @@ const AdminStats = () => {
                 <td>{user.stats?.gamesWon || 0}</td>
                 <td>{user.stats?.gamesLost || 0}</td>
                 <td>{user.stats?.winRate || 0}%</td>
+                <td>{formatLastLogin(user.lastLogin)}</td>
               </tr>
             ))}
           </tbody>
