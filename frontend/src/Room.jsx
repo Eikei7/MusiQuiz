@@ -129,6 +129,13 @@ function Room() {
         body: JSON.stringify({})
       });
       
+      if (response.status === 401) {
+        // Token expired or invalid
+        console.log('Token expired. Redirecting to login.');
+        navigate('/');
+        return;
+      }
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(`Failed to leave room: ${errorData.error || response.statusText}`);
@@ -139,6 +146,14 @@ function Room() {
       
     } catch (error) {
       console.error('Error leaving room:', error);
+      
+      // Check if the error is related to authorization
+      if (error.message && error.message.toLowerCase().includes('unauthorized')) {
+        console.log('Token appears to be invalid. Redirecting to login.');
+        navigate('/');
+        return;
+      }
+      
       alert(`Failed to leave room: ${error.message}`);
     }
   };

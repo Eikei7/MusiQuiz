@@ -228,7 +228,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
     return (
       <div className="quiz-time-container">
         <div className="game-over">
-          <h1>Game Over!</h1>
+          <h1>Quiz Over!</h1>
           
           <div className="final-scores">
             <h2>Final Scores</h2>
