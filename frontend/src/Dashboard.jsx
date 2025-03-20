@@ -2,16 +2,24 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import './Dashboard.css';
-import { ENDPOINT_ROOMS, ENDPOINT_USERS_UPDATE } from './endpoints';
+import { ENDPOINT_ROOMS, ENDPOINT_USERS_STATS, ENDPOINT_USERS_UPDATE } from './endpoints';
 
 function Dashboard() {
   const navigate = useNavigate();
   const { user, logout, token } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [stats, setStats] = useState({
+    gamesPlayed: 0,
+    gamesWon: 0, 
+    gamesLost: 0,
+    winRate: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [joiningRoom, setJoiningRoom] = useState(false);
+
+  // User settings state
   const [showUserSettings, setShowUserSettings] = useState(false);
   const [userSettings, setUserSettings] = useState({
     firstName: user?.firstName || '',
@@ -150,6 +158,31 @@ function Dashboard() {
     }
   };
 
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      try {
+        const response = await fetch(ENDPOINT_USERS_STATS, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch stats');
+        }
+        
+        const data = await response.json();
+        setStats(data.stats);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserStats();
+  }, [token]);
+
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
@@ -228,19 +261,19 @@ function Dashboard() {
                 <h2>Your Stats</h2>
                 <div className="stats-container">
                   <div className="stat-card">
-                    <div className="stat-value">0</div>
+                    <div className="stat-value">{stats.gamesPlayed}</div>
                     <div className="stat-label">Total Quizzes Played</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-value">0</div>
+                    <div className="stat-value">{stats.gamesWon}</div>
                     <div className="stat-label">Times Won</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-value">0</div>
+                    <div className="stat-value">{stats.gamesLost}</div>
                     <div className="stat-label">Times Lost</div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-value">0%</div>
+                    <div className="stat-value">{stats.winRate}%</div>
                     <div className="stat-label">Win Rate</div>
                   </div>
                 </div>

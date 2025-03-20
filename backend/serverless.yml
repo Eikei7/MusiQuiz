@@ -67,6 +67,30 @@ functions:
       - httpApi:
           path: /users/update
           method: put
+
+  updateUserStats:
+    handler: users.updateUserStats
+    events:
+      - http:
+          path: /users/stats/update
+          method: post
+          cors: true
+  
+  getUserStats:
+    handler: users.getUserStats
+    events:
+      - http:
+          path: /users/stats
+          method: get
+          cors: true
+
+  getAllUserStats:
+    handler: users.getAllUserStats
+    events:
+      - http:
+          path: /users/stats/all
+          method: get
+          cors: true
   
   createRoom:
     handler: rooms.createRoom

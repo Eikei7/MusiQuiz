@@ -416,3 +416,234 @@ module.exports.updateUser = async (event) => {
     };
   }
 };
+const getUserFromEvent = async (event) => {
+  try {
+    // Check if Authorization header exists
+    const authHeader = event.headers && (event.headers.Authorization || event.headers.authorization);
+    if (!authHeader) {
+      console.log('No authorization header found');
+      return null;
+    }
+
+    // Extract token
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify JWT token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    if (!decoded || !decoded.email) {
+      console.log('Invalid token payload:', decoded);
+      return null;
+    }
+    
+    // Get user from database to ensure they exist
+    const params = {
+      TableName: USERS_TABLE,
+      Key: { email: decoded.email }
+    };
+    
+    const result = await docClient.send(new GetCommand(params));
+    
+    if (!result.Item) {
+      console.log('User not found in database:', decoded.email);
+      return null;
+    }
+    
+    return result.Item;
+  } catch (error) {
+    console.error('Error getting user from event:', error);
+    return null;
+  }
+};
+module.exports.updateUserStats = async (event) => {
+  const { email, gameWon } = JSON.parse(event.body);
+  
+  // Verify user authentication
+  const user = await getUserFromEvent(event);
+  if (!user || user.email !== email) {
+    return {
+      statusCode: 403,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ error: "Unauthorized" })
+    };
+  }
+
+  try {
+    // Get current user data
+    const getUserParams = {
+      TableName: USERS_TABLE,
+      Key: { email }
+    };
+    
+    const userData = await docClient.send(new GetCommand(getUserParams));
+    const currentUser = userData.Item;
+    
+    // Initialize stats if they don't exist
+    if (!currentUser.stats) {
+      currentUser.stats = {
+        gamesPlayed: 0,
+        gamesWon: 0,
+        gamesLost: 0,
+        winRate: 0
+      };
+    }
+    
+    // Update stats
+    currentUser.stats.gamesPlayed += 1;
+    
+    if (gameWon) {
+      currentUser.stats.gamesWon += 1;
+    } else {
+      currentUser.stats.gamesLost += 1;
+    }
+    
+    // Calculate win rate
+    currentUser.stats.winRate = Math.round(
+      (currentUser.stats.gamesWon / currentUser.stats.gamesPlayed) * 100
+    );
+    
+    // Save updated user
+    const updateParams = {
+      TableName: USERS_TABLE,
+      Item: currentUser
+    };
+    
+    await docClient.send(new PutCommand(updateParams));
+    
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ 
+        message: "Stats updated successfully",
+        stats: currentUser.stats
+      })
+    };
+  } catch (error) {
+    console.error('Error updating stats:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ error: "Failed to update stats" })
+    };
+  }
+};
+
+module.exports.getUserStats = async (event) => {
+  // Verify user authentication
+  const user = await getUserFromEvent(event);
+  if (!user) {
+    return {
+      statusCode: 403,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ error: "Unauthorized" })
+    };
+  }
+
+  try {
+    // Get current user data
+    const getUserParams = {
+      TableName: USERS_TABLE,
+      Key: { email: user.email }
+    };
+    
+    const userData = await docClient.send(new GetCommand(getUserParams));
+    const currentUser = userData.Item;
+    
+    // Return default stats if none exist yet
+    if (!currentUser.stats) {
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Credentials': true
+        },
+        body: JSON.stringify({
+          stats: {
+            gamesPlayed: 0,
+            gamesWon: 0,
+            gamesLost: 0,
+            winRate: 0
+          }
+        })
+      };
+    }
+    
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ stats: currentUser.stats })
+    };
+  } catch (error) {
+    console.error('Error getting stats:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ error: "Failed to get stats" })
+    };
+  }
+};
+
+module.exports.getAllUserStats = async (event) => {
+  // Verify admin access
+  const user = await getUserFromEvent(event);
+  if (!user || user.role !== 'admin') {
+    return {
+      statusCode: 403,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ error: "Access denied. Admin only." })
+    };
+  }
+
+  try {
+    // Scan the users table to get all users
+    const params = {
+      TableName: USERS_TABLE,
+      ProjectionExpression: "email, firstName, lastName, stats, #role",
+      ExpressionAttributeNames: {
+        "#role": "role" // 'role' is a reserved word in DynamoDB
+      }
+    };
+    
+    const data = await docClient.send(new ScanCommand(params));
+    
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ users: data.Items })
+    };
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Credentials': true
+      },
+      body: JSON.stringify({ error: "Failed to fetch user statistics" })
+    };
+  }
+};

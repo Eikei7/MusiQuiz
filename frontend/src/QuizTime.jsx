@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "./AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import Card from "./Card";
 import QuizFooter from "./QuizFooter";
 import "./QuizTime.css";
-import { ENDPOINT_ROOMS } from "./endpoints";
+import { ENDPOINT_ROOMS, ENDPOINT_USERS, ENDPOINT_USERS_STATS_UPDATE } from "./endpoints";
 
 const QuizTime = ({ roomData: propRoomData }) => {
   const { token, user } = useAuth();
@@ -23,6 +23,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
   const [maxRounds, setMaxRounds] = useState(10);
   const [gameEnded, setGameEnded] = useState(false);
   const [scores, setScores] = useState({});
+  const [statsUpdated, setStatsUpdated] = useState(false);
   
   // Question state
   const [cardKey, setCardKey] = useState(0);
@@ -94,6 +95,13 @@ const QuizTime = ({ roomData: propRoomData }) => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [timeLeft, isTimerActive]);
+
+  // Update user stats when game ends
+  useEffect(() => {
+    if (gameEnded && !statsUpdated && user) {
+      updateUserStats();
+    }
+  }, [gameEnded, statsUpdated, user]);
 
   // Check if it's the current user's turn
   const isMyTurn = () => {
@@ -194,6 +202,62 @@ const QuizTime = ({ roomData: propRoomData }) => {
     // Generate a new card key to force re-mount of the Card component
     console.log('QuizTime: Advancing to next turn, creating new card with key:', cardKey + 1);
     setCardKey(prevKey => prevKey + 1);
+  };
+
+  const updateUserStats = async () => {
+    if (!user || !user.email) return;
+
+    try {
+      // Determine if current user is winner
+      let maxScore = -1;
+      let winners = [];
+      
+      players.forEach(player => {
+        const playerEmail = typeof player === 'object' ? player.email : player;
+        const score = scores[playerEmail] || 0;
+        
+        if (score > maxScore) {
+          maxScore = score;
+          winners = [player];
+        } else if (score === maxScore) {
+          winners.push(player);
+        }
+      });
+      
+      const isWinner = winners.some(winner => {
+        const winnerEmail = typeof winner === 'object' ? winner.email : winner;
+        return winnerEmail === user.email;
+      });
+
+      console.log('Updating stats for user:', user.email, 'Won:', isWinner);
+      
+      const response = await fetch(`${ENDPOINT_USERS_STATS_UPDATE}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: user.email,
+          gameWon: isWinner
+        })
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.log('Token expired. Cannot update stats.');
+          return;
+        }
+        throw new Error('Failed to update stats');
+      }
+      
+      const data = await response.json();
+      console.log('Stats updated successfully:', data);
+      setStatsUpdated(true);
+    } catch (error) {
+      console.error('Error updating game stats:', error);
+      // Don't block UI flow on stats update failure
+    }
   };
 
   const handleReturnToRoom = () => {
