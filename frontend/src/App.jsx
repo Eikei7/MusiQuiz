@@ -8,7 +8,6 @@ import AdminDashboard from './AdminDashboard';
 import QuizTime from './QuizTime';
 import './App.css';
 import Card from './Card';
-import QuestionsManager from './QuestionsManager';
 import Room from './Room';
 
 function App() {
@@ -16,11 +15,10 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
+          
           {/* Public routes */}
           <Route path="/" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/card" element={<Card />} />
-          <Route path="/allquestions" element={<QuestionsManager />} />
           
           {/* Protected routes for all authenticated users */}
           <Route 
@@ -57,7 +55,17 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/card" 
+            element={
+            <ProtectedRoute requireAdmin={true}>
+              <Card />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<Navigate replace to="/" />} />
+
         </Routes>
       </AuthProvider>
     </Router>

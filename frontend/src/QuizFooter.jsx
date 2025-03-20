@@ -1,8 +1,14 @@
 import React from 'react';
 import "./QuizTime.css";
 
-const QuizFooter = ({ selectedHotspot, isAnswerCorrect, disabled }) => {
+const QuizFooter = ({ selectedHotspot, isAnswerCorrect, disabled, onAnswerSelected }) => {
   const options = ['A', 'B', 'C', 'D'];
+  
+  const handleClick = (index) => {
+    if (!disabled && isAnswerCorrect === null) {
+      onAnswerSelected(index);
+    }
+  };
   
   return (
     <footer className="footer">
@@ -11,17 +17,20 @@ const QuizFooter = ({ selectedHotspot, isAnswerCorrect, disabled }) => {
           {options.map((option, index) => (
             <div 
               key={index}
-              className={`answer-hotspot 
+              className={`answer-box 
                 ${selectedHotspot === index ? 'selected' : ''} 
                 ${isAnswerCorrect !== null && selectedHotspot === index ? 
                   (isAnswerCorrect ? 'correct' : 'incorrect') : ''} 
                 ${disabled ? 'disabled' : ''}
               `}
+              onClick={() => handleClick(index)}
             >
-              <span className="hotspot-letter">{option}</span>
-              <span className="hotspot-instruction">
-                {disabled ? '' : ''}
-              </span>
+              <span className="option-letter">{option}</span>
+              {!disabled && isAnswerCorrect === null && (
+                <span className="option-instruction">
+                  {selectedHotspot === index ? 'Selected' : 'Click to select'}
+                </span>
+              )}
             </div>
           ))}
         </div>

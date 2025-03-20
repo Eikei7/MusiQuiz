@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import './Card.css';
 import { ENDPOINT_QUESTIONS_GET } from './endpoints';
@@ -28,12 +28,15 @@ const cardColors = [
 
 const Card = ({
   id,
-  token
+  token,
+  onQuestionLoaded
 }) => {
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [backgroundColor, setBackgroundColor] = useState('');
+  const questionLoadedRef = useRef(false);
+  const effectHasRunRef = useRef(false);
 
   // Animation variants for the card with flip effect
   const cardVariants = {
@@ -65,6 +68,15 @@ const Card = ({
   };
 
   useEffect(() => {
+    // Prevent effect from running more than once per instance
+    if (effectHasRunRef.current) {
+      return;
+    }
+    effectHasRunRef.current = true;
+    
+    // Reset question loaded flag
+    questionLoadedRef.current = false;
+    
     // Function to fetch a random question
     const fetchRandomQuestion = async () => {
       try {
@@ -95,7 +107,19 @@ const Card = ({
         const randomIndex = Math.floor(Math.random() * questions.length);
         const randomQuestion = questions[randomIndex];
 
+        console.log('Card: Selected random question:', randomQuestion);
         setQuestion(randomQuestion);
+        
+        // Notify parent component about the loaded question, but only once
+        if (onQuestionLoaded && !questionLoadedRef.current) {
+          const questionData = {
+            id: randomQuestion.id,
+            correctAnswerIndex: Number(randomQuestion.correctAnswerIndex)
+          };
+          console.log('Card: Notifying parent with question data:', questionData);
+          onQuestionLoaded(questionData);
+          questionLoadedRef.current = true;
+        }
       } catch (err) {
         console.error('Error fetching random question:', err);
         setError('Could not load question');
@@ -113,7 +137,7 @@ const Card = ({
     // Call the functions when the component mounts
     fetchRandomQuestion();
     selectRandomColor();
-  }, [token, id]);
+  }, [token, id, onQuestionLoaded]); // Adding back onQuestionLoaded but with safeguards
 
   return (
     <div className="card-container" style={{ perspective: '1000px' }}>

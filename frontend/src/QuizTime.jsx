@@ -18,15 +18,15 @@ const QuizTime = ({ roomData: propRoomData }) => {
   
   // Game state
   const [players, setPlayers] = useState(propRoomData?.players || []);
-  const [currentTurn, setCurrentTurn] = useState(0); // Index of player whose turn it is
+  const [currentTurn, setCurrentTurn] = useState(0);
   const [currentRound, setCurrentRound] = useState(1);
-  const [maxRounds, setMaxRounds] = useState(5); // Each player gets 5 turns
+  const [maxRounds, setMaxRounds] = useState(10);
   const [gameEnded, setGameEnded] = useState(false);
   const [scores, setScores] = useState({});
   
   // Question state
   const [cardKey, setCardKey] = useState(0);
-  const [droppedCardInfo, setDroppedCardInfo] = useState(null);
+  const [currentQuestionInfo, setCurrentQuestionInfo] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(null);
   
@@ -115,45 +115,44 @@ const QuizTime = ({ roomData: propRoomData }) => {
     return typeof player === 'string' ? player.split('@')[0] : "Unknown";
   };
 
-  const handleDragEnd = (event, info, cardData) => {
-    // Only allow dragging if it's your turn
+  const handleQuestionLoaded = (questionInfo) => {
+    console.log('QuizTime: Question loaded:', questionInfo);
+    if (questionInfo) {
+      // Store the question info with explicit number conversion
+      const updatedInfo = {
+        ...questionInfo,
+        correctAnswerIndex: Number(questionInfo.correctAnswerIndex)
+      };
+      setCurrentQuestionInfo(updatedInfo);
+    }
+  };
+
+  const handleAnswerSelected = (index) => {
+    // Only allow selecting if it's your turn
     if (!isMyTurn()) return;
     
-    // Check if card was dropped in a hotspot
-    const hotspotElements = document.querySelectorAll('.answer-hotspot');
-    
-    // Reset previously selected answer
-    setSelectedAnswer(null);
-    
-    // Loop through hotspots to see if card was dropped in one
-    hotspotElements.forEach((hotspot, index) => {
-      const rect = hotspot.getBoundingClientRect();
-      
-      // Check if card position overlaps with this hotspot
-      if (
-        info.point.x >= rect.left &&
-        info.point.x <= rect.right &&
-        info.point.y >= rect.top &&
-        info.point.y <= rect.bottom
-      ) {
-        // Card was dropped in this hotspot
-        setSelectedAnswer(index);
-        setDroppedCardInfo({
-          ...cardData,
-          hotspotIndex: index
-        });
-      }
-    });
+    // Ensure index is stored as a number
+    const numericIndex = Number(index);
+    console.log('QuizTime: Answer selected:', numericIndex);
+    setSelectedAnswer(numericIndex);
   };
 
   const handleSubmitAnswer = () => {
     // Stop the timer
     setIsTimerActive(false);
     
+    console.log('QuizTime: Submitting answer:', selectedAnswer);
+    console.log('QuizTime: Current question info:', currentQuestionInfo);
+    
     // Determine if answer is correct
     let isCorrect = false;
-    if (selectedAnswer !== null && droppedCardInfo) {
-      isCorrect = droppedCardInfo.correctAnswerIndex === selectedAnswer;
+    if (selectedAnswer !== null && currentQuestionInfo && currentQuestionInfo.correctAnswerIndex !== undefined) {
+      const selectedIdx = Number(selectedAnswer);
+      const correctIdx = Number(currentQuestionInfo.correctAnswerIndex);
+      
+      console.log('QuizTime: Comparing answer index', selectedIdx, 'with correct index', correctIdx);
+      isCorrect = selectedIdx === correctIdx;
+      console.log('QuizTime: Answer is correct?', isCorrect);
     }
     
     setIsAnswerCorrect(isCorrect);
@@ -186,11 +185,14 @@ const QuizTime = ({ roomData: propRoomData }) => {
     setCurrentRound(nextRound);
     
     // Reset question state
-    setDroppedCardInfo(null);
+    setCurrentQuestionInfo(null);
     setSelectedAnswer(null);
     setIsAnswerCorrect(null);
     setTimeLeft(TIMER_DURATION);
     setIsTimerActive(true);
+    
+    // Generate a new card key to force re-mount of the Card component
+    console.log('QuizTime: Advancing to next turn, creating new card with key:', cardKey + 1);
     setCardKey(prevKey => prevKey + 1);
   };
 
@@ -293,7 +295,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
         <div className="turn-indicator">
           <span className="turn-label">Turn:</span>
           <span className="current-player">
-            {isMyTurn() ? 'Your Turn' : ` ${getCurrentPlayerName()}'s turn`}
+            {isMyTurn() ? ' Your Turn' : ` ${getCurrentPlayerName()}'s turn`}
           </span>
         </div>
         
@@ -329,11 +331,8 @@ const QuizTime = ({ roomData: propRoomData }) => {
         <Card 
           key={cardKey}
           id="question-card"
-          isDropped={selectedAnswer !== null}
-          onDragEnd={handleDragEnd}
-          locked={isAnswerCorrect !== null || !isMyTurn()}
           token={token}
-          setDroppedCardInfo={setDroppedCardInfo}
+          onQuestionLoaded={handleQuestionLoaded}
         />
         
         {isMyTurn() && selectedAnswer !== null && isAnswerCorrect === null && (
@@ -372,6 +371,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
         selectedHotspot={selectedAnswer}
         isAnswerCorrect={isAnswerCorrect}
         disabled={!isMyTurn()}
+        onAnswerSelected={handleAnswerSelected}
       />
     </div>
   );
