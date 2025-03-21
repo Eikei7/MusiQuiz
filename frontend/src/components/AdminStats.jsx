@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { ENDPOINT_USERS_STATS_ALL } from '../endpoints';
-import './AdminStats.css'; // You'll create this file for styling
+import './AdminStats.css';
 
 const AdminStats = () => {
   const { token, user } = useAuth();
@@ -95,19 +95,33 @@ const AdminStats = () => {
       bValue = b[sortField];
     }
 
+    // Handle undefined or null values
+    if ((aValue === undefined || aValue === null) && (bValue === undefined || bValue === null)) {
+      return 0;
+    } else if (aValue === undefined || aValue === null) {
+      return sortDirection === 'asc' ? 1 : -1;
+    } else if (bValue === undefined || bValue === null) {
+      return sortDirection === 'asc' ? -1 : 1;
+    }
+
     // Handle numeric values
-    if (typeof aValue === 'number') {
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
       return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
     }
 
-    // Handle string values
-    if (typeof aValue === 'string') {
+    // Handle string values safely
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
       return sortDirection === 'asc'
         ? aValue.localeCompare(bValue)
         : bValue.localeCompare(aValue);
     }
 
-    return 0;
+    // Convert to strings for comparison if types don't match
+    const aStr = String(aValue || '');
+    const bStr = String(bValue || '');
+    return sortDirection === 'asc'
+      ? aStr.localeCompare(bStr)
+      : bStr.localeCompare(aStr);
   });
 
   if (loading) {

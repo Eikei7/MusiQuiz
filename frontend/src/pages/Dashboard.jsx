@@ -224,11 +224,6 @@ function Dashboard() {
                           </span>
                           {room.status && <span className="room-status">{room.status}</span>}
                         </div>
-                        <div className="room-footer">
-                          <span className="creation-date">
-                            {room.createdAt ? new Date(room.createdAt).toLocaleDateString() : ''}
-                          </span>
-                        </div>
                       </div>
                     ))}
                   </div>
