@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../auth/AuthContext';
 import { 
   ENDPOINT_USERS,
   ENDPOINT_USERS_DELETE, 
@@ -9,8 +9,8 @@ import {
   ENDPOINT_REGISTER 
 } from './endpoints';
 import './AdminDashboard.css';
-import QuestionsManager from './QuestionsManager';
-import AdminStats from './AdminStats';
+import QuestionsManager from '../components/QuestionsManager';
+import AdminStats from './components/AdminStats';
 
 function AdminDashboard() {
   const { user, logout, token } = useAuth();

@@ -1,6 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ENDPOINT_LOGIN } from './endpoints';
+import { ENDPOINT_LOGIN } from '../endpoints';
 
 const AuthContext = createContext();
 

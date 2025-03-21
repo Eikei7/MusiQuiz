@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
-import Card from "./Card";
-import QuizFooter from "./QuizFooter";
+import QuizFooter from "../components/QuizFooter";
 import "./QuizTime.css";
-import { ENDPOINT_ROOMS, ENDPOINT_USERS, ENDPOINT_USERS_STATS_UPDATE } from "./endpoints";
+import { ENDPOINT_ROOMS, ENDPOINT_USERS, ENDPOINT_USERS_STATS_UPDATE } from "../endpoints";
+import Card from "../components/Card";
 
 const QuizTime = ({ roomData: propRoomData }) => {
   const { token, user } = useAuth();

@@ -1,13 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
-import Login from './Login';
-import Signup from './Signup';
-import Dashboard from './Dashboard';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
 import AdminDashboard from './AdminDashboard';
-import QuizTime from './QuizTime';
+import QuizTime from './pages/QuizTime';
 import './App.css';
-import Card from './Card';
+import Card from './components/Card';
 import Room from './Room';
 
 function App() {

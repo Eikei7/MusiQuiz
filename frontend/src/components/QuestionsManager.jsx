@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../AuthContext';
 import QuestionForm from './QuestionForm';
-import { ENDPOINT_QUESTIONS } from './endpoints';
+import { ENDPOINT_QUESTIONS } from '../endpoints';
 import './QuestionsManager.css';
 
 function QuestionsManager() {

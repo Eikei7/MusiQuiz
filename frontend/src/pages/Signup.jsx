@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './Login-Signup.css';
-import { ENDPOINT_REGISTER } from './endpoints';
+import { ENDPOINT_REGISTER } from '../endpoints';
 
 function Signup() {
   const [formData, setFormData] = useState({

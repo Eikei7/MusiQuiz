@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { ENDPOINT_ROOMS } from './endpoints';
-import Chat from './Chat';
-import QuizTime from './QuizTime';
+import Chat from './components/Chat';
+import QuizTime from './pages/QuizTime';
 
 function Room() {
   const { roomId } = useParams();

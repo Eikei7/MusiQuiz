@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../AuthContext';
 import './Chat.css';
-import { ENDPOINT_CHAT } from './endpoints';
+import { ENDPOINT_CHAT } from '../endpoints';
 
 const Chat = ({ ws: externalWs, selectedRoom }) => {
   const { user } = useAuth();

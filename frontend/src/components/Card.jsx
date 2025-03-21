@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import './Card.css';
-import { ENDPOINT_QUESTIONS_GET } from './endpoints';
+import { ENDPOINT_QUESTIONS_GET } from '../endpoints';
 
 const cardColors = [
   '#FF6B6B',
