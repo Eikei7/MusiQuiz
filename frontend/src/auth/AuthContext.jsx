@@ -1,10 +1,27 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ENDPOINT_LOGIN } from '../endpoints';
+import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
+
+export const getTokenExpiration = (token) => {
+  if (!token) return null;
+  
+  try {
+    const decoded = jwtDecode(token);
+    if (decoded.exp) {
+      // exp is in seconds, convert to milliseconds
+      return new Date(decoded.exp * 1000);
+    }
+  } catch (error) {
+    console.error('Error decoding token:', error);
+  }
+  
+  return null;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

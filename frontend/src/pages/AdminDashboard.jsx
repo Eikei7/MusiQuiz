@@ -11,6 +11,7 @@ import {
 import './AdminDashboard.css';
 import QuestionsManager from '../components/QuestionsManager';
 import AdminStats from '../components/AdminStats';
+import TokenExpirationTimer from '../components/TokenExpirationTimer';
 
 function AdminDashboard() {
   const { user, logout, token } = useAuth();
@@ -334,6 +335,9 @@ function AdminDashboard() {
             <span className="admin-name">{user?.firstName || user?.email?.split('@')[0]}</span>
             <span className="admin-role">Administrator</span>
           </div>
+        </div>
+        <div>
+          <TokenExpirationTimer/>
         </div>
         <nav className="admin-nav">
           <ul>

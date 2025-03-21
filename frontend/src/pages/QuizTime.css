@@ -209,7 +209,7 @@
   .timer-warning {
     background-color: #ff5252;
     color: white;
-    animation: pulse 1s infinite;
+    animation: timer-pulse 1s infinite;
   }
   
 .game-info {
@@ -367,7 +367,7 @@
   margin-bottom: 20px;
 }
 
-  @keyframes pulse {
+  @keyframes timer-pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
