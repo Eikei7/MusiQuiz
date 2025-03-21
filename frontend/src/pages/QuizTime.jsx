@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../auth/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import QuizFooter from "../components/QuizFooter";
 import "./QuizTime.css";

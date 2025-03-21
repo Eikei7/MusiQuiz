@@ -7,10 +7,10 @@ import {
   ENDPOINT_ROOMS_GET,
   ENDPOINT_ROOMS_DELETE,
   ENDPOINT_REGISTER 
-} from './endpoints';
+} from '../endpoints';
 import './AdminDashboard.css';
 import QuestionsManager from '../components/QuestionsManager';
-import AdminStats from './components/AdminStats';
+import AdminStats from '../components/AdminStats';
 
 function AdminDashboard() {
   const { user, logout, token } = useAuth();

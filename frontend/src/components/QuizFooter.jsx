@@ -1,5 +1,5 @@
 import React from 'react';
-import "./QuizTime.css";
+import "../pages/QuizTime.css";
 
 const QuizFooter = ({ selectedHotspot, isAnswerCorrect, disabled, onAnswerSelected }) => {
   const options = ['A', 'B', 'C', 'D'];

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ENDPOINT_QUESTIONS } from './endpoints';
+import { ENDPOINT_QUESTIONS } from '../endpoints';
 import './QuestionForm.css';
 
 function QuestionForm({ onQuestionAdded, token, editQuestion }) {

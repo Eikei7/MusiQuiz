@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../auth/AuthContext';
 import { ENDPOINT_USERS_STATS_ALL } from '../endpoints';
 import './AdminStats.css'; // You'll create this file for styling
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../auth/AuthContext';
 import './Chat.css';
 import { ENDPOINT_CHAT } from '../endpoints';
 

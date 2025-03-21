@@ -1,14 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './AuthContext';
+import { AuthProvider } from './auth/AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
-import AdminDashboard from './AdminDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import QuizTime from './pages/QuizTime';
 import './App.css';
 import Card from './components/Card';
-import Room from './Room';
+import Room from './pages/Room';
 
 function App() {
   return (
