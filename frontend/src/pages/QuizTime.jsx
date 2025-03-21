@@ -124,7 +124,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
   };
 
   const handleQuestionLoaded = (questionInfo) => {
-    console.log('QuizTime: Question loaded:', questionInfo);
+    // console.log('QuizTime: Question loaded:', questionInfo);
     if (questionInfo) {
       // Store the question info with explicit number conversion
       const updatedInfo = {
@@ -141,7 +141,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
     
     // Ensure index is stored as a number
     const numericIndex = Number(index);
-    console.log('QuizTime: Answer selected:', numericIndex);
+    // console.log('QuizTime: Answer selected:', numericIndex);
     setSelectedAnswer(numericIndex);
   };
 
@@ -149,8 +149,8 @@ const QuizTime = ({ roomData: propRoomData }) => {
     // Stop the timer
     setIsTimerActive(false);
     
-    console.log('QuizTime: Submitting answer:', selectedAnswer);
-    console.log('QuizTime: Current question info:', currentQuestionInfo);
+    // console.log('QuizTime: Submitting answer:', selectedAnswer);
+    // console.log('QuizTime: Current question info:', currentQuestionInfo);
     
     // Determine if answer is correct
     let isCorrect = false;
@@ -158,9 +158,9 @@ const QuizTime = ({ roomData: propRoomData }) => {
       const selectedIdx = Number(selectedAnswer);
       const correctIdx = Number(currentQuestionInfo.correctAnswerIndex);
       
-      console.log('QuizTime: Comparing answer index', selectedIdx, 'with correct index', correctIdx);
+      // console.log('QuizTime: Comparing answer index', selectedIdx, 'with correct index', correctIdx);
       isCorrect = selectedIdx === correctIdx;
-      console.log('QuizTime: Answer is correct?', isCorrect);
+      // console.log('QuizTime: Answer is correct?', isCorrect);
     }
     
     setIsAnswerCorrect(isCorrect);
@@ -200,7 +200,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
     setIsTimerActive(true);
     
     // Generate a new card key to force re-mount of the Card component
-    console.log('QuizTime: Advancing to next turn, creating new card with key:', cardKey + 1);
+    // console.log('QuizTime: Advancing to next turn, creating new card with key:', cardKey + 1);
     setCardKey(prevKey => prevKey + 1);
   };
 
@@ -256,7 +256,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
       setStatsUpdated(true);
     } catch (error) {
       console.error('Error updating game stats:', error);
-      // Don't block UI flow on stats update failure
     }
   };
 
@@ -392,44 +391,46 @@ const QuizTime = ({ roomData: propRoomData }) => {
       </div>
       
       <div className="quiz-content">
-        <Card 
-          key={cardKey}
-          id="question-card"
-          token={token}
-          onQuestionLoaded={handleQuestionLoaded}
-        />
-        
-        {isMyTurn() && selectedAnswer !== null && isAnswerCorrect === null && (
-          <div className="submit-area">
-            <button 
-              className="submit-answer-button"
-              onClick={handleSubmitAnswer}
-            >
-              Submit Answer
-            </button>
-          </div>
-        )}
-        
-        {isAnswerCorrect !== null && (
-          <div className={`feedback-area ${isAnswerCorrect ? 'correct' : 'incorrect'}`}>
-            <h3>{isAnswerCorrect ? 'Correct!' : 'Incorrect!'}</h3>
-            {isMyTurn() && (
-              <button 
-                className="next-question-button"
-                onClick={handleNextTurn}
-              >
-                Next Turn
-              </button>
-            )}
-          </div>
-        )}
-        
-        {!isMyTurn() && isAnswerCorrect === null && (
-          <div className="waiting-message">
-            <p>Waiting for {getCurrentPlayerName()} to answer...</p>
-          </div>
+  <Card 
+    key={cardKey}
+    id="question-card"
+    token={token}
+    onQuestionLoaded={handleQuestionLoaded}
+  />
+  
+  <div className="feedback-container">
+    {isMyTurn() && selectedAnswer !== null && isAnswerCorrect === null && (
+      <div className="submit-area">
+        <button 
+          className="submit-answer-button"
+          onClick={handleSubmitAnswer}
+        >
+          Submit Answer
+        </button>
+      </div>
+    )}
+    
+    {isAnswerCorrect !== null && (
+      <div className={`feedback-area ${isAnswerCorrect ? 'correct' : 'incorrect'}`}>
+        <h3>{isAnswerCorrect ? 'Correct!' : 'Incorrect!'}</h3>
+        {isMyTurn() && (
+          <button 
+            className="next-question-button"
+            onClick={handleNextTurn}
+          >
+            Next Turn
+          </button>
         )}
       </div>
+    )}
+    
+    {!isMyTurn() && isAnswerCorrect === null && (
+      <div className="waiting-message">
+        <p>Waiting for {getCurrentPlayerName()} to answer...</p>
+      </div>
+    )}
+  </div>
+</div>
       
       <QuizFooter 
         selectedHotspot={selectedAnswer}

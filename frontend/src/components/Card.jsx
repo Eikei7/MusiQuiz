@@ -107,7 +107,7 @@ const Card = ({
         const randomIndex = Math.floor(Math.random() * questions.length);
         const randomQuestion = questions[randomIndex];
 
-        console.log('Card: Selected random question:', randomQuestion);
+        // console.log('Card: Selected random question:', randomQuestion);
         setQuestion(randomQuestion);
         
         // Notify parent component about the loaded question, but only once
@@ -116,7 +116,7 @@ const Card = ({
             id: randomQuestion.id,
             correctAnswerIndex: Number(randomQuestion.correctAnswerIndex)
           };
-          console.log('Card: Notifying parent with question data:', questionData);
+          // console.log('Card: Notifying parent with question data:', questionData);
           onQuestionLoaded(questionData);
           questionLoadedRef.current = true;
         }

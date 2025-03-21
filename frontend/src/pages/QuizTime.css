@@ -25,6 +25,7 @@
   justify-content: center;
   margin-bottom: 120px;
   position: relative;
+  min-height: 300px; /* Add a minimum height to accommodate the feedback area */
 }
 
 .footer {
@@ -101,7 +102,10 @@
 }
 
 .submit-area {
-  margin-top: 4rem;
+  position: absolute;
+  bottom: -60px;
+  left: 0;
+  right: 0;
   text-align: center;
 }
 
@@ -123,11 +127,12 @@
 
 /* Feedback area */
 .feedback-area {
-  position: relative;
-  top: 20px;
+  position: absolute;
   padding: 15px;
   border-radius: 8px;
   text-align: center;
+  max-width: 80%;
+  /* Remove top positioning */
 }
 
 .feedback-area h3{
@@ -270,11 +275,14 @@
 }
 
 .waiting-message {
-  margin-top: 20px;
+  position: absolute;
   padding: 15px;
-  background-color: rgba(0, 0, 0, 0.05);
   border-radius: 8px;
   text-align: center;
+  bottom: -60px;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* For backward compatibility with any code still using hotspot classes */
