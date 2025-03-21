@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.767.0",
-    "@aws-sdk/lib-dynamodb": "^3.767.0",
+    "@aws-sdk/client-dynamodb": "^3.772.0",
+    "@aws-sdk/lib-dynamodb": "^3.772.0",
     "framer-motion": "^12.5.0",
     "jwt-decode": "^4.0.0",
     "motion": "^12.5.0",
