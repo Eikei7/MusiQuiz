@@ -34,42 +34,42 @@ provider:
 functions:
   # Existing functions
   registerUser:
-    handler: users.registerUser
+    handler: functions/users.registerUser
     events:
       - httpApi:
           path: /register
           method: post
   
   loginUser:
-    handler: users.loginUser
+    handler: functions/users.loginUser
     events:
       - httpApi:
           path: /login
           method: post
         
   listUsers:
-    handler: users.listUsers
+    handler: functions/users.listUsers
     events:
       - httpApi:
           path: /users
           method: get
 
   deleteUser:
-    handler: users.deleteUser
+    handler: functions/users.deleteUser
     events:
       - httpApi:
           path: /users/{email}
           method: delete
 
   updateUser:
-    handler: users.updateUser
+    handler: functions/users.updateUser
     events:
       - httpApi:
           path: /users/update
           method: put
 
   updateUserStats:
-    handler: users.updateUserStats
+    handler: functions/users.updateUserStats
     events:
       - http:
           path: /users/stats/update
@@ -77,7 +77,7 @@ functions:
           cors: true
   
   getUserStats:
-    handler: users.getUserStats
+    handler: functions/users.getUserStats
     events:
       - http:
           path: /users/stats
@@ -85,7 +85,7 @@ functions:
           cors: true
 
   getAllUserStats:
-    handler: users.getAllUserStats
+    handler: functions/users.getAllUserStats
     events:
       - http:
           path: /users/stats/all
@@ -93,102 +93,102 @@ functions:
           cors: true
   
   createRoom:
-    handler: rooms.createRoom
+    handler: functions/rooms.createRoom
     events:
       - httpApi:
           path: /rooms
           method: post
   
   deleteRoom:
-    handler: rooms.deleteRoom
+    handler: functions/rooms.deleteRoom
     events:
       - httpApi:
           path: /rooms/{roomId}
           method: delete
   
   listRooms:
-    handler: rooms.listRooms
+    handler: functions/rooms.listRooms
     events:
       - httpApi:
           path: /rooms
           method: get
 
   getRoom:
-    handler: rooms.getRoom
+    handler: functions/rooms.getRoom
     events:
       - httpApi:
           path: /rooms/{roomId}
           method: get
   
   joinRoom:
-    handler: rooms.joinRoom
+    handler: functions/rooms.joinRoom
     events:
       - httpApi:
           path: /rooms/{roomId}/join
           method: post
   
   leaveRoom:
-    handler: rooms.leaveRoom
+    handler: functions/rooms.leaveRoom
     events:
       - httpApi:
           path: /rooms/{roomId}/leave
           method: post
 
   createQuestion:
-    handler: questions.createQuestion
+    handler: functions/questions.createQuestion
     events:
       - httpApi:
           path: /questions
           method: post
   
   getQuestions:
-    handler: questions.getQuestions
+    handler: functions/questions.getQuestions
     events:
       - httpApi:
           path: /questions
           method: get
   
   getQuestion:
-    handler: questions.getQuestion
+    handler: functions/questions.getQuestion
     events:
       - httpApi:
           path: /questions/{id}
           method: get
   
   updateQuestion:
-    handler: questions.updateQuestion
+    handler: functions/questions.updateQuestion
     events:
       - httpApi:
           path: /questions/{id}
           method: put
   
   deleteQuestion:
-    handler: questions.deleteQuestion
+    handler: functions/questions.deleteQuestion
     events:
       - httpApi:
           path: /questions/{id}
           method: delete
   
   connect:
-    handler: chat.connectHandler
+    handler: functions/chat.connectHandler
     events:
       - websocket:
           route: $connect
   
   disconnect:
-    handler: chat.disconnectHandler
+    handler: functions/chat.disconnectHandler
     events:
       - websocket:
           route: $disconnect
   
   default:
-    handler: chat.defaultHandler
+    handler: functions/chat.defaultHandler
     events:
       - websocket:
           route: $default
 
   startGame:
-    handler: rooms.startGame
+    handler: functions/rooms.startGame
     events:
       - httpApi:
          path: /rooms/{roomId}/start
