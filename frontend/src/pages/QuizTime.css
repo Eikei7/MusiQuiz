@@ -25,7 +25,7 @@
   justify-content: center;
   margin-bottom: 120px;
   position: relative;
-  min-height: 300px; /* Add a minimum height to accommodate the feedback area */
+  min-height: 300px; /* Maintain the minimum height */
 }
 
 .footer {
@@ -125,14 +125,16 @@
   background-color: #3a7bc8;
 }
 
-/* Feedback area */
 .feedback-area {
-  position: absolute;
+  position: absolute; /* Keep it absolute positioned */
   padding: 15px;
   border-radius: 8px;
   text-align: center;
-  max-width: 80%;
-  /* Remove top positioning */
+  left: 50%; /* Position left edge at center of container */
+  transform: translateX(-50%); /* Shift back by half its width to center it */
+  width: auto; /* Allow it to take its natural width */
+  min-width: 200px; /* Set a minimum width */
+  max-width: 80%; /* Maximum width for larger screens */
 }
 
 .feedback-area h3{
@@ -373,6 +375,34 @@
 .card-container {
   perspective: 1000px;
   margin-bottom: 20px;
+}
+
+.quiz-navigation {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+.leave-quiz-button {
+  padding: 8px 15px;
+  background-color: var(--button-red);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.leave-quiz-button:hover {
+  background-color: var(--button-red-hover);
+}
+
+.leave-quiz-button:active {
+  transform: scale(0.98);
 }
 
   @keyframes timer-pulse {

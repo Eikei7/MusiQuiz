@@ -353,7 +353,15 @@ const QuizTime = ({ roomData: propRoomData }) => {
   }
 
   return (
-    <div className="quiz-time-container">     
+    <div className="quiz-time-container">
+      <div className="quiz-navigation">
+  <button 
+    className="leave-quiz-button"
+    onClick={handleReturnToRoom}
+  >
+    Leave Quiz
+  </button>
+</div>     
       <div className="game-info">
         <div className="turn-indicator">
           <span className="turn-label">Turn:</span>
