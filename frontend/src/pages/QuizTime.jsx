@@ -363,6 +363,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
   </button>
 </div>     
       <div className="game-info">
+        <div>
         <div className="turn-indicator">
           <span className="turn-label">Turn:</span>
           <span className="current-player">
@@ -373,7 +374,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
         <div className="round-indicator">
           <span>Round {currentRound} of {maxRounds}</span>
         </div>
-        
+        </div>
         <div className={`timer ${timeLeft <= 5 ? 'timer-warning' : ''}`}>
           Time: {timeLeft}s
         </div>

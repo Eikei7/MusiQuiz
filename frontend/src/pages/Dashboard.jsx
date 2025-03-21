@@ -18,6 +18,9 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [joiningRoom, setJoiningRoom] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const [showRoomWarning, setShowRoomWarning] = useState(false);
+  const [activeRoom, setActiveRoom] = useState(null);
 
   // User settings state
   const [showUserSettings, setShowUserSettings] = useState(false);
@@ -94,6 +97,7 @@ function Dashboard() {
   useEffect(() => {
     document.title = 'MusiQuiz - Dashboard';
     fetchRooms();
+    checkUserInRoom();
   }, []);
 
   const fetchRooms = async () => {
@@ -120,7 +124,43 @@ function Dashboard() {
       setLoading(false);
     }
   };
-
+  const checkUserInRoom = async () => {
+    try {
+      const response = await fetch(ENDPOINT_ROOMS, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const roomsArray = Array.isArray(data) ? data : (data.rooms || []);
+        
+        // Check if user is in any room
+        for (const room of roomsArray) {
+          if (Array.isArray(room.players)) {
+            const userInRoom = room.players.some(player => {
+              const playerEmail = typeof player === 'object' ? player.email : player;
+              return playerEmail === user?.email;
+            });
+            
+            if (userInRoom) {
+              setActiveRoom({
+                roomId: room.roomId || room.id,
+                name: room.name
+              });
+              setShowRoomWarning(true);
+              break;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking if user is in room:', error);
+    } finally {
+      setIsChecking(false);
+    }
+  };
   const handleJoinRoom = async () => {
     if (!selectedRoom) {
       alert('Please select a room to join.');
@@ -156,6 +196,12 @@ function Dashboard() {
     } finally {
       setJoiningRoom(false);
     }
+  };
+  const handleGoToRoom = () => {
+    if (activeRoom && activeRoom.roomId) {
+      navigate(`/rooms/${activeRoom.roomId}`);
+    }
+    setShowRoomWarning(false);
   };
 
   useEffect(() => {
@@ -383,6 +429,26 @@ function Dashboard() {
       <footer className="dashboard-footer">
         <p>&copy; 2025 MusiQuiz. All rights reserved.</p>
       </footer>
+      {showRoomWarning && (
+  <div className="modal-overlay">
+    <div className="modal-container">
+      <div className="modal-header">
+        <h2>You're Still in a Room</h2>
+      </div>
+      <div className="modal-body">
+        <p>You're currently in the room "{activeRoom.name}". You should leave the room first before using the dashboard.</p>
+      </div>
+      <div className="modal-footer">
+        <button 
+          className="btn btn-primary"
+          onClick={handleGoToRoom}
+        >
+          Return to Room
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
