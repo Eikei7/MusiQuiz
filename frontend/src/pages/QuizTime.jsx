@@ -363,14 +363,13 @@ const QuizTime = ({ roomData: propRoomData }) => {
   </button>
 </div>     
       <div className="game-info">
-        <div>
+        <div className="game-header">
         <div className="turn-indicator">
           <span className="turn-label">Turn:</span>
           <span className="current-player">
             {isMyTurn() ? ' Your Turn' : ` ${getCurrentPlayerName()}'s turn`}
           </span>
         </div>
-        
         <div className="round-indicator">
           <span>Round {currentRound} of {maxRounds}</span>
         </div>

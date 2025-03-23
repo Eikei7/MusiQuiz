@@ -70,6 +70,13 @@ input {
   }
 }
 
+@media (min-width: 768px) {
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
 /* @media (max-width: 1270px) {
   body {
     min-height: 110vh;
@@ -79,12 +86,6 @@ input {
 @media (max-width: 966px) {
   body {
     min-height: 160vh;
-  }
-}
-
-@media (max-width: 768px) {
-  body {
-    min-height: 170vh;
   }
 }
 
