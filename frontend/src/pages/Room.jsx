@@ -223,9 +223,8 @@ function Room() {
     <div className="room-container">
       <header className="room-header">
         <h1>Room: {room?.name}</h1>
-        <div className="user-info">
-          <button onClick={handleLeaveRoom} className="leave-button">Leave Room</button>
-        </div>
+        <button onClick={handleLeaveRoom} className="leave-button">Leave Room</button>
+
       </header>
       
       <div className="room-content">

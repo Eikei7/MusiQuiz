@@ -399,12 +399,15 @@ const QuizTime = ({ roomData: propRoomData }) => {
       </div>
       
       <div className="quiz-content">
-  <Card 
-    key={cardKey}
-    id="question-card"
-    token={token}
-    onQuestionLoaded={handleQuestionLoaded}
-  />
+      <Card 
+  key={cardKey}
+  id="question-card"
+  token={token}
+  onQuestionLoaded={handleQuestionLoaded}
+  isAnswerCorrect={isAnswerCorrect}  // Pass this prop
+  selectedAnswer={selectedAnswer}    // Pass this prop
+  showCorrectAnswer={isAnswerCorrect !== null} // Show correct answer after submission
+/>
   
   <div className="feedback-container">
     {isMyTurn() && selectedAnswer !== null && isAnswerCorrect === null && (

@@ -70,27 +70,9 @@ input {
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1271px) {
   body {
     height: 100%;
     overflow: hidden;
   }
 }
-
-/* @media (max-width: 1270px) {
-  body {
-    min-height: 110vh;
-  }
-}
-
-@media (max-width: 966px) {
-  body {
-    min-height: 160vh;
-  }
-}
-
-@media (max-width: 480px) {
-  body {
-    min-height: 180vh;
-  }
-} */

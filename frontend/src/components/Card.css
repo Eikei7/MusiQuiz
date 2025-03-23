@@ -70,3 +70,26 @@
 .correct {
   background-color: rgba(255, 255, 255, 0.2);
 }
+
+.card-choice-item.correct-answer {
+  background-color: rgba(76, 175, 80, 0.3); /* light green */
+  border: 2px solid #4CAF50;
+}
+
+.card-choice-item.selected-correct {
+  background-color: rgba(76, 175, 80, 0.3); /* light green */
+  border: 2px solid #4CAF50;
+}
+
+.card-choice-item.selected-incorrect {
+  background-color: rgba(255, 87, 34, 0.3); /* light red/orange */
+  border: 2px solid #FF5722;
+}
+
+.correct-badge {
+  position: absolute;
+  right: 10px;
+  color: #4CAF50;
+  font-weight: bold;
+  font-size: 18px;
+}

@@ -31,7 +31,10 @@ const SHOWN_QUESTIONS_KEY = 'musiquiz_shown_questions';
 const Card = ({
   id,
   token,
-  onQuestionLoaded
+  onQuestionLoaded,
+  isAnswerCorrect,
+  selectedAnswer,
+  showCorrectAnswer
 }) => {
   const [question, setQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -205,10 +208,20 @@ const Card = ({
                     {question.choices.map((choice, index) => (
                       <div
                         key={index}
-                        className="card-choice-item"
+                        className={`card-choice-item ${
+                          // Highlight correct answer when showing result
+                          showCorrectAnswer && index === question.correctAnswerIndex ? 'correct-answer' : ''
+                        } ${
+                          // Highlight selected answer
+                          showCorrectAnswer && selectedAnswer === index ? 
+                            (isAnswerCorrect ? 'selected-correct' : 'selected-incorrect') : ''
+                        }`}
                       >
                         <span className="choice-marker">{String.fromCharCode(65 + index)}.</span>
                         <span className="choice-text">{choice}</span>
+                        {showCorrectAnswer && index === question.correctAnswerIndex && (
+                          <span className="correct-badge">✓</span>
+                        )}
                       </div>
                     ))}
                   </div>
