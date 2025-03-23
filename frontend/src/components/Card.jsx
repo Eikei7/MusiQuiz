@@ -26,6 +26,8 @@ const cardColors = [
   '#FFBF69' 
 ];
 
+const SHOWN_QUESTIONS_KEY = 'musiquiz_shown_questions';
+
 const Card = ({
   id,
   token,
@@ -67,6 +69,26 @@ const Card = ({
     }
   };
 
+  // Get shown questions from storage
+  const getShownQuestions = () => {
+    const shownQuestions = localStorage.getItem(SHOWN_QUESTIONS_KEY);
+    return shownQuestions ? JSON.parse(shownQuestions) : [];
+  };
+
+  // Add a question to the shown questions list
+  const markQuestionAsShown = (questionId) => {
+    const shownQuestions = getShownQuestions();
+    if (!shownQuestions.includes(questionId)) {
+      shownQuestions.push(questionId);
+      localStorage.setItem(SHOWN_QUESTIONS_KEY, JSON.stringify(shownQuestions));
+    }
+  };
+
+  // Reset shown questions (optional - could add a button for this)
+  const resetShownQuestions = () => {
+    localStorage.removeItem(SHOWN_QUESTIONS_KEY);
+  };
+
   useEffect(() => {
     // Prevent effect from running more than once per instance
     if (effectHasRunRef.current) {
@@ -94,20 +116,38 @@ const Card = ({
           throw new Error('Failed to fetch questions');
         }
 
-        const questions = await response.json();
+        const allQuestions = await response.json();
 
         // If no questions available
-        if (!questions || questions.length === 0) {
+        if (!allQuestions || allQuestions.length === 0) {
           setError('No questions available');
           setLoading(false);
           return;
         }
 
-        // Select a random question
-        const randomIndex = Math.floor(Math.random() * questions.length);
-        const randomQuestion = questions[randomIndex];
+        // Get the list of already shown questions
+        const shownQuestions = getShownQuestions();
+        
+        // Filter out questions that have already been shown
+        const availableQuestions = allQuestions.filter(q => !shownQuestions.includes(q.id));
+        
+        // If all questions have been shown, either reset or show message
+        if (availableQuestions.length === 0) {
+          // Option 1: Reset the shown questions list and use all questions
+          resetShownQuestions();
+          console.log('All questions have been shown. Resetting the list.');
+          
+          // Use all questions after reset
+          availableQuestions.push(...allQuestions);
+        }
 
-        // console.log('Card: Selected random question:', randomQuestion);
+        // Select a random question from available questions
+        const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+        const randomQuestion = availableQuestions[randomIndex];
+
+        // Mark this question as shown
+        markQuestionAsShown(randomQuestion.id);
+
         setQuestion(randomQuestion);
         
         // Notify parent component about the loaded question, but only once
@@ -116,7 +156,6 @@ const Card = ({
             id: randomQuestion.id,
             correctAnswerIndex: Number(randomQuestion.correctAnswerIndex)
           };
-          // console.log('Card: Notifying parent with question data:', questionData);
           onQuestionLoaded(questionData);
           questionLoadedRef.current = true;
         }
@@ -128,16 +167,14 @@ const Card = ({
       }
     };
 
-    // Select a random color from our predefined array
     const selectRandomColor = () => {
       const randomIndex = Math.floor(Math.random() * cardColors.length);
       setBackgroundColor(cardColors[randomIndex]);
     };
 
-    // Call the functions when the component mounts
     fetchRandomQuestion();
     selectRandomColor();
-  }, [token, id, onQuestionLoaded]); // Adding back onQuestionLoaded but with safeguards
+  }, [token, id, onQuestionLoaded]);
 
   return (
     <div className="card-container" style={{ perspective: '1000px' }}>
@@ -146,7 +183,6 @@ const Card = ({
         initial="initial"
         animate="animate"
         variants={cardVariants}
-        // whileHover={{ scale: 1.05 }}
         style={{
           cursor: 'default',
           backgroundColor,
