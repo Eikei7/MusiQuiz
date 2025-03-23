@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import './Dashboard.css';
 import { ENDPOINT_ROOMS, ENDPOINT_USERS_STATS, ENDPOINT_USERS_UPDATE } from '../endpoints';
+import HamburgerMenu from '../components/HamburgerMenu';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -240,6 +241,11 @@ function Dashboard() {
           </button>
           <button onClick={logout} className="logout-button">Logout</button>
         </div>
+        <HamburgerMenu 
+          user={user} 
+          logout={logout} 
+          onSettingsClick={() => setShowUserSettings(true)} 
+        />
       </header>
 
       <main className="dashboard-main">

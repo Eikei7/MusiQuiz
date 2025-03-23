@@ -516,6 +516,14 @@
   .dashboard-main {
     padding: 1rem;
   }
+
+  .room-container {
+    width: 75vw;
+  }
+
+  .room-card {
+    padding: 1.2rem;
+  }
   
   .rooms-grid {
     grid-template-columns: 1fr;
@@ -590,3 +598,5 @@
   .start-quiz-button:hover {
     background-color: #45a049;
   }
+
+  

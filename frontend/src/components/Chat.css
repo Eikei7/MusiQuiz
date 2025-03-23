@@ -95,8 +95,11 @@
   /* Media query for responsiveness */
   @media (max-width: 768px) {
     .chat-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       padding: 10px;
-      height: 40vh; /* Slightly taller on mobile */
+      height: 40vh;
     }
     
     .chat {
@@ -105,5 +108,30 @@
     
     .message {
       max-width: 100%;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .chat-container {
+      height: 50vh;
+    }
+    
+    .chat {
+      max-height: calc(50vh - 105px);
+    }
+
+    .input-send {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .message-input {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      width: 95%;
     }
   }

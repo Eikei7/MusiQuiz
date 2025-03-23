@@ -245,7 +245,7 @@ function Room() {
                 )}
               </div>
             ) : (
-              <p>Waiting for at least one more player to join...</p>
+              <p>Waiting for one more player to join...</p>
             )}
           </div>
           <div className="room-chat">

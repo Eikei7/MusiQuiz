@@ -13,7 +13,7 @@ function Signup() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -27,7 +27,6 @@ function Signup() {
     setError('');
     setSuccess('');
     
-    // Validate form
     if (!formData.email || !formData.password || !formData.confirmPassword) {
       setError('All fields are required');
       return;
@@ -120,7 +119,6 @@ function Signup() {
             />
           </div>
           
-          {/* Optional name fields */}
           <div className="input-group">
             <input 
               type="text" 
@@ -128,7 +126,7 @@ function Signup() {
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              placeholder="First Name (optional)" 
+              placeholder="First Name" 
               autoComplete="given-name"
             />
           </div>
@@ -139,7 +137,7 @@ function Signup() {
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              placeholder="Last Name (optional)" 
+              placeholder="Last Name" 
               autoComplete="family-name"
             />
           </div>
