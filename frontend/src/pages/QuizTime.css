@@ -1,6 +1,3 @@
-/* QuizTime.css - Improved version */
-
-/* Layout & Container Styles */
 .quiz-time-container {
   position: absolute;
   top: 0;
@@ -35,7 +32,6 @@
   z-index: 10;
 }
 
-/* Game Info & Navigation */
 .quiz-navigation {
   position: absolute;
   top: 10px;
@@ -114,7 +110,6 @@
   100% { transform: scale(1); }
 }
 
-/* Scores Panel */
 .scores-panel {
   display: flex;
   justify-content: center;
@@ -157,7 +152,6 @@
   color: #fff;
 }
 
-/* Answer Box Styles */
 .hotspots-container {
   display: flex;
   justify-content: center;
@@ -222,7 +216,6 @@
   margin-top: 5px;
 }
 
-/* Feedback Area */
 .feedback-container {
   width: 100%;
   display: flex;
@@ -312,7 +305,6 @@
   font-style: italic;
 }
 
-/* Game Over Screen */
 .game-over {
   text-align: center;
   padding: 30px;
@@ -377,7 +369,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Loading & Error States */
 .loading-screen, .error-screen {
   display: flex;
   flex-direction: column;
@@ -392,13 +383,11 @@
   color: #f44336;
 }
 
-/* Card Container */
 .card-container {
   perspective: 1000px;
   margin-bottom: 20px;
 }
 
-/* Backward compatibility for answer-hotspot */
 .answer-hotspot {
   width: 100px;
   height: 50px;
