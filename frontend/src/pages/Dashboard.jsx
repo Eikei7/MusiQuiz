@@ -442,7 +442,7 @@ function Dashboard() {
         <h2>You're Still in a Room</h2>
       </div>
       <div className="modal-body">
-        <p>You're currently in the room "{activeRoom.name}". You should leave the room first before using the dashboard.</p>
+        <p>You're currently in the room {activeRoom.name}. You should leave the room first before using the dashboard.</p>
       </div>
       <div className="modal-footer">
         <button 
