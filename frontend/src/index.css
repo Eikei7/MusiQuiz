@@ -15,7 +15,6 @@
 
   color-scheme: light;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #b4bcc1;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -70,23 +69,27 @@ input {
     background-position: 0% 50%;
   }
 }
-@media (max-width: 1270px) {
+
+/* @media (max-width: 1270px) {
   body {
-    min-height: 113vh;
+    min-height: 110vh;
   }
 }
+
 @media (max-width: 966px) {
   body {
-    height: 158vh;
+    min-height: 160vh;
   }
 }
+
 @media (max-width: 768px) {
   body {
-    height: 162vh;
+    min-height: 170vh;
   }
 }
+
 @media (max-width: 480px) {
   body {
-    height: 169vh;
+    min-height: 180vh;
   }
-}
+} */
