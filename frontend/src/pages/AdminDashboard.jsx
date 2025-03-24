@@ -56,7 +56,7 @@ function AdminDashboard() {
     fetchQuestions();
     fetchRooms();
   }, []);
-
+  // Fetch users from API
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -81,7 +81,7 @@ function AdminDashboard() {
       setLoading(false);
     }
   };
-
+  // Handle user input change
   const handleUserInputChange = (e) => {
     const { name, value } = e.target;
     setNewUserData({
@@ -90,7 +90,7 @@ function AdminDashboard() {
     });
   };
   
-  // Add this function to handle form submission
+  // Add new user
   const handleAddUser = async (e) => {
     e.preventDefault();
     setAddUserError('');
@@ -107,7 +107,7 @@ function AdminDashboard() {
   }
   
   setAddingUser(true);
-  
+  // Send the new user data to the server
   try {
     const response = await fetch(ENDPOINT_REGISTER, {
       method: 'POST',
@@ -151,18 +151,16 @@ function AdminDashboard() {
     setAddingUser(false);
   }
 };
-
+  // Delete user
   const confirmDeleteUser = (email) => {
     setDeletingUserEmail(email);
     setShowDeleteUserConfirmation(true);
   };
-  
+  // Handle user deletion
   const handleDeleteUser = async () => {
     if (!deletingUserEmail) return;
     
     try {
-      // Replace the hardcoded URL with your endpoint constant
-      // and replace {email} with the actual email value
       const url = ENDPOINT_USERS_DELETE.replace('{email}', encodeURIComponent(deletingUserEmail));
       
       const response = await fetch(url, {
@@ -189,7 +187,7 @@ function AdminDashboard() {
       alert(`Failed to delete user: ${err.message}`);
     }
   };
-
+  // Filter users based on search query
   const filteredUsers = useMemo(() => {
     if (!searchQuery.trim()) return users;
     
@@ -201,7 +199,7 @@ function AdminDashboard() {
       (user.role && user.role.toLowerCase().includes(query))
     );
   }, [users, searchQuery]);
-
+  // Fetch questions from API
   const fetchQuestions = async () => {
     try {
       const response = await fetch(ENDPOINT_QUESTIONS_GET, {
@@ -221,7 +219,7 @@ function AdminDashboard() {
       // Not setting the main error state to avoid disrupting the UI
     }
   };
-
+  // Fetch rooms from API
   const fetchRooms = async () => {
     try {
       const response = await fetch(ENDPOINT_ROOMS_GET, {
@@ -241,7 +239,7 @@ function AdminDashboard() {
       // Not setting the main error state to avoid disrupting the UI
     }
   };
-
+  // Create new room
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     
@@ -285,12 +283,12 @@ function AdminDashboard() {
       setCreatingRoom(false);
     }
   };
-
+  // Delete room
   const confirmDeleteRoom = (roomId) => {
     setDeletingRoomId(roomId);
     setShowDeleteConfirmation(true);
   };
-
+  // Handle room deletion
   const handleDeleteRoom = async () => {
     if (!deletingRoomId) return;
     
@@ -414,116 +412,116 @@ function AdminDashboard() {
               Add New User
               </button>
               {/* Add User Modal */}
-{showAddUserModal && (
-  <div className="modal-overlay">
-    <div className="modal-container">
-      <div className="modal-header">
-        <h2>Add New User</h2>
-        <button 
-          className="modal-close"
-          onClick={() => setShowAddUserModal(false)}
-        >
-          &times;
-        </button>
-      </div>
-      
-      <form onSubmit={handleAddUser}>
-        <div className="modal-body">
-          {addUserError && <div className="error-message">{addUserError}</div>}
-          
-          <div className="form-group">
-            <label htmlFor="email">Email (required)</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={newUserData.email}
-              onChange={handleUserInputChange}
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="password">Password (required)</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={newUserData.password}
-              onChange={handleUserInputChange}
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password (required)</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={newUserData.confirmPassword}
-              onChange={handleUserInputChange}
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="firstName">First Name</label>
-            <input
-              type="text"
-              id="firstName"
-              name="firstName"
-              value={newUserData.firstName}
-              onChange={handleUserInputChange}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="lastName">Last Name</label>
-            <input
-              type="text"
-              id="lastName"
-              name="lastName"
-              value={newUserData.lastName}
-              onChange={handleUserInputChange}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="role">Role</label>
-            <select
-              id="role"
-              name="role"
-              value={newUserData.role}
-              onChange={handleUserInputChange}
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="modal-footer">
-          <button 
-            type="button" 
-            className="btn btn-secondary"
-            onClick={() => setShowAddUserModal(false)}
-            disabled={addingUser}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={addingUser}
-          >
-            {addingUser ? 'Adding...' : 'Add User'}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
+              {showAddUserModal && (
+                <div className="modal-overlay">
+                  <div className="modal-container">
+                    <div className="modal-header">
+                      <h2>Add New User</h2>
+                      <button 
+                        className="modal-close"
+                        onClick={() => setShowAddUserModal(false)}
+                      >
+                        &times;
+                      </button>
+                    </div>
+                    
+                    <form onSubmit={handleAddUser}>
+                      <div className="modal-body">
+                        {addUserError && <div className="error-message">{addUserError}</div>}
+                        
+                        <div className="form-group">
+                          <label htmlFor="email">Email (required)</label>
+                          <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            value={newUserData.email}
+                            onChange={handleUserInputChange}
+                            required
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label htmlFor="password">Password (required)</label>
+                          <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            value={newUserData.password}
+                            onChange={handleUserInputChange}
+                            required
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label htmlFor="confirmPassword">Confirm Password (required)</label>
+                          <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            value={newUserData.confirmPassword}
+                            onChange={handleUserInputChange}
+                            required
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label htmlFor="firstName">First Name</label>
+                          <input
+                            type="text"
+                            id="firstName"
+                            name="firstName"
+                            value={newUserData.firstName}
+                            onChange={handleUserInputChange}
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label htmlFor="lastName">Last Name</label>
+                          <input
+                            type="text"
+                            id="lastName"
+                            name="lastName"
+                            value={newUserData.lastName}
+                            onChange={handleUserInputChange}
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label htmlFor="role">Role</label>
+                          <select
+                            id="role"
+                            name="role"
+                            value={newUserData.role}
+                            onChange={handleUserInputChange}
+                          >
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="modal-footer">
+                        <button 
+                          type="button" 
+                          className="btn btn-secondary"
+                          onClick={() => setShowAddUserModal(false)}
+                          disabled={addingUser}
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          type="submit" 
+                          className="btn btn-primary"
+                          disabled={addingUser}
+                        >
+                          {addingUser ? 'Adding...' : 'Add User'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
                 <div className="admin-search">
                   <input 
                     type="text" 
@@ -665,49 +663,49 @@ function AdminDashboard() {
       </main>
 
       {/* Delete User Confirmation Modal */}
-{showDeleteUserConfirmation && (
-  <div className="modal-overlay">
-    <div className="modal-container delete-confirmation">
-      <div className="modal-header">
-        <h2>Confirm User Deletion</h2>
-        <button 
-          className="modal-close"
-          onClick={() => {
-            setShowDeleteUserConfirmation(false);
-            setDeletingUserEmail(null);
-          }}
-        >
-          &times;
-        </button>
-      </div>
-      <div className="modal-body">
-        <p className='warning-text'>Are you sure you want to delete the user with email: <strong>{deletingUserEmail}</strong>?</p>
-        <p className="warning-text">
-          This action cannot be undone. All user data will be permanently deleted.
-        </p>
-      </div>
-      <div className="modal-footer">
-        <button 
-          type="button" 
-          className="btn btn-secondary"
-          onClick={() => {
-            setShowDeleteUserConfirmation(false);
-            setDeletingUserEmail(null);
-          }}
-        >
-          Cancel
-        </button>
-        <button 
-          type="button" 
-          className="btn btn-danger"
-          onClick={handleDeleteUser}
-        >
-          Delete User
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          {showDeleteUserConfirmation && (
+            <div className="modal-overlay">
+              <div className="modal-container delete-confirmation">
+                <div className="modal-header">
+                  <h2>Confirm User Deletion</h2>
+                  <button 
+                    className="modal-close"
+                    onClick={() => {
+                      setShowDeleteUserConfirmation(false);
+                      setDeletingUserEmail(null);
+                    }}
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="modal-body">
+                <p className='warning-text'>Are you sure you want to delete the user with email: <strong>{deletingUserEmail}</strong>?</p>
+                <p className="warning-text">
+                  This action cannot be undone. All user data will be permanently deleted.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowDeleteUserConfirmation(false);
+                    setDeletingUserEmail(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-danger"
+                  onClick={handleDeleteUser}
+                >
+                  Delete User
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       {/* Room Creation Modal */}
       {showRoomModal && (
         <div className="modal-overlay">

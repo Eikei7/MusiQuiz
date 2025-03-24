@@ -8,7 +8,7 @@ const TokenExpirationTimer = () => {
   
   useEffect(() => {
     if (!token) return;
-    
+    // Get the token expiration date
     const expiration = getTokenExpiration(token);
     if (!expiration) return;
     

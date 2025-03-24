@@ -34,7 +34,6 @@ function Login() {
     setLoading(true);
     
     try {
-      // Use the context login function instead of your own implementation
       const result = await login(formData.email, formData.password);
       
       if (!result.success) {

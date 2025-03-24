@@ -355,13 +355,13 @@ const QuizTime = ({ roomData: propRoomData }) => {
   return (
     <div className="quiz-time-container">
       <div className="quiz-navigation">
-  <button 
-    className="leave-quiz-button"
-    onClick={handleReturnToRoom}
-  >
-    Leave Quiz
-  </button>
-</div>     
+        <button 
+        className="leave-quiz-button"
+        onClick={handleReturnToRoom}
+        >
+        Leave Quiz
+        </button>
+      </div>     
       <div className="game-info">
         <div className="game-header">
         <div className="turn-indicator">
@@ -399,49 +399,48 @@ const QuizTime = ({ roomData: propRoomData }) => {
       </div>
       
       <div className="quiz-content">
-      <Card 
-  key={cardKey}
-  id="question-card"
-  token={token}
-  onQuestionLoaded={handleQuestionLoaded}
-  isAnswerCorrect={isAnswerCorrect}  // Pass this prop
-  selectedAnswer={selectedAnswer}    // Pass this prop
-  showCorrectAnswer={isAnswerCorrect !== null} // Show correct answer after submission
-/>
+        <Card 
+        key={cardKey}
+        id="question-card"
+        token={token}
+        onQuestionLoaded={handleQuestionLoaded}
+        isAnswerCorrect={isAnswerCorrect}
+        selectedAnswer={selectedAnswer}
+        showCorrectAnswer={isAnswerCorrect !== null}/>
   
-  <div className="feedback-container">
-    {isMyTurn() && selectedAnswer !== null && isAnswerCorrect === null && (
-      <div className="submit-area">
-        <button 
-          className="submit-answer-button"
-          onClick={handleSubmitAnswer}
-        >
-          Submit Answer
-        </button>
-      </div>
-    )}
-    
-    {isAnswerCorrect !== null && (
-      <div className={`feedback-area ${isAnswerCorrect ? 'correct' : 'incorrect'}`}>
-        <h3>{isAnswerCorrect ? 'Correct!' : 'Incorrect!'}</h3>
-        {isMyTurn() && (
-          <button 
-            className="next-question-button"
-            onClick={handleNextTurn}
-          >
-            Next Turn
-          </button>
+        <div className="feedback-container">
+          {isMyTurn() && selectedAnswer !== null && isAnswerCorrect === null && (
+            <div className="submit-area">
+              <button 
+                className="submit-answer-button"
+                onClick={handleSubmitAnswer}
+              >
+                Submit Answer
+              </button>
+            </div>
+          )}
+          {/* Show feedback if answer is correct or incorrect */}
+        {isAnswerCorrect !== null && (
+          <div className={`feedback-area ${isAnswerCorrect ? 'correct' : 'incorrect'}`}>
+            <h3>{isAnswerCorrect ? 'Correct!' : 'Incorrect!'}</h3>
+            {isMyTurn() && (
+              <button 
+                className="next-question-button"
+                onClick={handleNextTurn}
+              >
+                Next Turn
+              </button>
+            )}
+          </div>
         )}
+          {/* Show waiting message if it's not the current player's turn */}
+          {!isMyTurn() && isAnswerCorrect === null && (
+            <div className="waiting-message">
+              <p>Waiting for {getCurrentPlayerName()} to answer...</p>
+            </div>
+          )}
+        </div>
       </div>
-    )}
-    
-    {!isMyTurn() && isAnswerCorrect === null && (
-      <div className="waiting-message">
-        <p>Waiting for {getCurrentPlayerName()} to answer...</p>
-      </div>
-    )}
-  </div>
-</div>
       
       <QuizFooter 
         selectedHotspot={selectedAnswer}

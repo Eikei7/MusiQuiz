@@ -18,6 +18,7 @@ const AdminStats = () => {
     const now = new Date();
     const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
     
+    // Return formatted date string based on days difference
     if (diffInDays === 0) {
       return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     } else if (diffInDays === 1) {
@@ -71,10 +72,10 @@ const AdminStats = () => {
   // Handle sorting
   const handleSort = (field) => {
     if (sortField === field) {
-      // Toggle direction if clicking the same field
+
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      // Default to ascending for a new field
+
       setSortField(field);
       setSortDirection('asc');
     }
@@ -85,12 +86,12 @@ const AdminStats = () => {
     let aValue, bValue;
 
     if (sortField.includes('.')) {
-      // Handle nested fields like 'stats.gamesPlayed'
+
       const [parent, child] = sortField.split('.');
       aValue = a[parent] ? a[parent][child] : 0;
       bValue = b[parent] ? b[parent][child] : 0;
     } else {
-      // Handle top-level fields
+
       aValue = a[sortField];
       bValue = b[sortField];
     }

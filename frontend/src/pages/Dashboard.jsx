@@ -36,6 +36,7 @@ function Dashboard() {
   const [updateSuccess, setUpdateSuccess] = useState('');
   const [updating, setUpdating] = useState(false);
 
+  // Handle user settings change
   const handleSettingsChange = (e) => {
     const { name, value } = e.target;
     setUserSettings({
@@ -43,7 +44,7 @@ function Dashboard() {
       [name]: value
     });
   };
-
+  // Update user information
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     setUpdateError('');
@@ -56,7 +57,7 @@ function Dashboard() {
     }
     
     setUpdating(true);
-    
+    // Make the API call to update user information
     try {
       const response = await fetch(ENDPOINT_USERS_UPDATE, {
         method: 'PUT',
@@ -94,13 +95,13 @@ function Dashboard() {
       setUpdating(false);
     }
   };
-
+  
   useEffect(() => {
     document.title = 'MusiQuiz - Dashboard';
     fetchRooms();
     checkUserInRoom();
   }, []);
-
+  // Fetch rooms from API
   const fetchRooms = async () => {
     try {
       setLoading(true);
@@ -125,6 +126,7 @@ function Dashboard() {
       setLoading(false);
     }
   };
+  // Check if user is in any room
   const checkUserInRoom = async () => {
     try {
       const response = await fetch(ENDPOINT_ROOMS, {
@@ -137,7 +139,6 @@ function Dashboard() {
         const data = await response.json();
         const roomsArray = Array.isArray(data) ? data : (data.rooms || []);
         
-        // Check if user is in any room
         for (const room of roomsArray) {
           if (Array.isArray(room.players)) {
             const userInRoom = room.players.some(player => {
@@ -198,6 +199,7 @@ function Dashboard() {
       setJoiningRoom(false);
     }
   };
+  // Handle navigation to room
   const handleGoToRoom = () => {
     if (activeRoom && activeRoom.roomId) {
       navigate(`/rooms/${activeRoom.roomId}`);
