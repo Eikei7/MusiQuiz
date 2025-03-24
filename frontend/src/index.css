@@ -42,7 +42,7 @@ body {
    rgba(252,122,122,1) 100%);
   background-size: 200% 200%;
   animation: gradient 25s ease infinite;
-  overflow-y: hidden;
+  /* overflow-y: hidden; */
 }
 
 a {
@@ -69,10 +69,3 @@ input {
     background-position: 0% 50%;
   }
 }
-/* 
-@media (min-width: 1271px) {
-  body {
-    height: 100vh;
-    overflow-y: scroll;
-  }
-} */
