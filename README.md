@@ -43,4 +43,3 @@ MusiQuiz is an interactive web application that allows users to test their music
 ## Future Enhancement ideas
 
 * Leaderboards for tracking top players
-* Mobile application support
