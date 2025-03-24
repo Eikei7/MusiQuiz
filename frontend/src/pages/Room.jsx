@@ -48,7 +48,7 @@ function Room() {
         }
         
         const roomData = await response.json();
-        console.log('Polling received updated room data:', roomData);
+        // console.log('Polling received updated room data:', roomData);
         
         // Check if the game has started
         if (roomData.gameStarted && !quizStarted) {
@@ -161,7 +161,7 @@ function Room() {
   useEffect(() => {
     // Log detected duplicates
     if (room?.players) {
-      console.log('Player list:', room.players);
+      // console.log('Player list:', room.players);
       const emails = room.players.map(p => typeof p === 'object' ? p.email : p);
       const duplicates = emails.filter((email, index) => emails.indexOf(email) !== index);
       if (duplicates.length > 0) {

@@ -86,6 +86,26 @@
     background-color: #3367d6;
   }
   
+  .system-message {
+    text-align: center;
+    margin: 8px 0;
+    color: #6c757d;
+  }
+  
+  .system-message-content {
+    display: inline-block;
+    background-color: #f8f9fa;
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-size: 0.9em;
+  }
+  
+  .system-message .timestamp {
+    font-size: 0.8em;
+    margin-left: 6px;
+    opacity: 0.7;
+  }
+  
   @media (max-width: 768px) {
     .chat-container {
       justify-content: space-between;

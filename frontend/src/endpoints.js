@@ -22,6 +22,6 @@ export const ENDPOINT_QUESTIONS_DELETE =  `${API_BASE}/questions/{id}`;      //D
 export const ENDPOINT_QUESTIONS_UPDATE =  `${API_BASE}/questions/{id}`;      //PUT
 
 
-export const ENDPOINT_ROOM_CONNECTIONS = 'wss://2rd7r2g07b.execute-api.eu-north-1.amazonaws.com/dev';
-export const ENDPOINT_CHAT =             'wss://4nymssc2pg.execute-api.eu-north-1.amazonaws.com/dev';
+export const ENDPOINT_CHAT = 'wss://2rd7r2g07b.execute-api.eu-north-1.amazonaws.com/dev';
+// export const ENDPOINT_CHAT =             'wss://4nymssc2pg.execute-api.eu-north-1.amazonaws.com/dev';
 

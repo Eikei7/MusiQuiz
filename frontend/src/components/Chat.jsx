@@ -11,6 +11,8 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [displayName, setDisplayName] = useState('');
   const chatContainerRef = useRef(null);
+  // Track whether we've joined already to prevent duplicate join messages
+  const [hasJoined, setHasJoined] = useState(false);
 
   // Set display name based on user info from Auth context
   useEffect(() => {
@@ -77,6 +79,27 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
     }
   }, [externalWs]);
 
+  // Join the chat with current display name when connection is established
+  useEffect(() => {
+    // Only send join message when connection is OPEN, we have a display name, and haven't joined yet
+    if (ws && ws.readyState === WebSocket.OPEN && displayName && !hasJoined && connectionStatus === 'connected') {
+      console.log('Sending join message with displayName:', displayName);
+      
+      try {
+        ws.send(JSON.stringify({
+          action: 'joinchat', // Make sure this matches the route in serverless.yml
+          displayName,
+          roomId: selectedRoom?.roomId
+        }));
+        
+        // Mark that we've joined to prevent sending duplicate join messages
+        setHasJoined(true);
+      } catch (error) {
+        console.error('Error joining chat:', error);
+      }
+    }
+  }, [ws, displayName, selectedRoom, connectionStatus, hasJoined]);
+
   // Handle incoming messages
   useEffect(() => {
     if (!ws) return;
@@ -84,23 +107,39 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
     let isMounted = true;
     
     const handleMessage = (event) => {
-      console.log('WebSocket message received:', event.data);
+      // console.log('WebSocket message received:', event.data);
       
       try {
         const data = JSON.parse(event.data);
         
-        // Only handle chat messages, not room updates
-        if (data.type === "message" || (!data.type && data.message)) {
-          console.log('Chat message received:', data);
-          if (isMounted) {
+        if (isMounted) {
+          // Handle regular chat messages
+          if (data.type === "message" || (!data.type && data.message)) {
+            // console.log('Chat message received:', data);
             setMessages((prev) => [...prev, { 
-              message: data.message, 
+              message: data.message || data.content, 
               timestamp: data.timestamp || Date.now(), 
-              displayName: data.displayName 
+              displayName: data.displayName || data.sender,
+              type: "message"
             }]);
+          } 
+          // Handle system messages (user join/leave, etc.)
+          else if (data.type === "system") {
+            console.log('System message received:', data);
+            setMessages((prev) => [...prev, {
+              message: data.content,
+              timestamp: data.timestamp || Date.now(),
+              type: "system"
+            }]);
+          } 
+          // Handle users list updates
+          else if (data.type === "users") {
+            console.log('Users list received:', data);
+            // You can add additional state to track users if needed
+          } 
+          else {
+            console.log('Message not handled by Chat component:', data);
           }
-        } else {
-          console.log('Message not handled by Chat component:', data);
         }
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
@@ -170,9 +209,21 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
           <div className="empty-chat-message">No messages yet. Start the conversation!</div>
         ) : (
           messages.map((msg, index) => (
-            <div className="message" key={`msg-${index}-${msg.timestamp}`}>
-              <strong>{msg.displayName} {new Date(msg.timestamp).toLocaleTimeString()}:</strong> 
-              {msg.message}
+            <div 
+              className={`message ${msg.type === "system" ? "system-message" : ""}`} 
+              key={`msg-${index}-${msg.timestamp}`}
+            >
+              {msg.type === "system" ? (
+                <div className="system-message-content">
+                  <em>{msg.message}</em>
+                  <span className="timestamp">{new Date(msg.timestamp).toLocaleTimeString()}</span>
+                </div>
+              ) : (
+                <>
+                  <strong>{msg.displayName} {new Date(msg.timestamp).toLocaleTimeString()}:</strong> 
+                  {msg.message}
+                </>
+              )}
             </div>
           ))
         )}
