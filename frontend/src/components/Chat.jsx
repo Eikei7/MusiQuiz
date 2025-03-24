@@ -125,7 +125,7 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
           } 
           // Handle system messages (user join/leave, etc.)
           else if (data.type === "system") {
-            console.log('System message received:', data);
+            // console.log('System message received:', data);
             setMessages((prev) => [...prev, {
               message: data.content,
               timestamp: data.timestamp || Date.now(),

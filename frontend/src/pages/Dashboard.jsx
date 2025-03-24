@@ -264,46 +264,60 @@ function Dashboard() {
                 <h3>Available Rooms:</h3>
                 
                 {rooms.length > 0 ? (
-                  <div className="rooms-grid">
-                    {rooms.map(room => (
-                      <div 
-                        key={room.roomId || room.id}
-                        className={`room-card ${selectedRoom?.roomId === (room.roomId || room.id) ? 'selected' : ''}`}
-                        onClick={() => setSelectedRoom(room)}
-                      >
-                        <h4>{room.name}</h4>
-                        <div className="room-info">
-                          <span className="player-count">
-                            {Array.isArray(room.players) ? room.players.length : 0} players
-                          </span>
-                          {room.status && <span className="room-status">{room.status}</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-rooms">
-                    <p>No rooms available. Try again later or ask an admin to create a room.</p>
-                  </div>
-                )}
+  <div className="rooms-grid">
+    {rooms.map(room => (
+      <div 
+        key={room.roomId || room.id}
+        className={`room-card ${selectedRoom?.roomId === (room.roomId || room.id) ? 'selected' : ''}`}
+        onClick={() => setSelectedRoom(room)}
+      >
+        <h4>{room.name}</h4>
+        <div className="room-info">
+          <span className="player-count">
+            {Array.isArray(room.players) ? room.players.length : 0} players
+          </span>
+          {room.status && <span className="room-status">{room.status}</span>}
+        </div>
+        
+        {/* Mobile actions - only shown for selected room on small screens */}
+        <div className="room-actions-mobile">
+          <button 
+            className="join-room-button"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering the room selection
+              handleJoinRoom();
+            }}
+            disabled={joiningRoom}
+          >
+            {joiningRoom ? 'Joining...' : 'Join Room'}
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+) : (
+  <div className="empty-rooms">
+    <p>No rooms available. Try again later or ask an admin to create a room.</p>
+  </div>
+)}
               </div>
               
               <div className="room-actions">
-                <button 
-                  className="join-room-button"
-                  onClick={handleJoinRoom}
-                  disabled={!selectedRoom || joiningRoom}
-                >
-                  {joiningRoom ? 'Joining...' : 'Join Room'}
-                </button>
-                <button 
-                  className="refresh-button"
-                  onClick={fetchRooms}
-                  disabled={loading}
-                >
-                  {loading ? 'Refreshing...' : 'Refresh Rooms'}
-                </button>
-              </div>
+  <button 
+    className="join-room-button"
+    onClick={handleJoinRoom}
+    disabled={!selectedRoom || joiningRoom}
+  >
+    {joiningRoom ? 'Joining...' : 'Join Room'}
+  </button>
+  <button 
+    className="refresh-button"
+    onClick={fetchRooms}
+    disabled={loading}
+  >
+    {loading ? 'Refreshing...' : 'Refresh Rooms'}
+  </button>
+</div>
               
               {/* User Stats Section */}
               <div className="user-stats-section">
