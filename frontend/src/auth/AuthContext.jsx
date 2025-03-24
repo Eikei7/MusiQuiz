@@ -96,6 +96,26 @@ export const AuthProvider = ({ children }) => {
     return user && user.role === 'admin';
   };
 
+  // Get display name for user
+  const getDisplayName = () => {
+    if (user) {
+      return user.firstName || 
+             (user.email ? user.email.split('@')[0] : 'User');
+    }
+    
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        return decoded.firstName || decoded.name || 
+               (decoded.email ? decoded.email.split('@')[0] : 'User');
+      } catch (error) {
+        console.error('Failed to decode JWT token:', error);
+      }
+    }
+    
+    return 'Guest';
+  };
+
   const value = {
     user,
     token,
@@ -103,7 +123,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated,
-    isAdmin
+    isAdmin,
+    getDisplayName
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

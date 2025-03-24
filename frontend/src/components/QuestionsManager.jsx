@@ -16,7 +16,7 @@ function QuestionsManager() {
   useEffect(() => {
     fetchQuestions();
   }, [token]);
-
+  // Fetch questions from API
   const fetchQuestions = async () => {
     try {
       setLoading(true);
@@ -42,7 +42,7 @@ function QuestionsManager() {
       setLoading(false);
     }
   };
-
+  // Filter questions based on search query
   const filteredQuestions = useMemo(() => {
     if (!searchQuery.trim()) return questions;
     
@@ -58,7 +58,7 @@ function QuestionsManager() {
     setShowForm(false);
     setEditingQuestion(null);
   };
-
+  // Handle edit question
   const handleEdit = (question) => {
     setEditingQuestion(question);
     setShowForm(true);
@@ -95,40 +95,40 @@ function QuestionsManager() {
   return (
     <div className="questions-manager">
       <div className="admin-toolbar">
-  <button 
-    className="add-question-btn"
-    onClick={() => {
-      setEditingQuestion(null);
-      setShowForm(!showForm);
-    }}
-  >
-    {showForm ? 'Cancel' : 'Add New Question'}
-  </button>
+        <button 
+          className="add-question-btn"
+          onClick={() => {
+          setEditingQuestion(null);
+          setShowForm(!showForm);
+         }}
+        >
+        {showForm ? 'Cancel' : 'Add New Question'}
+        </button>
 
-  <div className="question-count">
-    <span>{!loading && (filteredQuestions.length + " question(s) found")}</span>
-  </div>
+      <div className="question-count">
+        <span>{!loading && (filteredQuestions.length + " question(s) found")}</span>
+      </div>
 
-  <div className="admin-search">
-    <input 
-      type="text" 
-      placeholder="Search questions..." 
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-    />
-    {searchQuery && (
-      <button 
+      <div className="admin-search">
+        <input 
+        type="text" 
+        placeholder="Search questions..." 
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {searchQuery && (
+        <button 
         className="search-clear-button"
         onClick={() => setSearchQuery('')}
-      >
+        >
         ×
-      </button>
-    )}
-  </div>
-</div>
+        </button>
+        )}
+      </div>
+    </div>
       
       {error && <div className="questions-error">{error}</div>}
-
+      
       {showForm && (
         <QuestionForm 
           onQuestionAdded={handleQuestionAdded} 

@@ -20,7 +20,7 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
       [name]: value
     });
   };
-
+  // Handle choice input change
   const handleChoiceChange = (index, value) => {
     const updatedChoices = [...formData.choices];
     updatedChoices[index] = value;
@@ -29,36 +29,7 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
       choices: updatedChoices
     });
   };
-
-  // const addChoice = () => {
-  //   if (formData.choices.length < 8) { // Limit to 8 choices
-  //     setFormData({
-  //       ...formData,
-  //       choices: [...formData.choices, '']
-  //     });
-  //   }
-  // };
-
-  // const removeChoice = (index) => {
-  //   if (formData.choices.length > 2) { // Maintain at least 2 choices
-  //     const updatedChoices = formData.choices.filter((_, i) => i !== index);
-      
-  //     // Update correctAnswerIndex if needed
-  //     let updatedCorrectIndex = formData.correctAnswerIndex;
-  //     if (index === formData.correctAnswerIndex) {
-  //       updatedCorrectIndex = 0;
-  //     } else if (index < formData.correctAnswerIndex) {
-  //       updatedCorrectIndex--;
-  //     }
-      
-  //     setFormData({
-  //       ...formData,
-  //       choices: updatedChoices,
-  //       correctAnswerIndex: updatedCorrectIndex
-  //     });
-  //   }
-  // };
-
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -77,7 +48,7 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
     }
     
     setLoading(true);
-    
+    // Prepare data for API
     try {
       const isEditing = !!editQuestion?.id;
       const url = isEditing 

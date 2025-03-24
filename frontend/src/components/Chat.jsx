@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '../auth/AuthContext';
 import './Chat.css';
 import { ENDPOINT_CHAT } from '../endpoints';
 
 const Chat = ({ ws: externalWs, selectedRoom }) => {
-  const { user } = useAuth();
+  const { getDisplayName } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [ws, setWs] = useState(null);
@@ -15,30 +14,9 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
 
   // Set display name based on user info from Auth context
   useEffect(() => {
-    if (user) {
-      const name = user.firstName || 
-                   (user.email ? user.email.split('@')[0] : 'User');
-      
-      setDisplayName(name);
-    } else {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const decoded = jwtDecode(token);
-          const name = decoded.firstName || decoded.name || 
-                      (decoded.email ? decoded.email.split('@')[0] : 'User');
-          setDisplayName(name);
-        } catch (error) {
-          console.error('Failed to decode JWT token:', error);
-          setDisplayName('User');
-        }
-      } else {
-        setDisplayName('Guest');
-      }
-    }
-  }, [user]);
+    setDisplayName(getDisplayName());
+  }, [getDisplayName]);
 
-  // Use external WebSocket if provided, otherwise create our own
   useEffect(() => {
     if (externalWs) {
       console.log('Using external WebSocket connection');
@@ -103,6 +81,8 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
   useEffect(() => {
     if (!ws) return;
     
+    let isMounted = true;
+    
     const handleMessage = (event) => {
       console.log('WebSocket message received:', event.data);
       
@@ -112,11 +92,13 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
         // Only handle chat messages, not room updates
         if (data.type === "message" || (!data.type && data.message)) {
           console.log('Chat message received:', data);
-          setMessages((prev) => [...prev, { 
-            message: data.message, 
-            timestamp: data.timestamp, 
-            displayName: data.displayName 
-          }]);
+          if (isMounted) {
+            setMessages((prev) => [...prev, { 
+              message: data.message, 
+              timestamp: data.timestamp || Date.now(), 
+              displayName: data.displayName 
+            }]);
+          }
         } else {
           console.log('Message not handled by Chat component:', data);
         }
@@ -128,6 +110,7 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
     ws.addEventListener('message', handleMessage);
     
     return () => {
+      isMounted = false;
       ws.removeEventListener('message', handleMessage);
     };
   }, [ws]);
@@ -140,7 +123,14 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
   }, [messages]);
 
   const sendMessage = () => {
-    if (ws && ws.readyState === WebSocket.OPEN && input.trim()) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      console.error('WebSocket not connected');
+      return;
+    }
+    
+    if (!input.trim()) return;
+    
+    try {
       ws.send(JSON.stringify({ 
         action: 'sendmessage', 
         message: input, 
@@ -148,6 +138,9 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
         roomId: selectedRoom?.roomId // Include roomId if available
       }));
       setInput('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // You might want to show a user-friendly error here
     }
   };
 
@@ -177,7 +170,7 @@ const Chat = ({ ws: externalWs, selectedRoom }) => {
           <div className="empty-chat-message">No messages yet. Start the conversation!</div>
         ) : (
           messages.map((msg, index) => (
-            <div className="message" key={`msg-${index}-${Date.now()}`}>
+            <div className="message" key={`msg-${index}-${msg.timestamp}`}>
               <strong>{msg.displayName} {new Date(msg.timestamp).toLocaleTimeString()}:</strong> 
               {msg.message}
             </div>
