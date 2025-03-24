@@ -56,13 +56,15 @@ function Login() {
 
   return (
     <div className='container'>
-      <img src="/logo_text_clear.png" alt="MusiQuiz logo" />
+      <div className="logo-container">
+        <img src="/logo_text_clear.png" alt="MusiQuiz logo" />
+      </div>
       <div className="login-container">
         {error && <div className="error-message">{error}</div>}
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="input-group">
             <input 
-              type="text" 
+              type="email" 
               id="email" 
               name="email"
               value={formData.email}

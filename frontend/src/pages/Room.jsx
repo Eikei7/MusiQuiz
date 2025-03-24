@@ -229,24 +229,30 @@ function Room() {
       
       <div className="room-content">
         <div className="room-main-area">
-          <div className="quiz-placeholder">
-            <h3>The quiz will start soon</h3>
-            <p>As soon as two players have joined the room, the quiz is ready to start.</p>
-            
-            {Array.isArray(room?.players) && room.players.length >= 2 ? (
-              <div className="start-quiz-container">
-                <p>All set! {amIFirstPlayer() ? 'You can now start the quiz.' : 'Waiting for the host to start the quiz.'}</p>
-                
-                {amIFirstPlayer() && (
-                  <button className="start-quiz-button" onClick={handleStartQuiz}>
-                    Start Quiz
-                  </button>
-                )}
-              </div>
-            ) : (
-              <p>Waiting for one more player to join...</p>
-            )}
-          </div>
+        <div className="quiz-placeholder">
+  <h3>The quiz will start soon</h3>
+  
+  {Array.isArray(room?.players) && room.players.length >= 2 ? (
+    <div className="start-quiz-container">
+      <p>All set! {amIFirstPlayer() ? 'You can now start a two-player quiz.' : 'Waiting for the host to start the quiz.'}</p>
+      
+      {amIFirstPlayer() && (
+        <button className="start-quiz-button" onClick={handleStartQuiz}>
+          Start Multiplayer Quiz
+        </button>
+      )}
+    </div>
+  ) : Array.isArray(room?.players) && room.players.length === 1 ? (
+    <div className="start-quiz-container">
+      <p>No other players have joined yet. You can still play in single-player mode!</p>
+      <button className="start-quiz-button single-player" onClick={handleStartQuiz}>
+        Start Single Player Game
+      </button>
+    </div>
+  ) : (
+    <p>Waiting for players to join...</p>
+  )}
+</div>
           <div className="room-chat">
             <h3>Room Chat</h3>
             <Chat roomId={roomId} />
