@@ -79,12 +79,11 @@ export const AuthProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.clear();
     setToken(null);
     setUser(null);
     navigate('/');
-  };
+};
 
   // Check if user is authenticated
   const isAuthenticated = () => {

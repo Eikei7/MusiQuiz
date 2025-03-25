@@ -74,7 +74,7 @@ const Card = ({
 
   // Get shown questions from storage
   const getShownQuestions = () => {
-    const shownQuestions = localStorage.getItem(SHOWN_QUESTIONS_KEY);
+    const shownQuestions = sessionStorage.getItem(SHOWN_QUESTIONS_KEY);
     return shownQuestions ? JSON.parse(shownQuestions) : [];
   };
 
@@ -83,13 +83,13 @@ const Card = ({
     const shownQuestions = getShownQuestions();
     if (!shownQuestions.includes(questionId)) {
       shownQuestions.push(questionId);
-      localStorage.setItem(SHOWN_QUESTIONS_KEY, JSON.stringify(shownQuestions));
+      sessionStorage.setItem(SHOWN_QUESTIONS_KEY, JSON.stringify(shownQuestions));
     }
   };
 
   // Reset shown questions (optional - could add a button for this)
   const resetShownQuestions = () => {
-    localStorage.removeItem(SHOWN_QUESTIONS_KEY);
+    sessionStorage.removeItem(SHOWN_QUESTIONS_KEY);
   };
 
   useEffect(() => {
