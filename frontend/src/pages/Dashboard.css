@@ -326,11 +326,36 @@
   margin: 0;
 }
 
-/* .player-item {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #eee;
-  color: #666;
-} */
+.player-item {
+  transition: background-color 0.5s ease, transform 0.5s ease;
+}
+
+.player-item.new-player {
+  background-color: rgba(74, 144, 226, 0.1);
+  animation: highlightNewPlayer 3s ease-out forwards;
+}
+
+@keyframes highlightNewPlayer {
+  0% {
+    background-color: rgba(74, 144, 226, 0.3);
+    transform: translateY(-2px);
+  }
+  100% {
+    background-color: #f8f8f8;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOutPlayer {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
 
 .player-item:last-child {
   border-bottom: none;

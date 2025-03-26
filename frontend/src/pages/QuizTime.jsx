@@ -105,23 +105,34 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
   // Check if it's the current user's turn
   const isMyTurn = () => {
-    if (!players || players.length === 0 || currentTurn >= players.length) return false;
-    
-    const currentPlayer = players[currentTurn];
-    const playerEmail = typeof currentPlayer === 'object' ? currentPlayer.email : currentPlayer;
-    return playerEmail === user.email;
-  };
+    // In single-player mode, it's always your turn
+      if (players.length === 1) {
+        return true;
+      }
+      
+      // Normal multi-player logic
+      if (!players || players.length === 0 || currentTurn >= players.length) return false;
+      
+      const currentPlayer = players[currentTurn];
+      const playerEmail = typeof currentPlayer === 'object' ? currentPlayer.email : currentPlayer;
+      return playerEmail === user.email;
+    };
 
-  // Get current player's display name
-  const getCurrentPlayerName = () => {
-    if (!players || players.length === 0 || currentTurn >= players.length) return "Unknown";
-    
-    const player = players[currentTurn];
-    if (typeof player === 'object') {
-      return player.firstName || player.email.split('@')[0];
-    }
-    return typeof player === 'string' ? player.split('@')[0] : "Unknown";
-  };
+    const getCurrentPlayerName = () => {
+      // In single-player mode, use the user's name
+      if (players.length === 1) {
+        return user.firstName || user.email.split('@')[0] || "You";
+      }
+      
+      // Normal multi-player logic
+      if (!players || players.length === 0 || currentTurn >= players.length) return "Unknown";
+      
+      const player = players[currentTurn];
+      if (typeof player === 'object') {
+        return player.firstName || player.email.split('@')[0];
+      }
+      return typeof player === 'string' ? player.split('@')[0] : "Unknown";
+    };
 
   const handleQuestionLoaded = (questionInfo) => {
     // console.log('QuizTime: Question loaded:', questionInfo);
@@ -260,7 +271,18 @@ const QuizTime = ({ roomData: propRoomData }) => {
   };
 
   const handleReturnToRoom = () => {
-    navigate(`/rooms/${roomId}`);
+    // Add confirmation dialog
+    const confirmLeave = window.confirm("Are you sure you want to leave the quiz? Your progress will be lost.");
+    
+    if (confirmLeave) {
+      // Clear any timers to prevent memory leaks
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      
+      // Navigate back to the room
+      navigate(`/rooms/${roomId}`);
+    }
   };
 
   // Loading state
@@ -411,7 +433,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
         selectedAnswer={selectedAnswer}
         showCorrectAnswer={isAnswerCorrect !== null}/>
   
-        <div className="feedback-container">
+          <div className="feedback-container">
           {isMyTurn() && selectedAnswer !== null && isAnswerCorrect === null && (
             <div className="submit-area">
               <button 
@@ -423,21 +445,21 @@ const QuizTime = ({ roomData: propRoomData }) => {
             </div>
           )}
           {/* Show feedback if answer is correct or incorrect */}
-        {isAnswerCorrect !== null && (
-          <div className={`feedback-area ${isAnswerCorrect ? 'correct' : 'incorrect'}`}>
-            <h3>{isAnswerCorrect ? 'Correct!' : 'Incorrect!'}</h3>
-            {isMyTurn() && (
-              <button 
-                className="next-question-button"
-                onClick={handleNextTurn}
-              >
-                Next Turn
-              </button>
-            )}
-          </div>
-        )}
-          {/* Show waiting message if it's not the current player's turn */}
-          {!isMyTurn() && isAnswerCorrect === null && (
+          {isAnswerCorrect !== null && (
+            <div className={`feedback-area ${isAnswerCorrect ? 'correct' : 'incorrect'}`}>
+              <h3>{isAnswerCorrect ? 'Correct!' : 'Incorrect!'}</h3>
+              {isMyTurn() && (
+                <button 
+                  className="next-question-button"
+                  onClick={handleNextTurn}
+                >
+                  Next Turn
+                </button>
+              )}
+            </div>
+          )}
+          {/* Show waiting message if it's not the current player's turn - hide in single player mode */}
+          {!isMyTurn() && isAnswerCorrect === null && players.length > 1 && (
             <div className="waiting-message">
               <p>Waiting for {getCurrentPlayerName()} to answer...</p>
             </div>

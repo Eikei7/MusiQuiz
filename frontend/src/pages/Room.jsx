@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { ENDPOINT_ROOMS } from '../endpoints';
 import Chat from '../components/Chat';
 import QuizTime from './QuizTime';
+import './RoomTransitions.css';
 
 function Room() {
   const { roomId } = useParams();
@@ -14,6 +15,11 @@ function Room() {
   const [error, setError] = useState('');
   const [quizStarted, setQuizStarted] = useState(false);
   const [wsPlayers, setWsPlayers] = useState([]);
+  
+  // Add transition states
+  const [isExiting, setIsExiting] = useState(false);
+  const [transitionComplete, setTransitionComplete] = useState(false);
+  const [transitionData, setTransitionData] = useState(null);
 
   useEffect(() => {
     if (room?.players) {
@@ -47,7 +53,6 @@ function Room() {
     console.log(`WebSocket notified that ${playerName} joined`);
     
     // Check if this player is already in our list to avoid duplicates
-    // Note: This is a simple check by display name, might need more robust solution
     if (!wsPlayers.some(p => p.displayName === playerName)) {
       setWsPlayers(prev => [...prev, { displayName: playerName, isNew: true }]);
     }
@@ -72,12 +77,12 @@ function Room() {
     fetchRoomData();
   }, [roomId, token, isAuthenticated, navigate]);
 
-  // Poll for room updates
+  // Check for game started status (one-time fetch instead of polling)
   useEffect(() => {
-    if (!room) return;
-    
-    // Poll for room updates every 3 seconds
-    const intervalId = setInterval(async () => {
+    const checkGameStarted = async () => {
+      // Don't check if we've already started the transition or quiz
+      if (isExiting || quizStarted) return;
+      
       try {
         const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}`, {
           headers: {
@@ -86,30 +91,30 @@ function Room() {
         });
         
         if (!response.ok) {
-          // Handle expired tokens
           if (response.status === 401) {
             logout();
             return;
           }
-          throw new Error('Failed to fetch room data');
+          return;
         }
         
         const roomData = await response.json();
-        // console.log('Polling received updated room data:', roomData);
         
         // Check if the game has started
         if (roomData.gameStarted && !quizStarted) {
-          setQuizStarted(true);
+          setTransitionData(roomData);
+          startExitTransition();
         }
-        
-        setRoom(roomData);
       } catch (error) {
-        console.error('Error polling room data:', error);
+        console.error('Error checking game status:', error);
       }
-    }, 3000); // 3 seconds for more responsive updates
+    };
+    
+    // Check every 5 seconds if game started (much less frequent than the previous polling)
+    const intervalId = setInterval(checkGameStarted, 5000);
     
     return () => clearInterval(intervalId);
-  }, [roomId, token, room, quizStarted, logout]);
+  }, [roomId, token, quizStarted, isExiting, logout]);
 
   const fetchRoomData = async () => {
     try {
@@ -208,7 +213,6 @@ function Room() {
   useEffect(() => {
     // Log detected duplicates
     if (room?.players) {
-      // console.log('Player list:', room.players);
       const emails = room.players.map(p => typeof p === 'object' ? p.email : p);
       const duplicates = emails.filter((email, index) => emails.indexOf(email) !== index);
       if (duplicates.length > 0) {
@@ -226,8 +230,22 @@ function Room() {
     return firstPlayerEmail === user?.email;
   };
 
+  // Start the transition out animation
+  const startExitTransition = () => {
+    setIsExiting(true);
+    
+    // After the transition duration, set quizStarted to true
+    setTimeout(() => {
+      setTransitionComplete(true);
+      setQuizStarted(true);
+    }, 800); // This should match your CSS transition duration
+  };
+
   const handleStartQuiz = async () => {
     try {
+      // First, start the exit transition
+      setIsExiting(true);
+      
       const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}/start`, {
         method: 'POST',
         headers: {
@@ -237,14 +255,41 @@ function Room() {
       });
       
       if (!response.ok) {
+        setIsExiting(false); // Revert transition if there's an error
         throw new Error("Failed to start quiz");
       }
       
-      // Navigate to the game route instead of just changing state
-      navigate(`/game/${roomId}`);
+      // Process the response data
+      let gameData;
+      try {
+        gameData = await response.json();
+      } catch (e) {
+        // If response isn't valid JSON, use the current room data
+        console.log('Using current room data for transition');
+        gameData = room;
+      }
+      
+      // Ensure gameData has all the necessary player information
+      if (!gameData.players && room.players) {
+        gameData = {
+          ...gameData,
+          players: room.players
+        };
+      }
+      
+      // We can still store the data but won't use it directly
+      setTransitionData(gameData);
+      
+      // After a short delay to allow the fade-out animation to play
+      setTimeout(() => {
+        // Navigate to the game route instead of using the transitionComplete/quizStarted state
+        navigate(`/game/${roomId}`);
+      }, 700); // Slightly shorter than the CSS transition to ensure smooth navigation
+      
     } catch (error) {
       console.error("Error starting quiz:", error);
       alert("Failed to start the quiz: " + error.message);
+      setIsExiting(false); // Revert transition
     }
   };
 
@@ -262,59 +307,71 @@ function Room() {
     );
   }
 
-  if (quizStarted) {
-    return <QuizTime roomData={room} />;
+  if (quizStarted && transitionComplete) {
+    return <QuizTime roomData={transitionData || room} />;
   }
 
   return (
-    <div className="room-container">
+    <div className={`room-container ${isExiting ? 'fade-out' : 'fade-in'}`}>
       <header className="room-header">
         <h1>Room: {room?.name}</h1>
-        <button onClick={handleLeaveRoom} className="leave-button">Leave Room</button>
-
+        <button 
+          onClick={handleLeaveRoom} 
+          className="leave-button"
+          disabled={isExiting}
+        >
+          Leave Room
+        </button>
       </header>
       
       <div className="room-content">
         <div className="room-main-area">
-        <div className="quiz-placeholder">
-  <h3>The quiz will start soon</h3>
-  
-  {Array.isArray(room?.players) && room.players.length >= 2 ? (
-    <div className="start-quiz-container">
-      <p>All set! {amIFirstPlayer() ? 'You can now start a two-player quiz.' : 'Waiting for the host to start the quiz.'}</p>
-      
-      {amIFirstPlayer() && (
-        <button className="start-quiz-button" onClick={handleStartQuiz}>
-          Start Multiplayer Quiz
-        </button>
-      )}
-    </div>
-  ) : Array.isArray(room?.players) && room.players.length === 1 ? (
-    <div className="start-quiz-container">
-      <p>No other players have joined yet. You can still play in single-player mode!</p>
-      <button className="start-quiz-button single-player" onClick={handleStartQuiz}>
-        Start Single Player Game
-      </button>
-    </div>
-  ) : (
-    <p>Waiting for players to join...</p>
-  )}
-</div>
-<div className="room-chat">
-  <h3>Room Chat</h3>
-  <Chat 
-    roomId={roomId} 
-    selectedRoom={{ roomId }} // Pass the room ID explicitly
-    onPlayerJoin={handlePlayerJoin} 
-    onPlayerLeave={handlePlayerLeave} 
-  />
-</div>
+          <div className="quiz-placeholder">
+            <h3>The quiz will start soon</h3>
+            
+            {Array.isArray(room?.players) && room.players.length >= 2 ? (
+              <div className="start-quiz-container">
+                <p>All set! {amIFirstPlayer() ? 'You can now start a two-player quiz.' : 'Waiting for the host to start the quiz.'}</p>
+                
+                {amIFirstPlayer() && (
+                  <button 
+                    className="start-quiz-button" 
+                    onClick={handleStartQuiz}
+                    disabled={isExiting}
+                  >
+                    {isExiting ? 'Starting...' : 'Start Multiplayer Quiz'}
+                  </button>
+                )}
+              </div>
+            ) : Array.isArray(room?.players) && room.players.length === 1 ? (
+              <div className="start-quiz-container">
+                <p>No other players have joined yet. You can still play in single-player mode!</p>
+                <button 
+                  className="start-quiz-button single-player" 
+                  onClick={handleStartQuiz}
+                  disabled={isExiting}
+                >
+                  {isExiting ? 'Starting...' : 'Start Single Player Game'}
+                </button>
+              </div>
+            ) : (
+              <p>Waiting for players to join...</p>
+            )}
+          </div>
+          <div className="room-chat">
+            <h3>Room Chat</h3>
+            <Chat 
+              roomId={roomId} 
+              selectedRoom={{ roomId }} 
+              onPlayerJoin={handlePlayerJoin} 
+              onPlayerLeave={handlePlayerLeave} 
+            />
+          </div>
         </div>
         
         <div className="players-section">
           <h3>Players in Room</h3>
           <ul className="players-list">
-            {/* Use the WebSocket-updated players list */}
             {wsPlayers.length > 0 ? (
               wsPlayers.map((player, index) => {
                 const isCurrentUser = player.email === user?.email || 
