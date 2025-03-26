@@ -193,6 +193,12 @@ functions:
       - websocket:
           route: joinchat
 
+  gameStarted:
+    handler: functions/chat.gameStarted
+    events:
+      - websocket:
+         route: gamestarted
+
   startGame:
     handler: functions/rooms.startGame
     events:

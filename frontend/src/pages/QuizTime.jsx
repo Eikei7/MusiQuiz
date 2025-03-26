@@ -285,6 +285,21 @@ const QuizTime = ({ roomData: propRoomData }) => {
     }
   };
 
+  const handleLeaveQuiz = () => {
+    // Add confirmation dialog
+    const confirmLeave = window.confirm("Do you want to return to the room?");
+    
+    if (confirmLeave) {
+      // Clear any timers to prevent memory leaks
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      
+      // Navigate back to the room
+      navigate(`/rooms/${roomId}`);
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -365,7 +380,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
           
           <button 
             className="return-button"
-            onClick={handleReturnToRoom}
+          onClick={handleLeaveQuiz}
           >
             Return to Room
           </button>

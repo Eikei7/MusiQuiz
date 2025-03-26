@@ -67,6 +67,27 @@ function Room() {
   };
 
   useEffect(() => {
+    if (wsPlayers.length > 0 && room) {
+      // Only update if the player count has actually changed
+      // This prevents infinite loops from updating the state constantly
+      const currentPlayerCount = room.players?.length || 0;
+      
+      if (wsPlayers.length !== currentPlayerCount) {
+        console.log('Updating room players from WebSocket data');
+        
+        // Update the room.players array based on wsPlayers
+        setRoom(prevRoom => ({
+          ...prevRoom,
+          players: wsPlayers.map(player => ({
+            email: player.email || player.displayName, // Fallback if email is missing
+            firstName: player.displayName,
+          }))
+        }));
+      }
+    }
+  }, [wsPlayers.length]);
+
+  useEffect(() => {
     // Redirect if not authenticated
     if (!isAuthenticated()) {
       navigate('/login', { state: { from: `/room/${roomId}` } });
@@ -246,6 +267,22 @@ function Room() {
       // First, start the exit transition
       setIsExiting(true);
       
+      try {
+        await fetch(`${ENDPOINT_CHAT}/gamestarted`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            displayName: user.firstName || user.email.split('@')[0],
+            roomId: roomId
+          })
+        });
+      } catch (chatError) {
+        console.log('Failed to send game started message, continuing anyway');
+      }
+
       const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}/start`, {
         method: 'POST',
         headers: {

@@ -144,6 +144,46 @@ module.exports.sendMessage = async (event) => {
   }
 };
 
+async function sendGameStartedMessage(event, displayName, roomId) {
+  try {
+    // Get connections for this specific room
+    const roomConnections = await getRoomConnections(roomId);
+    
+    const systemMessage = {
+      type: 'system',
+      content: `${displayName} started the game`,
+      timestamp: new Date().toISOString(),
+      roomId: roomId
+    };
+    
+    await broadcastMessage(event, roomConnections, systemMessage);
+  } catch (error) {
+    console.error('Game started message error:', error);
+  }
+}
+
+module.exports.gameStarted = async (event) => {
+  try {
+    const connectionId = event.requestContext.connectionId;
+    const body = JSON.parse(event.body);
+    const { displayName, roomId } = body;
+    
+    if (!displayName || !roomId) {
+      return { 
+        statusCode: 400, 
+        body: JSON.stringify({ error: 'Display name and room ID are required' }) 
+      };
+    }
+    
+    // Use the new function to send the game started message
+    await sendGameStartedMessage(event, displayName, roomId);
+    
+    return { statusCode: 200, body: JSON.stringify({ success: true }) };
+  } catch (error) {
+    console.error('Game started error:', error);
+    return { statusCode: 500, body: JSON.stringify({ error: 'Failed to send game started message' }) };
+  }
+};
 // Update system message function to be room-specific
 async function sendSystemMessage(event, content, roomId) {
   try {
