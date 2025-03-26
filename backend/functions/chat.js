@@ -13,6 +13,7 @@ module.exports.connect = async (event) => {
   return { statusCode: 200 };
 };
 
+// Update disconnect handler to only notify the specific room
 module.exports.disconnect = async (event) => {
   try {
     const connectionId = event.requestContext.connectionId;
@@ -24,15 +25,17 @@ module.exports.disconnect = async (event) => {
     };
     
     const connectionData = await dynamoDb.get(userParams).promise();
+    const userData = connectionData.Item || {};
     
     // Delete the connection
     await dynamoDb.delete(userParams).promise();
     
-    // If user had a display name, broadcast they left
-    if (connectionData.Item && connectionData.Item.displayName) {
+    // If user had a display name and room, broadcast they left to that room only
+    if (userData.displayName && userData.roomId) {
       await sendSystemMessage(
         event, 
-        `${connectionData.Item.displayName} left the room`
+        `${userData.displayName} left the room`,
+        userData.roomId
       );
     }
     
@@ -47,7 +50,8 @@ module.exports.disconnect = async (event) => {
 module.exports.joinChat = async (event) => {
   try {
     const connectionId = event.requestContext.connectionId;
-    const { displayName } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    const { displayName, roomId } = body; // Extract roomId from the request
     
     if (!displayName || displayName.trim() === '') {
       return { 
@@ -56,20 +60,30 @@ module.exports.joinChat = async (event) => {
       };
     }
     
-    // Store the user's display name
+    // Store both the display name AND room ID
     const params = {
       TableName: TABLE_NAME,
       Key: { connectionId },
-      UpdateExpression: 'set displayName = :displayName',
+      UpdateExpression: 'set displayName = :displayName, roomId = :roomId',
       ExpressionAttributeValues: {
-        ':displayName': displayName.trim()
+        ':displayName': displayName.trim(),
+        ':roomId': roomId || 'global' // Default to 'global' if no roomId provided
       }
     };
     
     await dynamoDb.update(params).promise();
     
-    // Broadcast a system message that user joined
-    await sendSystemMessage(event, `${displayName} joined the room`);
+    // Only broadcast to connections in the same room
+    const roomConnections = await getRoomConnections(roomId);
+    
+    const systemMessage = {
+      type: 'system',
+      content: `${displayName} joined the room`,
+      timestamp: new Date().toISOString(),
+      roomId: roomId
+    };
+    
+    await broadcastMessage(event, roomConnections, systemMessage);
     
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (error) {
@@ -78,11 +92,28 @@ module.exports.joinChat = async (event) => {
   }
 };
 
+// Helper function to get connections for a specific room
+async function getRoomConnections(roomId) {
+  if (!roomId) return [];
+  
+  const params = {
+    TableName: TABLE_NAME,
+    FilterExpression: 'roomId = :roomId',
+    ExpressionAttributeValues: {
+      ':roomId': roomId
+    }
+  };
+  
+  const result = await dynamoDb.scan(params).promise();
+  return result.Items || [];
+}
+
 // Send a regular chat message
 module.exports.sendMessage = async (event) => {
   try {
     const connectionId = event.requestContext.connectionId;
-    const { message, displayName, roomId } = JSON.parse(event.body);
+    const body = JSON.parse(event.body);
+    const { message, displayName, roomId } = body;
     const timestamp = new Date().toISOString();
     
     if (!message || message.trim() === '') {
@@ -92,19 +123,10 @@ module.exports.sendMessage = async (event) => {
       };
     }
     
-    // Get connections (can filter by roomId if implemented)
-    let scanParams = {
-      TableName: TABLE_NAME
-    };
+    // Get ONLY connections for this room
+    const roomConnections = await getRoomConnections(roomId);
     
-    if (roomId) {
-      scanParams.FilterExpression = 'roomId = :roomId';
-      scanParams.ExpressionAttributeValues = { ':roomId': roomId };
-    }
-    
-    const connections = await dynamoDb.scan(scanParams).promise();
-    
-    // Broadcast message to all relevant connections
+    // Broadcast message to room connections
     const messageData = {
       type: 'message',
       message: message.trim(),
@@ -113,7 +135,7 @@ module.exports.sendMessage = async (event) => {
       roomId
     };
     
-    await broadcastMessage(event, connections.Items, messageData);
+    await broadcastMessage(event, roomConnections, messageData);
     
     return { statusCode: 200, body: JSON.stringify({ success: true }) };
   } catch (error) {
@@ -122,18 +144,22 @@ module.exports.sendMessage = async (event) => {
   }
 };
 
-// Helper function to send system messages
-async function sendSystemMessage(event, content) {
+// Update system message function to be room-specific
+async function sendSystemMessage(event, content, roomId) {
   try {
-    const connections = await dynamoDb.scan({ TableName: TABLE_NAME }).promise();
+    // Only get connections for this room
+    const roomConnections = roomId 
+      ? await getRoomConnections(roomId)
+      : await dynamoDb.scan({ TableName: TABLE_NAME }).promise().then(data => data.Items || []);
     
     const systemMessage = {
       type: 'system',
       content,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      roomId
     };
     
-    await broadcastMessage(event, connections.Items, systemMessage);
+    await broadcastMessage(event, roomConnections, systemMessage);
   } catch (error) {
     console.error('System message error:', error);
   }

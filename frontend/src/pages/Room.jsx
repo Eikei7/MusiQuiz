@@ -13,6 +13,53 @@ function Room() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [quizStarted, setQuizStarted] = useState(false);
+  const [wsPlayers, setWsPlayers] = useState([]);
+
+  useEffect(() => {
+    if (room?.players) {
+      // Initialize the WebSocket player list with the current room players
+      const initialPlayers = Array.from(
+        new Map(
+          room.players.map(player => {
+            const email = typeof player === 'object' ? player.email : player;
+            let displayName;
+            if (typeof player === 'object' && player.firstName) {
+              displayName = player.firstName;
+            } else if (typeof player === 'object' && player.email) {
+              displayName = player.email.split('@')[0];
+            } else if (typeof player === 'string') {
+              displayName = player.split('@')[0];
+            } else {
+              displayName = "Unknown Player";
+            }
+            
+            return [email, { email, displayName }];
+          })
+        ).values()
+      );
+      
+      setWsPlayers(initialPlayers);
+    }
+  }, [room?.players]);
+
+  // Handler for when a player joins via WebSocket
+  const handlePlayerJoin = (playerName) => {
+    console.log(`WebSocket notified that ${playerName} joined`);
+    
+    // Check if this player is already in our list to avoid duplicates
+    // Note: This is a simple check by display name, might need more robust solution
+    if (!wsPlayers.some(p => p.displayName === playerName)) {
+      setWsPlayers(prev => [...prev, { displayName: playerName, isNew: true }]);
+    }
+  };
+  
+  // Handler for when a player leaves via WebSocket
+  const handlePlayerLeave = (playerName) => {
+    console.log(`WebSocket notified that ${playerName} left`);
+    
+    // Remove the player from our list
+    setWsPlayers(prev => prev.filter(p => p.displayName !== playerName));
+  };
 
   useEffect(() => {
     // Redirect if not authenticated
@@ -253,46 +300,33 @@ function Room() {
     <p>Waiting for players to join...</p>
   )}
 </div>
-          <div className="room-chat">
-            <h3>Room Chat</h3>
-            <Chat roomId={roomId} />
-          </div>
+<div className="room-chat">
+  <h3>Room Chat</h3>
+  <Chat 
+    roomId={roomId} 
+    selectedRoom={{ roomId }} // Pass the room ID explicitly
+    onPlayerJoin={handlePlayerJoin} 
+    onPlayerLeave={handlePlayerLeave} 
+  />
+</div>
         </div>
         
         <div className="players-section">
           <h3>Players in Room</h3>
           <ul className="players-list">
-            {Array.isArray(room?.players) && room.players.length > 0 ? (
-              // First deduplicate the players array by email
-              Array.from(
-                new Map(
-                  room.players.map(player => {
-                    const email = typeof player === 'object' ? player.email : player;
-                    return [email, player];
-                  })
-                ).values()
-              ).map((player, index) => {
-                // Get email for comparison
-                const playerEmail = typeof player === 'object' ? player.email : player;
-                // Check if this player is the current user
-                const isCurrentUser = playerEmail === user?.email;
-                
-                // Display name - handle both new and old format
-                let displayName;
-                if (typeof player === 'object' && player.firstName) {
-                  displayName = player.firstName;
-                } else if (typeof player === 'object' && player.email) {
-                  displayName = player.email.split('@')[0];
-                } else if (typeof player === 'string') {
-                  // Legacy format - just email
-                  displayName = player.split('@')[0];
-                } else {
-                  displayName = "Unknown Player";
-                }
+            {/* Use the WebSocket-updated players list */}
+            {wsPlayers.length > 0 ? (
+              wsPlayers.map((player, index) => {
+                const isCurrentUser = player.email === user?.email || 
+                                     (player.displayName === user?.firstName || 
+                                      player.displayName === user?.email?.split('@')[0]);
                 
                 return (
-                  <li key={index} className={`player-item ${isCurrentUser ? 'current-user' : ''}`}>
-                    {displayName}
+                  <li 
+                    key={index} 
+                    className={`player-item ${isCurrentUser ? 'current-user' : ''} ${player.isNew ? 'new-player' : ''}`}
+                  >
+                    {player.displayName}
                     {isCurrentUser && ' (You)'}
                   </li>
                 );
