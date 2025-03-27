@@ -22,6 +22,9 @@ function AdminDashboard() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
   
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   // Room creation state
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
@@ -56,6 +59,14 @@ function AdminDashboard() {
     fetchQuestions();
     fetchRooms();
   }, []);
+
+  // Close mobile menu when changing tabs
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      setIsMobileMenuOpen(false);
+    }
+  }, [activeTab]);
+
   // Fetch users from API
   const fetchUsers = async () => {
     try {
@@ -96,61 +107,61 @@ function AdminDashboard() {
     setAddUserError('');
 
     // Validate form
-  if (!newUserData.email || !newUserData.password || !newUserData.confirmPassword) {
-    setAddUserError('Email and password are required');
-    return;
-  }
-  
-  if (newUserData.password !== newUserData.confirmPassword) {
-    setAddUserError('Passwords do not match');
-    return;
-  }
-  
-  setAddingUser(true);
-  // Send the new user data to the server
-  try {
-    const response = await fetch(ENDPOINT_REGISTER, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` // Include admin token
-      },
-      body: JSON.stringify({
-        email: newUserData.email,
-        password: newUserData.password,
-        confirmPassword: newUserData.confirmPassword,
-        firstName: newUserData.firstName || '',
-        lastName: newUserData.lastName || '',
-        role: newUserData.role
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || data.message || 'Failed to add user');
+    if (!newUserData.email || !newUserData.password || !newUserData.confirmPassword) {
+      setAddUserError('Email and password are required');
+      return;
     }
+    
+    if (newUserData.password !== newUserData.confirmPassword) {
+      setAddUserError('Passwords do not match');
+      return;
+    }
+    
+    setAddingUser(true);
+    // Send the new user data to the server
+    try {
+      const response = await fetch(ENDPOINT_REGISTER, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Include admin token
+        },
+        body: JSON.stringify({
+          email: newUserData.email,
+          password: newUserData.password,
+          confirmPassword: newUserData.confirmPassword,
+          firstName: newUserData.firstName || '',
+          lastName: newUserData.lastName || '',
+          role: newUserData.role
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Failed to add user');
+      }
 
-    // Refresh the users list
-    fetchUsers();
-    
-    // Reset form and close modal
-    setNewUserData({
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      role: 'user'
-    });
-    setShowAddUserModal(false);
-    
-  } catch (error) {
-    setAddUserError(error.message || 'An error occurred while adding the user');
-  } finally {
-    setAddingUser(false);
-  }
-};
+      // Refresh the users list
+      fetchUsers();
+      
+      // Reset form and close modal
+      setNewUserData({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        firstName: '',
+        lastName: '',
+        role: 'user'
+      });
+      setShowAddUserModal(false);
+      
+    } catch (error) {
+      setAddUserError(error.message || 'An error occurred while adding the user');
+    } finally {
+      setAddingUser(false);
+    }
+  };
   // Delete user
   const confirmDeleteUser = (email) => {
     setDeletingUserEmail(email);
@@ -321,9 +332,25 @@ function AdminDashboard() {
     }
   };
 
+  // Toggle mobile menu
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   return (
     <div className="admin-dashboard">
-      <aside className="admin-sidebar">
+      {/* Hamburger menu button for mobile */}
+      <button 
+        className={`mobile-menu-toggle ${isMobileMenuOpen ? 'active' : ''}`} 
+        onClick={toggleMobileMenu}
+        aria-label="Toggle menu"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <aside className={`admin-sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="admin-logo">
           <h2>MusiQuiz</h2>
         </div>
@@ -373,6 +400,11 @@ function AdminDashboard() {
         </nav>
       </aside>
 
+      {/* Overlay for mobile sidebar */}
+      {isMobileMenuOpen && (
+        <div className="sidebar-overlay" onClick={toggleMobileMenu}></div>
+      )}
+
       <main className="admin-main">
         <header className="admin-header">
           <h1>
@@ -405,123 +437,123 @@ function AdminDashboard() {
           {activeTab === 'users' && (
             <div className="admin-users">
               <div className="admin-toolbar">
-              <button 
-              className="admin-button"
-              onClick={() => setShowAddUserModal(true)}
-              >
-              Add New User
-              </button>
-              {/* Add User Modal */}
-              {showAddUserModal && (
-                <div className="modal-overlay">
-                  <div className="modal-container">
-                    <div className="modal-header">
-                      <h2>Add New User</h2>
-                      <button 
-                        className="modal-close"
-                        onClick={() => setShowAddUserModal(false)}
-                      >
-                        &times;
-                      </button>
-                    </div>
-                    
-                    <form onSubmit={handleAddUser}>
-                      <div className="modal-body">
-                        {addUserError && <div className="error-message">{addUserError}</div>}
-                        
-                        <div className="form-group">
-                          <label htmlFor="email">Email (required)</label>
-                          <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value={newUserData.email}
-                            onChange={handleUserInputChange}
-                            required
-                          />
-                        </div>
-                        
-                        <div className="form-group">
-                          <label htmlFor="password">Password (required)</label>
-                          <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            value={newUserData.password}
-                            onChange={handleUserInputChange}
-                            required
-                          />
-                        </div>
-                        
-                        <div className="form-group">
-                          <label htmlFor="confirmPassword">Confirm Password (required)</label>
-                          <input
-                            type="password"
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            value={newUserData.confirmPassword}
-                            onChange={handleUserInputChange}
-                            required
-                          />
-                        </div>
-                        
-                        <div className="form-group">
-                          <label htmlFor="firstName">First Name</label>
-                          <input
-                            type="text"
-                            id="firstName"
-                            name="firstName"
-                            value={newUserData.firstName}
-                            onChange={handleUserInputChange}
-                          />
-                        </div>
-                        
-                        <div className="form-group">
-                          <label htmlFor="lastName">Last Name</label>
-                          <input
-                            type="text"
-                            id="lastName"
-                            name="lastName"
-                            value={newUserData.lastName}
-                            onChange={handleUserInputChange}
-                          />
-                        </div>
-                        
-                        <div className="form-group">
-                          <label htmlFor="role">Role</label>
-                          <select
-                            id="role"
-                            name="role"
-                            value={newUserData.role}
-                            onChange={handleUserInputChange}
-                          >
-                            <option value="user">User</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        </div>
+                <button 
+                  className="admin-button"
+                  onClick={() => setShowAddUserModal(true)}
+                >
+                  Add New User
+                </button>
+                {/* Add User Modal */}
+                {showAddUserModal && (
+                  <div className="modal-overlay">
+                    <div className="modal-container">
+                      <div className="modal-header">
+                        <h2>Add New User</h2>
+                        <button 
+                          className="modal-close"
+                          onClick={() => setShowAddUserModal(false)}
+                        >
+                          &times;
+                        </button>
                       </div>
                       
-                      <div className="modal-footer">
-                        <button 
-                          type="button" 
-                          className="btn btn-secondary"
-                          onClick={() => setShowAddUserModal(false)}
-                          disabled={addingUser}
-                        >
-                          Cancel
-                        </button>
-                        <button 
-                          type="submit" 
-                          className="btn btn-primary"
-                          disabled={addingUser}
-                        >
-                          {addingUser ? 'Adding...' : 'Add User'}
-                        </button>
-                      </div>
-                    </form>
+                      <form onSubmit={handleAddUser}>
+                        <div className="modal-body">
+                          {addUserError && <div className="error-message">{addUserError}</div>}
+                          
+                          <div className="form-group">
+                            <label htmlFor="email">Email (required)</label>
+                            <input
+                              type="email"
+                              id="email"
+                              name="email"
+                              value={newUserData.email}
+                              onChange={handleUserInputChange}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label htmlFor="password">Password (required)</label>
+                            <input
+                              type="password"
+                              id="password"
+                              name="password"
+                              value={newUserData.password}
+                              onChange={handleUserInputChange}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label htmlFor="confirmPassword">Confirm Password (required)</label>
+                            <input
+                              type="password"
+                              id="confirmPassword"
+                              name="confirmPassword"
+                              value={newUserData.confirmPassword}
+                              onChange={handleUserInputChange}
+                              required
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label htmlFor="firstName">First Name</label>
+                            <input
+                              type="text"
+                              id="firstName"
+                              name="firstName"
+                              value={newUserData.firstName}
+                              onChange={handleUserInputChange}
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label htmlFor="lastName">Last Name</label>
+                            <input
+                              type="text"
+                              id="lastName"
+                              name="lastName"
+                              value={newUserData.lastName}
+                              onChange={handleUserInputChange}
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label htmlFor="role">Role</label>
+                            <select
+                              id="role"
+                              name="role"
+                              value={newUserData.role}
+                              onChange={handleUserInputChange}
+                            >
+                              <option value="user">User</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="modal-footer">
+                          <button 
+                            type="button" 
+                            className="btn btn-secondary"
+                            onClick={() => setShowAddUserModal(false)}
+                            disabled={addingUser}
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            type="submit" 
+                            className="btn btn-primary"
+                            disabled={addingUser}
+                          >
+                            {addingUser ? 'Adding...' : 'Add User'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
                 <div className="admin-search">
                   <input 
                     type="text" 
@@ -530,13 +562,13 @@ function AdminDashboard() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
-                   <button 
-                    className="search-clear-button"
-                    onClick={() => setSearchQuery('')}
+                    <button 
+                      className="search-clear-button"
+                      onClick={() => setSearchQuery('')}
                     >
-                    ×
+                      ×
                     </button>
-                    )}
+                  )}
                 </div>
               </div>
 
@@ -545,39 +577,40 @@ function AdminDashboard() {
               ) : error ? (
                 <div className="admin-error">{error}</div>
               ) : (
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Email</th>
-                      <th>First Name</th>
-                      <th>Last Name</th>
-                      <th>Role</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
-                    <tr key={user.email}>
-                    <td>{user.email}</td>
-                    <td>{user.firstName || '-'}</td>
-                    <td>{user.lastName || '-'}</td>
-                    <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
-                    <td>
-                      <button className="action-button edit-button">Edit</button>
-                      <button className="action-button delete-button" onClick={() => confirmDeleteUser(user.email)}>Delete</button>
-                    </td>
-                    </tr>
-                    ))
-                    ) : (
-                  <tr>
-                    <td colSpan="5" className="no-data">
-                     {searchQuery ? 'No matching users found' : 'No users found'}
-                  </td>
-                  </tr>
-                    )}
-                  </tbody>
-                </table>
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Email</th>
+                        <th className="hide-on-mobile">First Name</th>
+                        <th className="hide-on-mobile">Last Name</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
+                        filteredUsers.map((user) => (
+                          <tr key={user.email}>
+                            <td>{user.email}</td>
+                            <td className="hide-on-mobile">{user.firstName || '-'}</td>
+                            <td className="hide-on-mobile">{user.lastName || '-'}</td>
+                            <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
+                            <td>
+                              <button className="action-button delete-button" onClick={() => confirmDeleteUser(user.email)}>Delete</button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="no-data">
+                           {searchQuery ? 'No matching users found' : 'No users found'}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
@@ -591,7 +624,9 @@ function AdminDashboard() {
           {activeTab === 'rooms' && (
             <div className="admin-rooms">
               <div className="admin-toolbar">
-                <button className="admin-button" onClick={() => setShowRoomModal(true)}>Create New Room</button>
+                <button className="admin-button" onClick={() => setShowRoomModal(true)}>
+                  Create New Room
+                </button>
                 <div className="admin-search">
                   <input type="text" placeholder="Search rooms..." />
                 </div>
@@ -600,112 +635,121 @@ function AdminDashboard() {
               {loading ? (
                 <div className="admin-loading">Loading rooms...</div>
               ) : (
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Room ID</th>
-                      <th>Name</th>
-                      <th>Players</th>
-                      <th>Status</th>
-                      <th>Created At</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.isArray(rooms) && rooms.length > 0 ? (
-                      rooms.map((room) => (
-                        <tr key={room.id || room.roomId}>
-                          <td>{room.id || room.roomId}</td>
-                          <td>{room.name || '-'}</td>
-                          <td>
-                            {Array.isArray(room.players) && room.players.length > 0 ? (
-                              <div className="player-list">
-                                <span className="player-count">{room.players.length}</span>
-                                <div className="player-tooltip">
-                                  <ul>
-                                    {room.players.map((player, index) => (
-                                      <li key={index}>{player.name || player.email || player}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="no-players">No players</span>
-                            )}
-                          </td>
-                          <td><span className={`status-badge ${room.status?.toLowerCase() || 'inactive'}`}>{room.status || 'Inactive'}</span></td>
-                          <td>{room.createdAt ? new Date(room.createdAt).toLocaleString() : '-'}</td>
-                          <td>
-                            <button 
-                              className="action-button delete-button"
-                              onClick={() => confirmDeleteRoom(room.id || room.roomId)}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
+                <div className="table-container">
+                  <table className="admin-table">
+                    <thead>
                       <tr>
-                        <td colSpan="7" className="no-data">No rooms found</td>
+                        <th>Room ID</th>
+                        <th>Name</th>
+                        <th className="hide-on-mobile">Players</th>
+                        <th className="hide-on-mobile">Status</th>
+                        <th className="hide-on-mobile">Created At</th>
+                        <th>Actions</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {Array.isArray(rooms) && rooms.length > 0 ? (
+                        rooms.map((room) => (
+                          <tr key={room.id || room.roomId}>
+                            <td>{room.id || room.roomId}</td>
+                            <td>{room.name || '-'}</td>
+                            <td className="hide-on-mobile">
+                              {Array.isArray(room.players) && room.players.length > 0 ? (
+                                <div className="player-list">
+                                  <span className="player-count">{room.players.length}</span>
+                                  <div className="player-tooltip">
+                                    <ul>
+                                      {room.players.map((player, index) => (
+                                        <li key={index}>{player.name || player.email || player}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="no-players">No players</span>
+                              )}
+                            </td>
+                            <td className="hide-on-mobile">
+                              <span className={`status-badge ${room.status?.toLowerCase() || 'inactive'}`}>
+                                {room.status || 'Inactive'}
+                              </span>
+                            </td>
+                            <td className="hide-on-mobile">
+                              {room.createdAt ? new Date(room.createdAt).toLocaleString() : '-'}
+                            </td>
+                            <td>
+                              <button 
+                                className="action-button delete-button"
+                                onClick={() => confirmDeleteRoom(room.id || room.roomId)}
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="6" className="no-data">No rooms found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
 
           {activeTab === 'stats' && (
-              <AdminStats/>
+            <AdminStats/>
           )}
         </div>
       </main>
 
       {/* Delete User Confirmation Modal */}
-          {showDeleteUserConfirmation && (
-            <div className="modal-overlay">
-              <div className="modal-container delete-confirmation">
-                <div className="modal-header">
-                  <h2>Confirm User Deletion</h2>
-                  <button 
-                    className="modal-close"
-                    onClick={() => {
-                      setShowDeleteUserConfirmation(false);
-                      setDeletingUserEmail(null);
-                    }}
-                >
-                  &times;
-                </button>
-              </div>
-              <div className="modal-body">
-                <p className='warning-text'>Are you sure you want to delete the user with email: <strong>{deletingUserEmail}</strong>?</p>
-                <p className="warning-text">
-                  This action cannot be undone. All user data will be permanently deleted.
-                </p>
-              </div>
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setShowDeleteUserConfirmation(false);
-                    setDeletingUserEmail(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="button" 
-                  className="btn btn-danger"
-                  onClick={handleDeleteUser}
-                >
-                  Delete User
-                </button>
-              </div>
+      {showDeleteUserConfirmation && (
+        <div className="modal-overlay">
+          <div className="modal-container delete-confirmation">
+            <div className="modal-header">
+              <h2>Confirm User Deletion</h2>
+              <button 
+                className="modal-close"
+                onClick={() => {
+                  setShowDeleteUserConfirmation(false);
+                  setDeletingUserEmail(null);
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className='warning-text'>Are you sure you want to delete the user with email: <strong>{deletingUserEmail}</strong>?</p>
+              <p className="warning-text">
+                This action cannot be undone. All user data will be permanently deleted.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowDeleteUserConfirmation(false);
+                  setDeletingUserEmail(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-danger"
+                onClick={handleDeleteUser}
+              >
+                Delete User
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
+      
       {/* Room Creation Modal */}
       {showRoomModal && (
         <div className="modal-overlay">

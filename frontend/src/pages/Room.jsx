@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { ENDPOINT_ROOMS } from '../endpoints';
+import { ENDPOINT_ROOMS, ENDPOINT_CHAT } from '../endpoints';
 import Chat from '../components/Chat';
 import QuizTime from './QuizTime';
 import './RoomTransitions.css';
@@ -18,7 +18,6 @@ function Room() {
   
   // Add transition states
   const [isExiting, setIsExiting] = useState(false);
-  const [transitionComplete, setTransitionComplete] = useState(false);
   const [transitionData, setTransitionData] = useState(null);
 
   useEffect(() => {
@@ -98,10 +97,25 @@ function Room() {
     fetchRoomData();
   }, [roomId, token, isAuthenticated, navigate]);
 
-  // Check for game started status (one-time fetch instead of polling)
+  // Check if user is the first player (host)
+  const amIFirstPlayer = () => {
+    if (!room?.players || room.players.length === 0) return false;
+    
+    const firstPlayer = room.players[0];
+    const firstPlayerEmail = typeof firstPlayer === 'object' ? firstPlayer.email : firstPlayer;
+    
+    return firstPlayerEmail === user?.email;
+  };
+
+  // Check for game started status (only for non-host players)
   useEffect(() => {
+    // Skip this check if user is the host - let them press the button
+    if (room && amIFirstPlayer()) {
+      return;
+    }
+    
     const checkGameStarted = async () => {
-      // Don't check if we've already started the transition or quiz
+      // Don't check if we've already started the transition
       if (isExiting || quizStarted) return;
       
       try {
@@ -123,19 +137,24 @@ function Room() {
         
         // Check if the game has started
         if (roomData.gameStarted && !quizStarted) {
+          console.log('Game started detected, transitioning to game...');
           setTransitionData(roomData);
-          startExitTransition();
+          // Use the same navigation pattern as the button click handler
+          setIsExiting(true);
+          setTimeout(() => {
+            navigate(`/game/${roomId}`);
+          }, 700);
         }
       } catch (error) {
         console.error('Error checking game status:', error);
       }
     };
     
-    // Check every 5 seconds if game started (much less frequent than the previous polling)
+    // Check every 5 seconds if game started (for non-host players)
     const intervalId = setInterval(checkGameStarted, 5000);
     
     return () => clearInterval(intervalId);
-  }, [roomId, token, quizStarted, isExiting, logout]);
+  }, [roomId, token, quizStarted, isExiting, logout, room, navigate, amIFirstPlayer, user?.email]);
 
   const fetchRoomData = async () => {
     try {
@@ -242,26 +261,6 @@ function Room() {
     }
   }, [room?.players]);
 
-  const amIFirstPlayer = () => {
-    if (!room?.players || room.players.length === 0) return false;
-    
-    const firstPlayer = room.players[0];
-    const firstPlayerEmail = typeof firstPlayer === 'object' ? firstPlayer.email : firstPlayer;
-    
-    return firstPlayerEmail === user?.email;
-  };
-
-  // Start the transition out animation
-  const startExitTransition = () => {
-    setIsExiting(true);
-    
-    // After the transition duration, set quizStarted to true
-    setTimeout(() => {
-      setTransitionComplete(true);
-      setQuizStarted(true);
-    }, 800); // This should match your CSS transition duration
-  };
-
   const handleStartQuiz = async () => {
     try {
       // First, start the exit transition
@@ -314,12 +313,12 @@ function Room() {
         };
       }
       
-      // We can still store the data but won't use it directly
+      // Store the data but won't use it directly
       setTransitionData(gameData);
       
       // After a short delay to allow the fade-out animation to play
       setTimeout(() => {
-        // Navigate to the game route instead of using the transitionComplete/quizStarted state
+        // Navigate to the game route
         navigate(`/game/${roomId}`);
       }, 700); // Slightly shorter than the CSS transition to ensure smooth navigation
       
@@ -342,10 +341,6 @@ function Room() {
         <button onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
       </div>
     );
-  }
-
-  if (quizStarted && transitionComplete) {
-    return <QuizTime roomData={transitionData || room} />;
   }
 
   return (

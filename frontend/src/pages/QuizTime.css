@@ -502,8 +502,9 @@
   }
   
   .player-score {
-    min-width: 70px;
+    width: 220px;
     font-size: 0.9rem;
+    padding: 0;
   }
   
   .score-value {
