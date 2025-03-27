@@ -1,5 +1,11 @@
-const AWS = require('aws-sdk');
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
+// Import DynamoDB from SDK v3
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand, GetCommand, DeleteCommand, UpdateCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
+const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require('@aws-sdk/client-apigatewaymanagementapi');
+
+// Initialize the DynamoDB client
+const dynamoClient = new DynamoDBClient();
+const dynamoDb = DynamoDBDocumentClient.from(dynamoClient);
 const TABLE_NAME = 'WebSocketConnections2025';
 
 module.exports.connect = async (event) => {
@@ -9,7 +15,7 @@ module.exports.connect = async (event) => {
     Item: { connectionId },
   };
 
-  await dynamoDb.put(params).promise();
+  await dynamoDb.send(new PutCommand(params));
   return { statusCode: 200 };
 };
 
@@ -24,11 +30,11 @@ module.exports.disconnect = async (event) => {
       Key: { connectionId },
     };
     
-    const connectionData = await dynamoDb.get(userParams).promise();
+    const connectionData = await dynamoDb.send(new GetCommand(userParams));
     const userData = connectionData.Item || {};
     
     // Delete the connection
-    await dynamoDb.delete(userParams).promise();
+    await dynamoDb.send(new DeleteCommand(userParams));
     
     // If user had a display name and room, broadcast they left to that room only
     if (userData.displayName && userData.roomId) {
@@ -71,7 +77,7 @@ module.exports.joinChat = async (event) => {
       }
     };
     
-    await dynamoDb.update(params).promise();
+    await dynamoDb.send(new UpdateCommand(params));
     
     // Only broadcast to connections in the same room
     const roomConnections = await getRoomConnections(roomId);
@@ -104,7 +110,7 @@ async function getRoomConnections(roomId) {
     }
   };
   
-  const result = await dynamoDb.scan(params).promise();
+  const result = await dynamoDb.send(new ScanCommand(params));
   return result.Items || [];
 }
 
@@ -184,13 +190,14 @@ module.exports.gameStarted = async (event) => {
     return { statusCode: 500, body: JSON.stringify({ error: 'Failed to send game started message' }) };
   }
 };
+
 // Update system message function to be room-specific
 async function sendSystemMessage(event, content, roomId) {
   try {
     // Only get connections for this room
     const roomConnections = roomId 
       ? await getRoomConnections(roomId)
-      : await dynamoDb.scan({ TableName: TABLE_NAME }).promise().then(data => data.Items || []);
+      : await getAllConnections();
     
     const systemMessage = {
       type: 'system',
@@ -205,25 +212,37 @@ async function sendSystemMessage(event, content, roomId) {
   }
 }
 
+// Helper function to get all connections
+async function getAllConnections() {
+  const params = {
+    TableName: TABLE_NAME
+  };
+  
+  const result = await dynamoDb.send(new ScanCommand(params));
+  return result.Items || [];
+}
+
 // Helper function to broadcast messages to connections
 async function broadcastMessage(event, connections, messageData) {
-  const apiGateway = new AWS.ApiGatewayManagementApi({
-    endpoint: event.requestContext.domainName + '/' + event.requestContext.stage,
+  const endpoint = event.requestContext.domainName + '/' + event.requestContext.stage;
+  
+  const apiGatewayClient = new ApiGatewayManagementApiClient({
+    endpoint: `https://${endpoint}`
   });
   
   const postToConnection = async ({ connectionId }) => {
     try {
-      await apiGateway.postToConnection({
+      await apiGatewayClient.send(new PostToConnectionCommand({
         ConnectionId: connectionId,
         Data: JSON.stringify(messageData),
-      }).promise();
+      }));
     } catch (error) {
       if (error.statusCode === 410) {
         // Connection is stale, remove it
-        await dynamoDb.delete({
+        await dynamoDb.send(new DeleteCommand({
           TableName: TABLE_NAME,
           Key: { connectionId },
-        }).promise();
+        }));
       } else {
         console.error(`Error sending to connection ${connectionId}:`, error);
       }
