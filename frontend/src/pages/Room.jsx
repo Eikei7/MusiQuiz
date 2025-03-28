@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { ENDPOINT_ROOMS, ENDPOINT_CHAT } from '../endpoints';
 import Chat from '../components/Chat';
-import QuizTime from './QuizTime';
 import './RoomTransitions.css';
 
 function Room() {

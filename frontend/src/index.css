@@ -24,10 +24,10 @@
 
 body {
   margin: 0;
-  height: 100vh;
+  min-height: 100vh; /* Changed from height: 100vh */
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Changed from center */
   background: linear-gradient(135deg,
    rgba(255,108,123,1) 0%,
    rgba(240,115,254,1) 10%,
@@ -41,8 +41,9 @@ body {
    rgba(255,228,123,1) 90%,
    rgba(252,122,122,1) 100%);
   background-size: 200% 200%;
+  background-attachment: fixed; /* Added to fix background on scroll */
   animation: gradient 25s ease infinite;
-  /* overflow-y: hidden; */
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 a {
