@@ -6,25 +6,29 @@ import './QuestionsManager.css';
 
 // Get the same categories array from QuestionForm to keep consistency
 const MUSIC_CATEGORIES = [
-  "Classical",
-  "Rock",
-  "Pop",
-  "Jazz",
+  "Awards",
   "Blues",
-  "Hip Hop",
-  "Soul",
+  "Classical",
+  "Country",
+  "Dansband",
   "Disco",
   "Electronic",
-  "Country",
+  "Events",
   "Folk",
-  "World Music",
-  "Music Theory",
-  "Instruments",
   "General",
+  "Hip Hop",
+  "Instruments",
+  "Jazz",
+  "Metal",
   "Music Technology",
+  "Music Theory",
   "Musical",
-  "Awards",
-  "Video game music"
+  "Pop",
+  "Punk",
+  "Rock",
+  "Soul",
+  "Video game music",
+  "World Music"
 ];
 
 function QuestionsManager() {

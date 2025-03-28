@@ -4,25 +4,29 @@ import './QuestionForm.css';
 
 // Define list of music categories
 const MUSIC_CATEGORIES = [
-  "Classical",
-  "Rock",
-  "Pop",
-  "Jazz",
-  "Blues",
-  "Hip Hop",
-  "Disco",
-  "Soul",
-  "Electronic",
-  "Country",
-  "Folk",
-  "World Music",
-  "Music Theory",
-  "Instruments",
-  "General",
-  "Music Technology",
-  "Musical",
   "Awards",
-  "Video game music"
+  "Blues",
+  "Classical",
+  "Country",
+  "Dansband",
+  "Disco",
+  "Electronic",
+  "Events",
+  "Folk",
+  "General",
+  "Hip Hop",
+  "Instruments",
+  "Jazz",
+  "Metal",
+  "Music Technology",
+  "Music Theory",
+  "Musical",
+  "Pop",
+  "Punk",
+  "Rock",
+  "Soul",
+  "Video game music",
+  "World Music"
 ];
 
 function QuestionForm({ onQuestionAdded, token, editQuestion }) {
