@@ -42,7 +42,7 @@ function AdminDashboard() {
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: 'user' // Default role
+    role: 'user'
   });
   const [addUserError, setAddUserError] = useState('');
   const [addingUser, setAddingUser] = useState(false);
@@ -82,7 +82,7 @@ function AdminDashboard() {
       }
 
       const data = await response.json();
-      // Ensure we're setting an array to the users state
+
       setUsers(Array.isArray(data) ? data : (data.users || []));
       setError('');
     } catch (err) {
@@ -262,7 +262,6 @@ function AdminDashboard() {
     try {
       setCreatingRoom(true);
       
-      // Only sending the name since the backend handles roomId, players array, and createdAt
       const roomData = {
         name: newRoomName.trim()
       };
@@ -304,8 +303,7 @@ function AdminDashboard() {
     if (!deletingRoomId) return;
     
     try {
-      // Make sure the URL format matches what your backend expects
-      // Your backend expects roomId as a path parameter
+
       const response = await fetch(`${ENDPOINT_ROOMS_DELETE}/${deletingRoomId}`, {
         method: 'DELETE',
         headers: {

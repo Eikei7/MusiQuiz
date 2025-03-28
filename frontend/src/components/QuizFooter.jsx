@@ -3,7 +3,6 @@ import "../pages/QuizTime.css";
 
 const QuizFooter = ({ selectedHotspot, isAnswerCorrect, disabled, onAnswerSelected }) => {
   const options = ['A', 'B', 'C', 'D'];
-  // Handle click on answer box
   const handleClick = (index) => {
     if (!disabled && isAnswerCorrect === null) {
       onAnswerSelected(index);

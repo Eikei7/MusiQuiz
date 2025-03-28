@@ -292,7 +292,6 @@
   color: #666;
 }
 
-/* Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -391,7 +390,6 @@
   cursor: not-allowed;
 }
 
-/* Player list styles */
 .player-list {
   position: relative;
   display: inline-block;
@@ -446,7 +444,6 @@
   margin-top: 8px;
 }
 
-/* Delete confirmation styles */
 .delete-confirmation {
   max-width: 400px;
 }
@@ -512,7 +509,6 @@
   100% { opacity: 1; }
 }
 
-/* Mobile menu toggle button */
 .mobile-menu-toggle {
   display: none;
   flex-direction: column;
@@ -550,7 +546,6 @@
   transform: translateY(-9px) rotate(-45deg);
 }
 
-/* Overlay for mobile sidebar */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -562,7 +557,6 @@
   z-index: 999;
 }
 
-/* Mobile responsiveness */
 @media (max-width: 768px) {
   .admin-dashboard {
     flex-direction: column;
@@ -602,10 +596,6 @@
     flex-direction: column;
     align-items: flex-start;
   }
-/*   
-  .admin-search {
-    width: 100%;
-  } */
   
   .admin-search input {
     width: 100%;
@@ -630,7 +620,6 @@
   }
 }
 
-/* Medium screens */
 @media (min-width: 769px) and (max-width: 1024px) {
   .admin-content {
     min-width: auto;
@@ -641,7 +630,6 @@
   }
 }
 
-/* Error message styling */
 .error-message {
   background-color: #f8d7da;
   color: #721c24;
@@ -651,7 +639,6 @@
   border: 1px solid #f5c6cb;
 }
 
-/* Status badge styling */
 .status-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;

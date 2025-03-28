@@ -11,7 +11,6 @@ const Chat = ({ ws: externalWs, selectedRoom, onPlayerJoin, onPlayerLeave }) => 
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [displayName, setDisplayName] = useState('');
   const chatContainerRef = useRef(null);
-  // Track whether we've joined already to prevent duplicate join messages
   const [hasJoined, setHasJoined] = useState(false);
 
   // Set display name based on user info from Auth context
@@ -54,7 +53,6 @@ const Chat = ({ ws: externalWs, selectedRoom, onPlayerJoin, onPlayerLeave }) => 
         externalWs.removeEventListener('error', handleError);
       };
     } else {
-      // Create our own WebSocket if none is provided
       console.log('Creating new WebSocket connection');
       const websocket = new WebSocket(ENDPOINT_CHAT);
       
@@ -81,18 +79,17 @@ const Chat = ({ ws: externalWs, selectedRoom, onPlayerJoin, onPlayerLeave }) => 
 
   // Join the chat with current display name when connection is established
   useEffect(() => {
-    // Only send join message when connection is OPEN, we have a display name, and haven't joined yet
+
     if (ws && ws.readyState === WebSocket.OPEN && displayName && !hasJoined && connectionStatus === 'connected') {
       console.log('Sending join message with displayName:', displayName);
       
       try {
         ws.send(JSON.stringify({
-          action: 'joinchat', // Make sure this matches the route in serverless.yml
+          action: 'joinchat',
           displayName,
           roomId: selectedRoom?.roomId
         }));
         
-        // Mark that we've joined to prevent sending duplicate join messages
         setHasJoined(true);
       } catch (error) {
         console.error('Error joining chat:', error);
@@ -152,7 +149,6 @@ const handleMessage = (event) => {
           // Handle users list updates
           else if (data.type === "users") {
             console.log('Users list received:', data);
-            // You can add additional state to track users if needed
           } 
           else {
             console.log('Message not handled by Chat component:', data);
@@ -191,12 +187,11 @@ const handleMessage = (event) => {
         action: 'sendmessage', 
         message: input, 
         displayName,
-        roomId: selectedRoom?.roomId // Include roomId if available
+        roomId: selectedRoom?.roomId
       }));
       setInput('');
     } catch (error) {
       console.error('Error sending message:', error);
-      // You might want to show a user-friendly error here
     }
   };
 

@@ -47,19 +47,19 @@ const Card = ({
     initial: {
       scale: 0.1,
       rotate: -180,
-      rotateY: 180, // Start flipped
+      rotateY: 180,
       opacity: 0,
     },
     animate: {
       scale: 1,
       rotate: 0,
-      rotateY: 0, // End normal
+      rotateY: 0,
       opacity: 1,
       transition: {
         duration: 1.2,
         ease: "easeOut",
         rotateY: {
-          duration: 0.8, // Flip happens a bit faster than the full animation
+          duration: 0.8,
         },
         scale: {
           duration: 1.2,
@@ -86,7 +86,6 @@ const Card = ({
     }
   };
 
-  // Reset shown questions (optional - could add a button for this)
   const resetShownQuestions = () => {
     sessionStorage.removeItem(SHOWN_QUESTIONS_KEY);
   };
@@ -158,7 +157,7 @@ const Card = ({
           const questionData = {
             id: randomQuestion.id,
             correctAnswerIndex: Number(randomQuestion.correctAnswerIndex),
-            category: randomQuestion.category || 'General' // Pass the category info
+            category: randomQuestion.category || 'General'
           };
           console.log('Card: Sending question data with category:', questionData.category);
           onQuestionLoaded(questionData);

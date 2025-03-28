@@ -29,7 +29,6 @@
   color: #4caf50;
 }
 
-/* Search input */
 .question-search {
   position: relative;
   flex: 0 0 300px;
@@ -69,7 +68,6 @@
   align-items: center;
 }
 
-/* Responsive table */
 @media (max-width: 768px) {
   .questions-table {
     display: block;

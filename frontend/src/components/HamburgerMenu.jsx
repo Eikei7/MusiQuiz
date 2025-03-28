@@ -1,4 +1,3 @@
-// HamburgerMenu.js
 import { useState, useEffect, useRef } from 'react';
 import './HamburgerMenu.css';
 

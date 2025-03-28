@@ -13,7 +13,7 @@ export const getTokenExpiration = (token) => {
   try {
     const decoded = jwtDecode(token);
     if (decoded.exp) {
-      // exp is in seconds, convert to milliseconds
+
       return new Date(decoded.exp * 1000);
     }
   } catch (error) {

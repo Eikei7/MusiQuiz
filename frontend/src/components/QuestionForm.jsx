@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ENDPOINT_QUESTIONS } from '../endpoints';
 import './QuestionForm.css';
 
-// Define list of music categories
 const MUSIC_CATEGORIES = [
   "Awards",
   "Blues",
