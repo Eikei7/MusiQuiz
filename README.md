@@ -6,7 +6,7 @@ MusiQuiz is an interactive web application that allows users to test their music
 
 * **User Authentication:** Secure login and registration system
 * **Admin Dashboard:** Comprehensive management of users, questions, and rooms
-* **Quiz Rooms:** Users can join existing rooms (created by an admin) to play with others
+* **Quiz Rooms:** Users can join existing rooms (created by an admin) to play a quiz by themselves or against others
 * **Chat:** Users who have joined a room can chat while waiting for a game to start.
 * ~~**Turn-Based Gameplay:** Players take turns answering music questions~~ ⬅️ WORK IN PROGRESS
 * ~~**Real-Time Updates:** See other players' actions instantly~~⬅️ WORK IN PROGRESS
@@ -30,16 +30,28 @@ MusiQuiz is an interactive web application that allows users to test their music
 
 1. Users log in to their accounts
 2. Players browse and join available quiz rooms
-3. When at least two players have joined a room, the host (first player) can start the game
-4. Players take turns answering music trivia questions
-5. Correct answers earn points; incorrect answers yield no points
-6. After all rounds, final scores are displayed and a winner is declared
+3. Either the player choose to play a single player game, or waits for a second player to join the room
+5. Players take turns answering music trivia questions
+6. Correct answers earn points; incorrect answers yield no points
+7. After all rounds, final scores are displayed and a winner is declared
 
 ## User Roles
 
-* **Regular Users:** Can join rooms and participate in quizzes
+* **Regular Users:** Can join rooms, participate in quizzes and view stats
 * **Administrators:** Can manage all aspects of the application including users, questions, and rooms
 
 ## Future Enhancement ideas
 
 * Leaderboards for tracking top players
+
+## Screenshots
+![screenshot_5](https://github.com/user-attachments/assets/00c39c50-6956-4b54-9a25-a195b459e23f)
+![screenshot_1](https://github.com/user-attachments/assets/7115ec0c-dee2-4ffa-8f8b-86075339b89a)
+![screenshot_2](https://github.com/user-attachments/assets/e4896ec0-eb1d-4305-90a3-d62158d5098c)
+![screenshot_3](https://github.com/user-attachments/assets/ef4cbcd7-da0a-4334-9510-9ba41f21eef4)
+![screenshot_4](https://github.com/user-attachments/assets/c37007ab-0690-49be-aeb6-a4dc9c042aef)
+![screenshot_6](https://github.com/user-attachments/assets/70a3768b-6ddf-4b8a-baeb-39ee0fa34548)
+![screenshot_7](https://github.com/user-attachments/assets/05dd8f82-2259-4723-9949-e196319b1bd2)
+
+
+
