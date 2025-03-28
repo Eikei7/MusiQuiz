@@ -4,6 +4,28 @@ import QuestionForm from './QuestionForm';
 import { ENDPOINT_QUESTIONS } from '../endpoints';
 import './QuestionsManager.css';
 
+// Get the same categories array from QuestionForm to keep consistency
+const MUSIC_CATEGORIES = [
+  "Classical",
+  "Rock",
+  "Pop",
+  "Jazz",
+  "Blues",
+  "Hip Hop",
+  "Electronic",
+  "Country",
+  "Folk",
+  "World Music",
+  "Music Theory",
+  "Instruments",
+  "Music History",
+  "General",
+  "Music Technology",
+  "Musical",
+  "Awards",
+  "Video game music"
+];
+
 function QuestionsManager() {
   const { token } = useAuth();
   const [questions, setQuestions] = useState([]);
@@ -12,6 +34,7 @@ function QuestionsManager() {
   const [showForm, setShowForm] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
 
   useEffect(() => {
     fetchQuestions();
@@ -42,16 +65,28 @@ function QuestionsManager() {
       setLoading(false);
     }
   };
-  // Filter questions based on search query
+  // Filter questions based on search query and category
   const filteredQuestions = useMemo(() => {
-    if (!searchQuery.trim()) return questions;
+    let filtered = questions;
     
-    const query = searchQuery.toLowerCase().trim();
-    return questions.filter(question => 
-      question.question?.toLowerCase().includes(query) ||
-      question.choices?.some(choice => choice.toLowerCase().includes(query))
-    );
-  }, [questions, searchQuery]);
+    // Filter by category if selected
+    if (categoryFilter) {
+      filtered = filtered.filter(question => 
+        question.category === categoryFilter
+      );
+    }
+    
+    // Filter by search query if provided
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(question => 
+        question.question?.toLowerCase().includes(query) ||
+        question.choices?.some(choice => choice.toLowerCase().includes(query))
+      );
+    }
+    
+    return filtered;
+  }, [questions, searchQuery, categoryFilter]);
 
   const handleQuestionAdded = () => {
     fetchQuestions();
@@ -105,27 +140,40 @@ function QuestionsManager() {
         {showForm ? 'Cancel' : 'Add New Question'}
         </button>
 
-      <div className="question-count">
-        <span>{!loading && (filteredQuestions.length + " question(s) found")}</span>
-      </div>
+        <div className="filter-container">
+          <select
+            className="category-filter"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            {MUSIC_CATEGORIES.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </div>
 
-      <div className="admin-search">
-        <input 
-        type="text" 
-        placeholder="Search questions..." 
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        {searchQuery && (
-        <button 
-        className="search-clear-button"
-        onClick={() => setSearchQuery('')}
-        >
-        ×
-        </button>
-        )}
+        <div className="question-count">
+          <span>{!loading && (filteredQuestions.length + " question(s) found")}</span>
+        </div>
+
+        <div className="admin-search">
+          <input 
+          type="text" 
+          placeholder="Search questions..." 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+          <button 
+          className="search-clear-button"
+          onClick={() => setSearchQuery('')}
+          >
+          ×
+          </button>
+          )}
+        </div>
       </div>
-    </div>
       
       {error && <div className="questions-error">{error}</div>}
       
@@ -137,19 +185,21 @@ function QuestionsManager() {
         />
       )}
 
-      
-
       {loading ? (
         <div className="questions-loading">Loading questions...</div>
       ) : filteredQuestions.length === 0 ? (
         <div className="no-questions">
-          <p>{searchQuery ? 'No matching questions found.' : 'No questions found. Add your first question to get started!'}</p>
+          <p>{searchQuery || categoryFilter 
+              ? 'No matching questions found.' 
+              : 'No questions found. Add your first question to get started!'}
+          </p>
         </div>
       ) : (
         <table className="questions-table">
           <thead>
             <tr>
               <th>Question</th>
+              <th>Category</th>
               <th>Option A</th>
               <th>Option B</th>
               <th>Option C</th>
@@ -162,6 +212,7 @@ function QuestionsManager() {
             {filteredQuestions.map((question) => (
               <tr key={question.id}>
                 <td className="question-text-table">{question.question}</td>
+                <td>{question.category || 'General'}</td>
                 <td>{question.choices[0] || '-'}</td>
                 <td>{question.choices[1] || '-'}</td>
                 <td>{question.choices[2] || '-'}</td>

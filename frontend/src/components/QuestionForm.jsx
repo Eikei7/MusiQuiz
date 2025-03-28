@@ -2,11 +2,34 @@ import { useState } from 'react';
 import { ENDPOINT_QUESTIONS } from '../endpoints';
 import './QuestionForm.css';
 
+// Define list of music categories
+const MUSIC_CATEGORIES = [
+  "Classical",
+  "Rock",
+  "Pop",
+  "Jazz",
+  "Blues",
+  "Hip Hop",
+  "Electronic",
+  "Country",
+  "Folk",
+  "World Music",
+  "Music Theory",
+  "Instruments",
+  "Music History",
+  "General",
+  "Music Technology",
+  "Musical",
+  "Awards",
+  "Video game music"
+];
+
 function QuestionForm({ onQuestionAdded, token, editQuestion }) {
   const [formData, setFormData] = useState(editQuestion || {
     question: '',
     choices: ['', '', '', ''],
-    correctAnswerIndex: 0
+    correctAnswerIndex: 0,
+    category: 'General'
   });
   
   const [error, setError] = useState('');
@@ -79,7 +102,8 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
         setFormData({
           question: '',
           choices: ['', '', '', ''],
-          correctAnswerIndex: 0
+          correctAnswerIndex: 0,
+          category: 'General'
         });
       }
       
@@ -114,6 +138,23 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
             placeholder="Enter your question here..."
             rows="3"
           />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="category">Category:</label>
+          <select
+            id="category"
+            name="category"
+            value={formData.category || 'General'}
+            onChange={handleChange}
+            required
+          >
+            {MUSIC_CATEGORIES.map(category => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
         </div>
         
         <div className="form-group">

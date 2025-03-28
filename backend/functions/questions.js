@@ -27,7 +27,7 @@ const headers = {
 module.exports.createQuestion = async (event) => {
     try {
       const body = JSON.parse(event.body);
-      const { question, choices, correctAnswerIndex } = body;
+      const { question, choices, correctAnswerIndex, category } = body;
       
       // Validate required fields
       if (!question || !choices || correctAnswerIndex === undefined) {
@@ -73,6 +73,7 @@ module.exports.createQuestion = async (event) => {
           question,
           choices,
           correctAnswerIndex,
+          category: category || "General", // Default to "General" if no category provided
           createdAt: timestamp,
           updatedAt: timestamp
         }
@@ -165,7 +166,7 @@ module.exports.updateQuestion = async (event) => {
     try {
       const questionId = event.pathParameters.id;
       const body = JSON.parse(event.body);
-      const { question, choices, correctAnswerIndex } = body;
+      const { question, choices, correctAnswerIndex, category } = body;
       
       // Check if question exists
       const checkParams = {
@@ -223,6 +224,11 @@ module.exports.updateQuestion = async (event) => {
       if (correctAnswerIndex !== undefined) {
         updateParams.UpdateExpression += ", correctAnswerIndex = :correctAnswerIndex";
         updateParams.ExpressionAttributeValues[":correctAnswerIndex"] = correctAnswerIndex;
+      }
+      
+      if (category !== undefined) {
+        updateParams.UpdateExpression += ", category = :category";
+        updateParams.ExpressionAttributeValues[":category"] = category;
       }
       
       const result = await docClient.send(new UpdateCommand(updateParams));
