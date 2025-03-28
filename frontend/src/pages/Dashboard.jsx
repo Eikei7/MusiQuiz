@@ -360,19 +360,23 @@ function Dashboard() {
         <div className="category-breakdown">
           <h4>Categories Breakdown</h4>
           <div className="category-chart">
-            {Object.entries(stats.categoryStats).map(([category, catStats]) => (
-              <div className="category-bar-container" key={category}>
-                <div className="category-name">{category}</div>
-                <div className="category-bar-wrapper">
-                  <div 
-                    className="category-bar" 
-                    style={{ width: `${catStats.accuracy}%` }}
-                  ></div>
-                  <span className="category-accuracy">{catStats.accuracy}%</span>
+            {Object.entries(stats.categoryStats)
+              // Sort categories by accuracy (highest to lowest)
+              .sort((a, b) => b[1].accuracy - a[1].accuracy)
+              .map(([category, catStats]) => (
+                <div className="category-bar-container" key={category}>
+                  <div className="category-name">{category}</div>
+                  <div className="category-bar-wrapper">
+                    <div 
+                      className="category-bar" 
+                      style={{ width: `${catStats.accuracy}%` }}
+                    ></div>
+                    <span className="category-accuracy">{catStats.accuracy}%</span>
+                  </div>
+                  <div className="category-count">{catStats.correct}/{catStats.total}</div>
                 </div>
-                <div className="category-count">{catStats.correct}/{catStats.total}</div>
-              </div>
-            ))}
+              ))
+            }
           </div>
         </div>
       )}
