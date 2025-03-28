@@ -6,7 +6,6 @@ import { ENDPOINT_QUESTIONS_GET } from '../endpoints';
 const cardColors = [
   '#FF6B6B',
   '#4ECDC4', 
-  '#FFD166',
   '#6A0572',
   '#FF8811',
   '#41B3A3',
@@ -202,6 +201,9 @@ const Card = ({
               <p className="error-text">{error}</p>
             ) : (
               <>
+                <div className="card-header">
+                  <div className="category-badge">{question?.category || "General"}</div>
+                </div>
                 <p className="question-text">{question?.question || "No question available"}</p>
                 {question && (
                   <div className="choices-container">

@@ -25,6 +25,27 @@
   color: white;
 }
 
+.card-header {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  padding: 10px 15px 0;
+}
+
+.category-badge {
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(3px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 .question-text {
   font-size: 18px;
   font-weight: 400;
@@ -63,7 +84,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding-top: 30px;
+  /* padding-top: 30px; */
   padding-bottom: 50px;
 }
 
@@ -98,5 +119,26 @@
   .card {
     width: 200px;
     height: 300px;
+  }
+
+  .category-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+  
+  .question-text {
+    font-size: 0.8rem;
+  }
+
+  .choice-text {
+    font-size: 0.8rem;
+  }
+
+  .choice-marker {
+    font-size: 0.8rem;
+    margin-right: 8px;
+  }
+  .choices-container {
+    padding: 0 10px;
   }
 }
