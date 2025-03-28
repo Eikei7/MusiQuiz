@@ -428,6 +428,7 @@ module.exports.updateUser = async (event) => {
     };
   }
 };
+
 const getUserFromEvent = async (event) => {
   try {
     // Check if Authorization header exists
@@ -467,8 +468,9 @@ const getUserFromEvent = async (event) => {
     return null;
   }
 };
+
 module.exports.updateUserStats = async (event) => {
-  const { email, gameWon } = JSON.parse(event.body);
+  const { email, gameWon, questionStats } = JSON.parse(event.body);
   
   // Verify user authentication
   const user = await getUserFromEvent(event);
@@ -499,11 +501,19 @@ module.exports.updateUserStats = async (event) => {
         gamesPlayed: 0,
         gamesWon: 0,
         gamesLost: 0,
-        winRate: 0
+        winRate: 0,
+        categoryStats: {},
+        bestCategory: null,
+        bestCategoryAccuracy: 0
       };
     }
     
-    // Update stats
+    // Ensure categoryStats exists
+    if (!currentUser.stats.categoryStats) {
+      currentUser.stats.categoryStats = {};
+    }
+    
+    // Update game stats
     currentUser.stats.gamesPlayed += 1;
     
     if (gameWon) {
@@ -516,6 +526,50 @@ module.exports.updateUserStats = async (event) => {
     currentUser.stats.winRate = Math.round(
       (currentUser.stats.gamesWon / currentUser.stats.gamesPlayed) * 100
     );
+    
+    // Process question stats if provided
+    if (questionStats && Array.isArray(questionStats)) {
+      questionStats.forEach(stat => {
+        const { category, isCorrect } = stat;
+        
+        if (category) {
+          // Initialize category stats if needed
+          if (!currentUser.stats.categoryStats[category]) {
+            currentUser.stats.categoryStats[category] = {
+              correct: 0,
+              total: 0,
+              accuracy: 0
+            };
+          }
+          
+          // Update category stats
+          currentUser.stats.categoryStats[category].total += 1;
+          
+          if (isCorrect) {
+            currentUser.stats.categoryStats[category].correct += 1;
+          }
+          
+          // Calculate accuracy percentage
+          const correct = currentUser.stats.categoryStats[category].correct;
+          const total = currentUser.stats.categoryStats[category].total;
+          currentUser.stats.categoryStats[category].accuracy = Math.round((correct / total) * 100);
+        }
+      });
+      
+      // Determine best category (highest accuracy with at least 3 questions)
+      let bestCategory = null;
+      let bestAccuracy = 0;
+      
+      Object.entries(currentUser.stats.categoryStats).forEach(([category, stats]) => {
+        if (stats.total >= 3 && stats.accuracy > bestAccuracy) {
+          bestCategory = category;
+          bestAccuracy = stats.accuracy;
+        }
+      });
+      
+      currentUser.stats.bestCategory = bestCategory;
+      currentUser.stats.bestCategoryAccuracy = bestAccuracy;
+    }
     
     // Save updated user
     const updateParams = {

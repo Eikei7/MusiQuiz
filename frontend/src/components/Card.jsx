@@ -154,10 +154,13 @@ const Card = ({
         
         // Notify parent component about the loaded question, but only once
         if (onQuestionLoaded && !questionLoadedRef.current) {
+          // Add the category to the data passed to parent component
           const questionData = {
             id: randomQuestion.id,
-            correctAnswerIndex: Number(randomQuestion.correctAnswerIndex)
+            correctAnswerIndex: Number(randomQuestion.correctAnswerIndex),
+            category: randomQuestion.category || 'General' // Pass the category info
           };
+          console.log('Card: Sending question data with category:', questionData.category);
           onQuestionLoaded(questionData);
           questionLoadedRef.current = true;
         }

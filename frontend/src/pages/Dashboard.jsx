@@ -321,26 +321,64 @@ function Dashboard() {
               
               {/* User Stats Section */}
               <div className="user-stats-section">
-                <h2>Your Stats</h2>
-                <div className="stats-container">
-                  <div className="stat-card">
-                    <div className="stat-value">{stats.gamesPlayed}</div>
-                    <div className="stat-label">Total Quizzes Played</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-value">{stats.gamesWon}</div>
-                    <div className="stat-label">Times Won</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-value">{stats.gamesLost}</div>
-                    <div className="stat-label">Times Lost</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-value">{stats.winRate}%</div>
-                    <div className="stat-label">Win Rate</div>
-                  </div>
+  <h2>Your Stats</h2>
+  <div className="stats-container">
+    <div className="stat-card">
+      <div className="stat-value">{stats.gamesPlayed}</div>
+      <div className="stat-label">Total Quizzes Played</div>
+    </div>
+    <div className="stat-card">
+      <div className="stat-value">{stats.gamesWon}</div>
+      <div className="stat-label">Times Won</div>
+    </div>
+    <div className="stat-card">
+      <div className="stat-value">{stats.gamesLost}</div>
+      <div className="stat-label">Times Lost</div>
+    </div>
+    <div className="stat-card">
+      <div className="stat-value">{stats.winRate}%</div>
+      <div className="stat-label">Win Rate</div>
+    </div>
+  </div>
+  
+  {stats.bestCategory && (
+    <div className="category-stats-section">
+      <h3>Category Performance</h3>
+      <div className="stats-container">
+        <div className="stat-card">
+          <div className="stat-value">{stats.bestCategory}</div>
+          <div className="stat-label">Strongest Category</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">{stats.bestCategoryAccuracy}%</div>
+          <div className="stat-label">Accuracy in Best Category</div>
+        </div>
+      </div>
+      
+      {/* Category breakdown */}
+      {stats.categoryStats && Object.keys(stats.categoryStats).length > 0 && (
+        <div className="category-breakdown">
+          <h4>Categories Breakdown</h4>
+          <div className="category-chart">
+            {Object.entries(stats.categoryStats).map(([category, catStats]) => (
+              <div className="category-bar-container" key={category}>
+                <div className="category-name">{category}</div>
+                <div className="category-bar-wrapper">
+                  <div 
+                    className="category-bar" 
+                    style={{ width: `${catStats.accuracy}%` }}
+                  ></div>
+                  <span className="category-accuracy">{catStats.accuracy}%</span>
                 </div>
+                <div className="category-count">{catStats.correct}/{catStats.total}</div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )}
+</div>
             </>
           )}
         </section>

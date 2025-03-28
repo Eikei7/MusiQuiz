@@ -31,6 +31,9 @@ const QuizTime = ({ roomData: propRoomData }) => {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState(null);
   
+  // New state for category tracking
+  const [questionStats, setQuestionStats] = useState([]);
+  
   // Timer state
   const TIMER_DURATION = 30; // seconds
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
@@ -176,6 +179,17 @@ const QuizTime = ({ roomData: propRoomData }) => {
     
     setIsAnswerCorrect(isCorrect);
     
+    // Track question stats for category analysis
+    if (isMyTurn() && currentQuestionInfo) {
+      setQuestionStats(prev => [
+        ...prev,
+        {
+          category: currentQuestionInfo.category || 'General',
+          isCorrect: isCorrect
+        }
+      ]);
+    }
+    
     // Update score
     if (isCorrect) {
       const currentPlayerEmail = typeof players[currentTurn] === 'object' 
@@ -241,6 +255,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
       });
 
       console.log('Updating stats for user:', user.email, 'Won:', isWinner);
+      console.log('Sending category stats:', questionStats);
       
       const response = await fetch(`${ENDPOINT_USERS_STATS_UPDATE}`, {
         method: 'POST',
@@ -250,7 +265,8 @@ const QuizTime = ({ roomData: propRoomData }) => {
         },
         body: JSON.stringify({
           email: user.email,
-          gameWon: isWinner
+          gameWon: isWinner,
+          questionStats: questionStats
         })
       });
       
