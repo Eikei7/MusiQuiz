@@ -4,7 +4,6 @@ import QuestionForm from './QuestionForm';
 import { ENDPOINT_QUESTIONS } from '../endpoints';
 import './QuestionsManager.css';
 
-// Get the same categories array from QuestionForm to keep consistency
 const MUSIC_CATEGORIES = [
   "Awards",
   "Blues",
