@@ -57,7 +57,7 @@ MusiQuiz is an interactive web application that allows users to test their music
 ![screenshot_1](https://github.com/user-attachments/assets/7115ec0c-dee2-4ffa-8f8b-86075339b89a)
 ![screenshot_2](https://github.com/user-attachments/assets/e4896ec0-eb1d-4305-90a3-d62158d5098c)
 ![screenshot_3](https://github.com/user-attachments/assets/ef4cbcd7-da0a-4334-9510-9ba41f21eef4)
-![screenshot_4](https://github.com/user-attachments/assets/c37007ab-0690-49be-aeb6-a4dc9c042aef)
+![screenshot_4](https://github.com/user-attachments/assets/bf9f32c6-e045-4c60-a9b8-21ca01e7e365)
 ![screenshot_6](https://github.com/user-attachments/assets/70a3768b-6ddf-4b8a-baeb-39ee0fa34548)
 ![screenshot_7](https://github.com/user-attachments/assets/05dd8f82-2259-4723-9949-e196319b1bd2)
 
