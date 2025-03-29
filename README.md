@@ -2,6 +2,13 @@
 ## Project Overview
 MusiQuiz is an interactive web application that allows users to test their music knowledge through engaging quiz gameplay. Built with a modern tech stack and real-time multiplayer functionality, it delivers a dynamic and social quiz experience.
 
+## Instructions
+
+1. To run locally, simply clone project to your computer.
+2. Open shell, type cd frontend.
+3. type npm run dev.
+4. Open link in a browser.
+
 ## Key Features
 
 * **User Authentication:** Secure login and registration system
