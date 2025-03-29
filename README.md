@@ -5,9 +5,10 @@ MusiQuiz is an interactive web application that allows users to test their music
 ## Instructions
 
 1. To run locally, simply clone project to your computer.
-2. Open shell/terminal, type cd frontend.
-3. type npm run dev.
-4. Open link in a browser.
+2. Open shell/terminal, type ```cd frontend``` and press ENTER
+3. type ```npm install``` and press ENTER
+4. type ```npm run dev``` and press ENTER
+5. Open link in a browser.
 
 ## Key Features
 
