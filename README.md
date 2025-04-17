@@ -1,4 +1,5 @@
 # MusiQuiz: Interactive Multiplayer Music Quiz
+[![Netlify Status](https://api.netlify.com/api/v1/badges/1ea640ec-3e15-480f-b0ad-5af0cae19ecb/deploy-status)](https://app.netlify.com/sites/musi-quiz/deploys)
 ## Project Overview
 MusiQuiz is an interactive web application that allows users to test their music knowledge through engaging quiz gameplay. Built with a modern tech stack and real-time multiplayer functionality, it delivers a dynamic and social quiz experience.
 
