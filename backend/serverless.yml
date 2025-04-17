@@ -1,0 +1,270 @@
+org: frontenderik
+service: MusiQuiz
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: eu-north-1
+  environment:
+    USERS_TABLE: ${self:service}-users-${sls:stage}
+    ROOMS_TABLE: ${self:service}-rooms-${sls:stage}
+    QUESTIONS_TABLE: ${self:service}-questions-${sls:stage}
+    CONNECTIONS_TABLE: ${self:service}-connections-${sls:stage}
+    JWT_SECRET: "ilovemusic"
+
+  httpApi:
+    cors: true
+    
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:BatchGetItem
+            - execute-api:ManageConnections
+          Resource: "*"
+
+
+functions:
+  # Existing functions
+  registerUser:
+    handler: functions/users.registerUser
+    events:
+      - httpApi:
+          path: /register
+          method: post
+  
+  loginUser:
+    handler: functions/users.loginUser
+    events:
+      - httpApi:
+          path: /login
+          method: post
+        
+  listUsers:
+    handler: functions/users.listUsers
+    events:
+      - httpApi:
+          path: /users
+          method: get
+
+  deleteUser:
+    handler: functions/users.deleteUser
+    events:
+      - httpApi:
+          path: /users/{email}
+          method: delete
+
+  updateUser:
+    handler: functions/users.updateUser
+    events:
+      - httpApi:
+          path: /users/update
+          method: put
+
+  updateUserStats:
+    handler: functions/users.updateUserStats
+    events:
+      - http:
+          path: /users/stats/update
+          method: post
+          cors: true
+  
+  getUserStats:
+    handler: functions/users.getUserStats
+    events:
+      - http:
+          path: /users/stats
+          method: get
+          cors: true
+
+  getAllUserStats:
+    handler: functions/users.getAllUserStats
+    events:
+      - http:
+          path: /users/stats/all
+          method: get
+          cors: true
+  
+  createRoom:
+    handler: functions/rooms.createRoom
+    events:
+      - httpApi:
+          path: /rooms
+          method: post
+  
+  deleteRoom:
+    handler: functions/rooms.deleteRoom
+    events:
+      - httpApi:
+          path: /rooms/{roomId}
+          method: delete
+  
+  listRooms:
+    handler: functions/rooms.listRooms
+    events:
+      - httpApi:
+          path: /rooms
+          method: get
+
+  getRoom:
+    handler: functions/rooms.getRoom
+    events:
+      - httpApi:
+          path: /rooms/{roomId}
+          method: get
+  
+  joinRoom:
+    handler: functions/rooms.joinRoom
+    events:
+      - httpApi:
+          path: /rooms/{roomId}/join
+          method: post
+  
+  leaveRoom:
+    handler: functions/rooms.leaveRoom
+    events:
+      - httpApi:
+          path: /rooms/{roomId}/leave
+          method: post
+
+  createQuestion:
+    handler: functions/questions.createQuestion
+    events:
+      - httpApi:
+          path: /questions
+          method: post
+  
+  getQuestions:
+    handler: functions/questions.getQuestions
+    events:
+      - httpApi:
+          path: /questions
+          method: get
+  
+  getQuestion:
+    handler: functions/questions.getQuestion
+    events:
+      - httpApi:
+          path: /questions/{id}
+          method: get
+  
+  updateQuestion:
+    handler: functions/questions.updateQuestion
+    events:
+      - httpApi:
+          path: /questions/{id}
+          method: put
+  
+  deleteQuestion:
+    handler: functions/questions.deleteQuestion
+    events:
+      - httpApi:
+          path: /questions/{id}
+          method: delete
+
+  connect:
+    handler: functions/chat.connect
+    events:
+      - websocket:
+          route: $connect
+  
+  disconnect:
+    handler: functions/chat.disconnect
+    events:
+      - websocket:
+          route: $disconnect
+  
+  sendMessage:
+    handler: functions/chat.sendMessage
+    events:
+      - websocket:
+          route: sendmessage
+
+  joinChat:
+    handler: functions/chat.joinChat
+    events:
+      - websocket:
+          route: joinchat
+
+  gameStarted:
+    handler: functions/chat.gameStarted
+    events:
+      - websocket:
+         route: gamestarted
+
+  startGame:
+    handler: functions/rooms.startGame
+    events:
+      - httpApi:
+         path: /rooms/{roomId}/start
+         method: post
+
+resources:
+  Resources:
+  
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-users-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: email
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    RoomsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-rooms-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: roomId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: roomId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    QuestionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-questions-${sls:stage}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-connections-${sls:stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+
+    WebSocketMessagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: WebSocketConnections2025
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
