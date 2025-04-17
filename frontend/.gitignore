@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-/frontend/endpoints.js
+/frontend/src/endpoints.js
 
 # Editor directories and files
 ../.vscode/*
