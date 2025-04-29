@@ -4,6 +4,8 @@ import { useAuth } from '../auth/AuthContext';
 import './Dashboard.css';
 import { ENDPOINT_ROOMS, ENDPOINT_USERS_STATS, ENDPOINT_USERS_UPDATE } from '../endpoints';
 import HamburgerMenu from '../components/HamburgerMenu';
+// Import toast from react-toastify
+import { toast } from 'react-toastify';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -32,8 +34,6 @@ function Dashboard() {
     newPassword: '',
     confirmNewPassword: ''
   });
-  const [updateError, setUpdateError] = useState('');
-  const [updateSuccess, setUpdateSuccess] = useState('');
   const [updating, setUpdating] = useState(false);
 
   // Handle user settings change
@@ -47,16 +47,18 @@ function Dashboard() {
   // Update user information
   const handleUpdateUser = async (e) => {
     e.preventDefault();
-    setUpdateError('');
-    setUpdateSuccess('');
     
     // Basic validation
     if (userSettings.newPassword && userSettings.newPassword !== userSettings.confirmNewPassword) {
-      setUpdateError('New passwords do not match');
+      toast.error('New passwords do not match');
       return;
     }
     
     setUpdating(true);
+    
+    // Show a loading toast that we'll update based on the result
+    const toastId = toast.loading('Updating your information...');
+    
     // Make the API call to update user information
     try {
       const response = await fetch(ENDPOINT_USERS_UPDATE, {
@@ -79,7 +81,13 @@ function Dashboard() {
         throw new Error(data.error || 'Failed to update user information');
       }
       
-      setUpdateSuccess('Your information has been updated successfully');
+      // Update toast to success
+      toast.update(toastId, {
+        render: 'Your information has been updated successfully',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000
+      });
       
       // Clear password fields
       setUserSettings({
@@ -89,8 +97,17 @@ function Dashboard() {
         confirmNewPassword: ''
       });
       
+      // Close the settings modal after successful update
+      setTimeout(() => setShowUserSettings(false), 1500);
+      
     } catch (error) {
-      setUpdateError(error.message || 'An error occurred while updating your information');
+      // Update toast to error
+      toast.update(toastId, {
+        render: error.message || 'An error occurred while updating your information',
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000
+      });
     } finally {
       setUpdating(false);
     }
@@ -119,9 +136,17 @@ function Dashboard() {
       const roomsArray = Array.isArray(data) ? data : (data.rooms || []);
       setRooms(roomsArray);
       setError('');
+      
+      // Show a success toast when rooms are refreshed
+      if (!loading) { // Don't show on initial load
+        toast.success('Rooms refreshed successfully');
+      }
     } catch (err) {
       console.error('Error loading rooms:', err);
       setError('Unable to load rooms. Please try again later.');
+      
+      // Show an error toast
+      toast.error('Unable to load rooms. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -165,12 +190,15 @@ function Dashboard() {
   };
   const handleJoinRoom = async () => {
     if (!selectedRoom) {
-      alert('Please select a room to join.');
+      toast.warning('Please select a room to join.');
       return;
     }
     
     try {
       setJoiningRoom(true);
+      
+      // Show a loading toast
+      const toastId = toast.loading(`Joining room: ${selectedRoom.name}...`);
       
       // Make the API call to join the room
       const response = await fetch(`${ENDPOINT_ROOMS}/${selectedRoom.roomId}/join`, {
@@ -186,6 +214,14 @@ function Dashboard() {
       
       // Check if the response is successful or the user is already in the room
       if (response.ok || (response.status === 400 && data.error === "You are already in this room.")) {
+        // Update toast to success
+        toast.update(toastId, {
+          render: `Successfully joined ${selectedRoom.name}!`,
+          type: 'success',
+          isLoading: false,
+          autoClose: 2000
+        });
+        
         // Navigate to the room page
         navigate(`/rooms/${selectedRoom.roomId}`);
       } else {
@@ -194,7 +230,9 @@ function Dashboard() {
       
     } catch (error) {
       console.error('Error joining room:', error);
-      alert(`Failed to join room: ${error.message}`);
+      
+      // Show error toast
+      toast.error(`Failed to join room: ${error.message}`);
     } finally {
       setJoiningRoom(false);
     }
@@ -202,6 +240,7 @@ function Dashboard() {
   // Handle navigation to room
   const handleGoToRoom = () => {
     if (activeRoom && activeRoom.roomId) {
+      toast.info(`Returning to room: ${activeRoom.name}`);
       navigate(`/rooms/${activeRoom.roomId}`);
     }
     setShowRoomWarning(false);
@@ -224,6 +263,9 @@ function Dashboard() {
         setStats(data.stats);
       } catch (error) {
         console.error('Error fetching stats:', error);
+        
+        // Show a toast notification for stats loading error
+        toast.error('Unable to load your stats. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -231,6 +273,14 @@ function Dashboard() {
     
     fetchUserStats();
   }, [token]);
+
+  // Handle logout with toast notification
+  const handleLogout = () => {
+    toast.info('Logging out...', { autoClose: 2000 });
+    setTimeout(() => {
+      logout();
+    }, 500);
+  };
 
   return (
     <div className="dashboard-container">
@@ -241,11 +291,11 @@ function Dashboard() {
           <button onClick={() => setShowUserSettings(true)} className="settings-button">
             Settings
           </button>
-          <button onClick={logout} className="logout-button">Logout</button>
+          <button onClick={handleLogout} className="logout-button">Logout</button>
         </div>
         <HamburgerMenu 
           user={user} 
-          logout={logout} 
+          logout={handleLogout} 
           onSettingsClick={() => setShowUserSettings(true)} 
         />
       </header>
@@ -402,9 +452,6 @@ function Dashboard() {
               
               <form onSubmit={handleUpdateUser}>
                 <div className="modal-body">
-                  {updateError && <div className="error-message">{updateError}</div>}
-                  {updateSuccess && <div className="success-message">{updateSuccess}</div>}
-                  
                   <div className="form-group">
                     <label htmlFor="firstName">First Name</label>
                     <input

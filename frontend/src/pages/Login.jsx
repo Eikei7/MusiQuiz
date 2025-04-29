@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login-Signup.css';
 import { useAuth } from '../auth/AuthContext';
+// Import toast from react-toastify
+import { toast } from 'react-toastify';
 
 function Login() {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -23,22 +24,33 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     
     // Validate form
     if (!formData.email || !formData.password) {
-      setError('Email and password are required');
+      // Replace error state with toast notification
+      toast.error('Email and password are required');
       return;
     }
     
     setLoading(true);
     
     try {
+      // Show loading toast that we'll update based on the result
+      const toastId = toast.loading('Logging in...');
+      
       const result = await login(formData.email, formData.password);
       
       if (!result.success) {
         throw new Error(result.error || 'Login failed');
       }
+      
+      // Update toast to success
+      toast.update(toastId, {
+        render: 'Login successful!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 2000
+      });
       
       // Navigate based on user role
       if (result.userData.role === 'admin') {
@@ -48,7 +60,8 @@ function Login() {
       }
       
     } catch (error) {
-      setError(error.message || 'An error occurred during login');
+      // Show error toast instead of setting error state
+      toast.error(error.message || 'An error occurred during login');
     } finally {
       setLoading(false);
     }
@@ -60,7 +73,6 @@ function Login() {
         <img src="/logo_text_clear.png" alt="MusiQuiz logo" />
       </div>
       <div className="login-container">
-        {error && <div className="error-message">{error}</div>}
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="input-group">
             <input 

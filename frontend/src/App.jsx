@@ -10,10 +10,26 @@ import './App.css';
 import Card from './components/Card';
 import Room from './pages/Room';
 
+// Import React-Toastify components and CSS
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function App() {
   return (
     <Router>
       <AuthProvider>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
+        
         <Routes>
           
           {/* Public routes */}
