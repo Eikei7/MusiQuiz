@@ -6,6 +6,8 @@ import { ENDPOINT_ROOMS, ENDPOINT_USERS_STATS, ENDPOINT_USERS_UPDATE } from '../
 import HamburgerMenu from '../components/HamburgerMenu';
 // Import toast from react-toastify
 import { toast } from 'react-toastify';
+// Add the CSS import
+import 'react-toastify/dist/ReactToastify.css';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -36,6 +38,14 @@ function Dashboard() {
   });
   const [updating, setUpdating] = useState(false);
 
+  // Add cleanup effect for toasts when component unmounts
+  useEffect(() => {
+    return () => {
+      // Dismiss all toasts when component unmounts
+      toast.dismiss();
+    };
+  }, []);
+
   // Handle user settings change
   const handleSettingsChange = (e) => {
     const { name, value } = e.target;
@@ -44,7 +54,8 @@ function Dashboard() {
       [name]: value
     });
   };
-  // Update user information
+  
+  // Update user information with fixed toast handling
   const handleUpdateUser = async (e) => {
     e.preventDefault();
     
@@ -57,7 +68,10 @@ function Dashboard() {
     setUpdating(true);
     
     // Show a loading toast that we'll update based on the result
-    const toastId = toast.loading('Updating your information...');
+    // Add closeButton to ensure it can be manually closed if stuck
+    const toastId = toast.loading('Updating your information...', {
+      closeButton: true
+    });
     
     // Make the API call to update user information
     try {
@@ -81,13 +95,16 @@ function Dashboard() {
         throw new Error(data.error || 'Failed to update user information');
       }
       
-      // Update toast to success
-      toast.update(toastId, {
-        render: 'Your information has been updated successfully',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000
-      });
+      // Update toast to success with a small delay to ensure toast is initialized
+      setTimeout(() => {
+        toast.update(toastId, {
+          render: 'Your information has been updated successfully',
+          type: 'success',
+          isLoading: false,
+          autoClose: 3000,
+          closeButton: true
+        });
+      }, 100);
       
       // Clear password fields
       setUserSettings({
@@ -101,13 +118,16 @@ function Dashboard() {
       setTimeout(() => setShowUserSettings(false), 1500);
       
     } catch (error) {
-      // Update toast to error
-      toast.update(toastId, {
-        render: error.message || 'An error occurred while updating your information',
-        type: 'error',
-        isLoading: false,
-        autoClose: 5000
-      });
+      // Update toast to error with delay
+      setTimeout(() => {
+        toast.update(toastId, {
+          render: error.message || 'An error occurred while updating your information',
+          type: 'error',
+          isLoading: false,
+          autoClose: 5000,
+          closeButton: true
+        });
+      }, 100);
     } finally {
       setUpdating(false);
     }
@@ -139,14 +159,20 @@ function Dashboard() {
       
       // Show a success toast when rooms are refreshed
       if (!loading) { // Don't show on initial load
-        toast.success('Rooms refreshed successfully');
+        toast.success('Rooms refreshed successfully', {
+          closeButton: true,
+          autoClose: 3000
+        });
       }
     } catch (err) {
       console.error('Error loading rooms:', err);
       setError('Unable to load rooms. Please try again later.');
       
       // Show an error toast
-      toast.error('Unable to load rooms. Please try again later.');
+      toast.error('Unable to load rooms. Please try again later.', {
+        closeButton: true,
+        autoClose: 5000
+      });
     } finally {
       setLoading(false);
     }
@@ -190,15 +216,19 @@ function Dashboard() {
   };
   const handleJoinRoom = async () => {
     if (!selectedRoom) {
-      toast.warning('Please select a room to join.');
+      toast.warning('Please select a room to join.', {
+        closeButton: true
+      });
       return;
     }
     
     try {
       setJoiningRoom(true);
       
-      // Show a loading toast
-      const toastId = toast.loading(`Joining room: ${selectedRoom.name}...`);
+      // Show a loading toast with closeButton
+      const toastId = toast.loading(`Joining room: ${selectedRoom.name}...`, {
+        closeButton: true
+      });
       
       // Make the API call to join the room
       const response = await fetch(`${ENDPOINT_ROOMS}/${selectedRoom.roomId}/join`, {
@@ -214,13 +244,16 @@ function Dashboard() {
       
       // Check if the response is successful or the user is already in the room
       if (response.ok || (response.status === 400 && data.error === "You are already in this room.")) {
-        // Update toast to success
-        toast.update(toastId, {
-          render: `Successfully joined ${selectedRoom.name}!`,
-          type: 'success',
-          isLoading: false,
-          autoClose: 2000
-        });
+        // Update toast to success with small delay
+        setTimeout(() => {
+          toast.update(toastId, {
+            render: `Successfully joined ${selectedRoom.name}!`,
+            type: 'success',
+            isLoading: false,
+            autoClose: 4000,
+            closeButton: true
+          });
+        }, 100);
         
         // Navigate to the room page
         navigate(`/rooms/${selectedRoom.roomId}`);
@@ -231,8 +264,14 @@ function Dashboard() {
     } catch (error) {
       console.error('Error joining room:', error);
       
-      // Show error toast
-      toast.error(`Failed to join room: ${error.message}`);
+      // Add timeout to ensure previous toast is dismissed
+      setTimeout(() => {
+        // Show error toast
+        toast.error(`Failed to join room: ${error.message}`, {
+          closeButton: true,
+          autoClose: 5000
+        });
+      }, 200);
     } finally {
       setJoiningRoom(false);
     }
@@ -240,7 +279,10 @@ function Dashboard() {
   // Handle navigation to room
   const handleGoToRoom = () => {
     if (activeRoom && activeRoom.roomId) {
-      toast.info(`Returning to room: ${activeRoom.name}`);
+      toast.info(`Returning to room: ${activeRoom.name}`, {
+        closeButton: true,
+        autoClose: 2000
+      });
       navigate(`/rooms/${activeRoom.roomId}`);
     }
     setShowRoomWarning(false);
@@ -265,7 +307,10 @@ function Dashboard() {
         console.error('Error fetching stats:', error);
         
         // Show a toast notification for stats loading error
-        toast.error('Unable to load your stats. Please try again later.');
+        toast.error('Unable to load your stats. Please try again later.', {
+          closeButton: true,
+          autoClose: 5000
+        });
       } finally {
         setLoading(false);
       }
@@ -276,10 +321,16 @@ function Dashboard() {
 
   // Handle logout with toast notification
   const handleLogout = () => {
-    toast.info('Logging out...', { autoClose: 2000 });
+    const toastId = toast.info('Logging out...', { 
+      autoClose: 2000,
+      closeButton: true
+    });
+    
+    // Add a safety mechanism to clear toasts if they get stuck
     setTimeout(() => {
       logout();
-    }, 500);
+      toast.dismiss(toastId);
+    }, 1500);
   };
 
   return (

@@ -9,8 +9,6 @@ import QuizTime from './pages/QuizTime';
 import './App.css';
 import Card from './components/Card';
 import Room from './pages/Room';
-
-// Import React-Toastify components and CSS
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -20,7 +18,7 @@ function App() {
       <AuthProvider>
         <ToastContainer
           position="top-right"
-          autoClose={5000}
+          autoClose={3000}
           hideProgressBar={false}
           newestOnTop
           closeOnClick
