@@ -253,10 +253,12 @@ function Dashboard() {
             autoClose: 4000,
             closeButton: true
           });
+          
+          // Delay navigation to allow toast to be visible
+          setTimeout(() => {
+            navigate(`/rooms/${selectedRoom.roomId}`);
+          }, 1000); // Show toast for 1 second before navigating
         }, 100);
-        
-        // Navigate to the room page
-        navigate(`/rooms/${selectedRoom.roomId}`);
       } else {
         throw new Error(data.error || 'Failed to join room');
       }
