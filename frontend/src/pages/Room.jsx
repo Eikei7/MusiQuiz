@@ -265,66 +265,48 @@ function Room() {
       // First, start the exit transition
       setIsExiting(true);
       
-      try {
-        await fetch(`${ENDPOINT_CHAT}/gamestarted`, {
+      // Only the host should make the POST request to start the game
+      if (amIFirstPlayer()) {
+        try {
+          await fetch(`${ENDPOINT_CHAT}/gamestarted`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              displayName: user.firstName || user.email.split('@')[0],
+              roomId: roomId
+            })
+          });
+        } catch (chatError) {
+          console.log('Failed to send game started message, continuing anyway');
+        }
+  
+        // Only the host makes this request
+        const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}/start`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            displayName: user.firstName || user.email.split('@')[0],
-            roomId: roomId
-          })
+          }
         });
-      } catch (chatError) {
-        console.log('Failed to send game started message, continuing anyway');
-      }
-
-      const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+        
+        if (!response.ok) {
+          setIsExiting(false); // Revert transition if there's an error
+          throw new Error("Failed to start quiz");
         }
-      });
-      
-      if (!response.ok) {
-        setIsExiting(false); // Revert transition if there's an error
-        throw new Error("Failed to start quiz");
       }
       
-      // Process the response data
-      let gameData;
-      try {
-        gameData = await response.json();
-      } catch (e) {
-        // If response isn't valid JSON, use the current room data
-        console.log('Using current room data for transition');
-        gameData = room;
-      }
-      
-      // Ensure gameData has all the necessary player information
-      if (!gameData.players && room.players) {
-        gameData = {
-          ...gameData,
-          players: room.players
-        };
-      }
-      
-      // Store the data but won't use it directly
-      setTransitionData(gameData);
-      
-      // After a short delay to allow the fade-out animation to play
+      // All players navigate to the game
       setTimeout(() => {
-        // Navigate to the game route
         navigate(`/game/${roomId}`);
-      }, 700); // Slightly shorter than the CSS transition to ensure smooth navigation
+      }, 700);
       
     } catch (error) {
       console.error("Error starting quiz:", error);
       alert("Failed to start the quiz: " + error.message);
-      setIsExiting(false); // Revert transition
+      setIsExiting(false);
     }
   };
 
@@ -395,7 +377,8 @@ function Room() {
               roomId={roomId} 
               selectedRoom={{ roomId }} 
               onPlayerJoin={handlePlayerJoin} 
-              onPlayerLeave={handlePlayerLeave} 
+              onPlayerLeave={handlePlayerLeave}
+              onGameStart={handleStartQuiz}
             />
           </div>
         </div>

@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthContext';
 import './Chat.css';
 import { ENDPOINT_CHAT } from '../endpoints';
 
-const Chat = ({ ws: externalWs, selectedRoom, onPlayerJoin, onPlayerLeave }) => {
+const Chat = ({ ws: externalWs, selectedRoom, onPlayerJoin, onPlayerLeave, onGameStart }) => {
   const { getDisplayName } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -104,48 +104,54 @@ const Chat = ({ ws: externalWs, selectedRoom, onPlayerJoin, onPlayerLeave }) => 
     let isMounted = true;
     
     // In the handleMessage function, add room filtering 
-const handleMessage = (event) => {
-  try {
-    const data = JSON.parse(event.data);
-    
-    // Only process messages for our room (or global messages)
-    const messageRoomId = data.roomId || null;
-    const ourRoomId = selectedRoom?.roomId || null;
-    
-    // Skip messages not intended for our room
-    if (messageRoomId && ourRoomId && messageRoomId !== ourRoomId) {
-      return;
-    }
-    
-    if (isMounted) {
-      // Handle regular chat messages
-      if (data.type === "message" || (!data.type && data.message)) {
-        setMessages((prev) => [...prev, { 
-          message: data.message || data.content, 
-          timestamp: data.timestamp || Date.now(), 
-          displayName: data.displayName || data.sender,
-          type: "message"
-        }]);
-      } 
-      // Handle system messages (user join/leave, etc.)
-      else if (data.type === "system") {
-        // Process player join/leave events (if callbacks exist)
-        if (data.content && onPlayerJoin && data.content.includes('joined the room')) {
-          const playerName = data.content.split(' joined')[0];
-          onPlayerJoin(playerName);
+    const handleMessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        // Only process messages for our room (or global messages)
+        const messageRoomId = data.roomId || null;
+        const ourRoomId = selectedRoom?.roomId || null;
+        
+        // Skip messages not intended for our room
+        if (messageRoomId && ourRoomId && messageRoomId !== ourRoomId) {
+          return;
         }
         
-        if (data.content && onPlayerLeave && data.content.includes('left the room')) {
-          const playerName = data.content.split(' left')[0];
-          onPlayerLeave(playerName);
-        }
-        
-        setMessages((prev) => [...prev, {
-          message: data.content,
-          timestamp: data.timestamp || Date.now(),
-          type: "system"
-        }]);
-      } 
+        if (isMounted) {
+          // Handle regular chat messages
+          if (data.type === "message" || (!data.type && data.message)) {
+            setMessages((prev) => [...prev, { 
+              message: data.message || data.content, 
+              timestamp: data.timestamp || Date.now(), 
+              displayName: data.displayName || data.sender,
+              type: "message"
+            }]);
+          } 
+          // Handle system messages (user join/leave, etc.)
+          else if (data.type === "system") {
+            // Process player join/leave events (if callbacks exist)
+            if (data.content && onPlayerJoin && data.content.includes('joined the room')) {
+              const playerName = data.content.split(' joined')[0];
+              onPlayerJoin(playerName);
+            }
+            
+            if (data.content && onPlayerLeave && data.content.includes('left the room')) {
+              const playerName = data.content.split(' left')[0];
+              onPlayerLeave(playerName);
+            }
+            
+            // Check for game started message and trigger game join if callback exists
+            if (data.content && data.content.includes('started the game') && props.onGameStart) {
+              console.log('Game started message received via WebSocket');
+              props.onGameStart();
+            }
+            
+            setMessages((prev) => [...prev, {
+              message: data.content,
+              timestamp: data.timestamp || Date.now(),
+              type: "system"
+            }]);
+          } 
           // Handle users list updates
           else if (data.type === "users") {
             console.log('Users list received:', data);
