@@ -18,7 +18,7 @@ MusiQuiz is an interactive web application that allows users to test their music
 * **Quiz Rooms:** Users can join existing rooms (created by an admin) to play a quiz by themselves or against others
 * **Chat:** Users who have joined a room can chat while waiting for a game to start.
 * ~~**Turn-Based Gameplay:** Players take turns answering music questions~~ ⬅️ WORK IN PROGRESS
-* ~~**Real-Time Updates:** See other players' actions instantly~~⬅️ WORK IN PROGRESS
+* **Real-Time Updates:** See other players' actions instantly
 * **Score Tracking:** Track performance across games
 
 ## Technical Architecture
@@ -30,16 +30,13 @@ MusiQuiz is an interactive web application that allows users to test their music
 
 ### Backend
 
-* **AWS Lambda:** Serverless functions for API endpoints
-* **DynamoDB:** NoSQL database for storing users, questions, and game states
-* **API Gateway:** RESTful API routing and management
-* **WebSockets:** Real-time communication between players
+* **Supabase:** Functions for endpoints, PostgreSQL database for storing users, questions, and game states, real-time updates and more.
 
 ## Game Flow
 
-1. Users log in to their accounts
-2. Players browse and join available quiz rooms
-3. Either the player choose to play a single player game, or waits for a second player to join the room
+1. Users create and/or log in to their accounts
+2. Players browse and join a quiz room
+3. The player chooses to either play a single player game, or waits for a second player to join the room
 5. Players take turns answering music trivia questions
 6. Correct answers earn points; incorrect answers yield no points
 7. After all rounds, final scores are displayed and a winner is declared
