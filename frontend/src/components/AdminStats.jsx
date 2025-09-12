@@ -3,12 +3,12 @@ import { supabase } from '../supabaseClient';
 import './AdminStats.css';
 
 const AdminStats = () => {
-  const { user } = useAuth();
   const [usersStats, setUsersStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortField, setSortField] = useState('email');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [currentUser, setCurrentUser] = useState(null);
 
   const formatLastLogin = (timestamp) => {
     if (!timestamp) return 'Never logged in';
@@ -38,6 +38,20 @@ const AdminStats = () => {
       try {
         setLoading(true);
 
+        // Get current user from Supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUser(user);
+
+        // Check if user is admin using your email-based approach
+        const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'erikmatfors@gmail.com';
+        const isAdmin = user?.email === ADMIN_EMAIL;
+
+        if (!isAdmin) {
+          setError('Admin access required');
+          setLoading(false);
+          return;
+        }
+
         // Fetch all users and their stats from Supabase
         const { data, error } = await supabase
           .from('users')
@@ -54,13 +68,8 @@ const AdminStats = () => {
       }
     };
 
-    if (user && user.user_metadata?.role === 'admin') {
-      fetchAllUserStats();
-    } else {
-      setError('Admin access required');
-      setLoading(false);
-    }
-  }, [user]);
+    fetchAllUserStats();
+  }, []);
 
   // Handle sorting
   const handleSort = (field) => {

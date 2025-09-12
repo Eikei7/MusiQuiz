@@ -12,6 +12,8 @@ import Room from './pages/Room';
 import Card from './components/Card';
 import './App.css';
 
+const ADMIN_EMAIL = 'erikmatfors@gmail.com';
+
 function App() {
   const [session, setSession] = useState(null);
 
@@ -26,6 +28,8 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const isAdmin = session?.user?.email === ADMIN_EMAIL;
 
   return (
     <Router>
@@ -42,34 +46,32 @@ function App() {
       />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={!session ? <Login /> : <Navigate to="/dashboard" replace />} />
-        <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/dashboard" replace />} />
+        <Route path="/" element={!session ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
+        <Route path="/signup" element={!session ? <Signup /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
 
         {/* Protected routes for all authenticated users */}
         <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/" replace />} />
         <Route path="/rooms/:roomId" element={session ? <Room /> : <Navigate to="/" replace />} />
         <Route path="/game/:roomId" element={session ? <QuizTime /> : <Navigate to="/" replace />} />
 
-        {/* Admin-only route */}
+        {/* Admin-only routes */}
         <Route
           path="/admin"
           element={
-            session ? (
-              // Check if the user is admin by querying the users table
+            session && isAdmin ? (
               <AdminDashboard />
             ) : (
-              <Navigate to="/" replace />
+              <Navigate to={session ? "/dashboard" : "/"} replace />
             )
           }
         />
         <Route
           path="/card"
           element={
-            session ? (
-              // Check if the user is admin by querying the users table
+            session && isAdmin ? (
               <Card />
             ) : (
-              <Navigate to="/" replace />
+              <Navigate to={session ? "/dashboard" : "/"} replace />
             )
           }
         />

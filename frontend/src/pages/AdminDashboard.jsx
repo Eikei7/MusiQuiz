@@ -555,7 +555,7 @@ function AdminDashboard() {
                       {Array.isArray(rooms) && rooms.length > 0 ? (
                         rooms.map((room, index) => (
                           <tr key={room.id || room.roomId || `room-${index}`}>
-                            <td>{room.id || room.roomId}</td>
+                            <td>{room.room_id || room.roomId}</td>
                             <td>{room.name || '-'}</td>
                             <td className="hide-on-mobile">
                                 {Array.isArray(room.players) && room.players.length > 0 ? (

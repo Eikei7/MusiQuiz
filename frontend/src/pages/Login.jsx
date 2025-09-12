@@ -37,13 +37,29 @@ function Login() {
       if (!authData.user) {
         throw new Error('User not found after login');
       }
+      // Update last_login in the users table
+      try {
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', authData.user.id);
+        
+        if (updateError) {
+          console.warn('Failed to update last_login:', updateError);
+        }
+      } catch (updateErr) {
+        console.warn('Error updating last_login:', updateErr);
+      }
+
       toast.update(toastId, {
         render: 'Login successful!',
         type: 'success',
         isLoading: false,
         autoClose: 2000
       });
-      navigate('/dashboard');
+      
+      // Remove the hardcoded navigation - let App.jsx handle the redirect
+      // The auth state change will trigger the redirect logic in App.jsx
     } catch (error) {
       toast.error(error.message || 'An error occurred during login');
     } finally {

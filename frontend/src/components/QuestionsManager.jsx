@@ -30,7 +30,6 @@ const MUSIC_CATEGORIES = [
 ];
 
 function QuestionsManager() {
-  const { user } = useAuth();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -38,10 +37,18 @@ function QuestionsManager() {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    // Get current user from Supabase
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUser(user);
+    };
+    
+    getCurrentUser();
     fetchQuestions();
-  }, [user]);
+  }, []);
 
   // Fetch questions from Supabase
   const fetchQuestions = async () => {
@@ -170,7 +177,7 @@ function QuestionsManager() {
       {showForm && (
         <QuestionForm
           onQuestionAdded={handleQuestionAdded}
-          user={user}
+          user={currentUser}
           editQuestion={editingQuestion}
         />
       )}
