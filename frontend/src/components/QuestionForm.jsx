@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ENDPOINT_QUESTIONS } from '../endpoints';
+import { supabase } from '../supabaseClient';
 import './QuestionForm.css';
 
 const MUSIC_CATEGORIES = [
@@ -28,14 +28,22 @@ const MUSIC_CATEGORIES = [
   "World Music"
 ];
 
-function QuestionForm({ onQuestionAdded, token, editQuestion }) {
-  const [formData, setFormData] = useState(editQuestion || {
-    question: '',
-    choices: ['', '', '', ''],
-    correctAnswerIndex: 0,
-    category: 'General'
+function QuestionForm({ onQuestionAdded, user, editQuestion }) {
+  const [formData, setFormData] = useState(() => {
+    if (editQuestion) {
+      return {
+        ...editQuestion,
+        choices: Array.isArray(editQuestion.choices) ? editQuestion.choices : ['', '', '', ''],
+      };
+    }
+    return {
+      question: '',
+      choices: ['', '', '', ''],
+      correctAnswerIndex: 0,
+      category: 'General'
+    };
   });
-  
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,6 +55,7 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
       [name]: value
     });
   };
+
   // Handle choice input change
   const handleChoiceChange = (index, value) => {
     const updatedChoices = [...formData.choices];
@@ -56,51 +65,49 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
       choices: updatedChoices
     });
   };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    
+
     // Validate form
     if (!formData.question.trim()) {
       setError('Question text is required');
       return;
     }
-    
+
     // Check if all choices have content
     if (formData.choices.some(choice => !choice.trim())) {
       setError('All choices must have content');
       return;
     }
-    
+
     setLoading(true);
-    // Prepare data for API
+
     try {
       const isEditing = !!editQuestion?.id;
-      const url = isEditing 
-        ? `${ENDPOINT_QUESTIONS}/${editQuestion.id}` 
-        : ENDPOINT_QUESTIONS;
-      
-      const method = isEditing ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to save question');
+
+      if (isEditing) {
+        // Update existing question
+        const { error } = await supabase
+          .from('questions')
+          .update(formData)
+          .eq('id', editQuestion.id);
+
+        if (error) throw error;
+      } else {
+        // Add new question
+        const { error } = await supabase
+          .from('questions')
+          .insert([formData]);
+
+        if (error) throw error;
       }
-      
+
       setSuccess(isEditing ? 'Question updated successfully!' : 'Question added successfully!');
-      
+
       if (!isEditing) {
         // Reset form after successful creation
         setFormData({
@@ -110,12 +117,12 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
           category: 'General'
         });
       }
-      
+
       // Notify parent component
       if (onQuestionAdded) {
-        onQuestionAdded(data);
+        onQuestionAdded();
       }
-      
+
     } catch (error) {
       setError(error.message || 'An error occurred saving the question');
     } finally {
@@ -126,10 +133,10 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
   return (
     <div className="question-form-container">
       <h2>{editQuestion ? 'Edit Question' : 'Add New Question'}</h2>
-      
+
       {error && <div className="form-error">{error}</div>}
       {success && <div className="form-success">{success}</div>}
-      
+
       <form onSubmit={handleSubmit} className="question-form">
         <div className="form-group">
           <label htmlFor="question">Question:</label>
@@ -143,7 +150,7 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
             rows="3"
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="category">Category:</label>
           <select
@@ -160,10 +167,10 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
             ))}
           </select>
         </div>
-        
+
         <div className="form-group">
           <label>Answer Choices:</label>
-          
+
           {formData.choices.map((choice, index) => (
             <div key={index} className="choice-row">
               <div className="choice-input">
@@ -186,10 +193,10 @@ function QuestionForm({ onQuestionAdded, token, editQuestion }) {
             </div>
           ))}
         </div>
-        
+
         <div className="form-actions">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="save-question"
             disabled={loading}
           >

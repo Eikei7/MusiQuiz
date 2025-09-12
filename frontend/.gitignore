@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 /frontend/src/endpoints.js
+/.env
 
 # Editor directories and files
 ../.vscode/*

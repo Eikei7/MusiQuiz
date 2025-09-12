@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './Login-Signup.css';
-import { ENDPOINT_REGISTER } from '../endpoints';
+import { supabase } from '../supabaseClient';
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -13,7 +13,7 @@ function Signup() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -23,57 +23,51 @@ function Signup() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    
-    if (!formData.email || !formData.password || !formData.confirmPassword) {
-      setError('All fields are required');
-      return;
-    }
-    
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  setLoading(true);
+  try {
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
+      setLoading(false);
       return;
     }
-    
-    setLoading(true);
-    
-    try {
-      const response = await fetch(ENDPOINT_REGISTER, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          confirmPassword: formData.confirmPassword,
-          firstName: formData.firstName || '',
-          lastName: formData.lastName || ''
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || data.message || 'Registration failed');
-      }
-      
-      setSuccess('Registration successful! You can now log in.');
-      setFormData({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        firstName: '',
-        lastName: ''
-      });
-    } catch (error) {
-      setError(error.message || 'An error occurred during registration');
-    } finally {
-      setLoading(false);
+    // 1. Register the user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+    });
+    if (authError) throw authError;
+    // 2. Only insert into "users" table if authData.user exists
+    if (authData.user) {
+      const { error: dbError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authData.user.id,
+            email: formData.email,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            role: 'user',
+          },
+        ]);
+      if (dbError) throw dbError;
     }
-  };
+    setSuccess('Registration successful! Please check your email for confirmation.');
+    setFormData({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      firstName: '',
+      lastName: ''
+    });
+  } catch (error) {
+    setError(error.message || 'An error occurred during registration');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className='container'>
@@ -83,65 +77,65 @@ function Signup() {
         {success && <div className="success-message">{success}</div>}
         <form className="signup-form" onSubmit={handleSubmit}>
           <div className="input-group">
-            <input 
-              type="text" 
-              id="email" 
+            <input
+              type="text"
+              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Username (email address)" 
-              required 
+              placeholder="Username (email address)"
+              required
               autoComplete="username"
             />
           </div>
           <div className="input-group">
-            <input 
-              type="password" 
-              id="password" 
+            <input
+              type="password"
+              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               placeholder="Password"
-              required 
+              required
               autoComplete="new-password"
             />
           </div>
           <div className="input-group">
-            <input 
-              type="password" 
-              id="confirmPassword" 
+            <input
+              type="password"
+              id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="Password again"
-              required 
+              required
               autoComplete="new-password"
             />
           </div>
-          
+
           <div className="input-group">
-            <input 
-              type="text" 
-              id="firstName" 
+            <input
+              type="text"
+              id="firstName"
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              placeholder="First Name" 
+              placeholder="First Name"
               autoComplete="given-name"
             />
           </div>
           <div className="input-group">
-            <input 
-              type="text" 
+            <input
+              type="text"
               id="lastName" 
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              placeholder="Last Name" 
+              placeholder="Last Name"
               autoComplete="family-name"
             />
           </div>
-          
+
           <div className="input-group">
             <button type="submit" disabled={loading}>
               {loading ? 'Registering...' : 'Register'}

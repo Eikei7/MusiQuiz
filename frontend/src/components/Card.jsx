@@ -1,35 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import './Card.css';
-import { ENDPOINT_QUESTIONS_GET } from '../endpoints';
+import { supabase } from '../supabaseClient';
 
 const cardColors = [
-  '#FF6B6B',
-  '#4ECDC4', 
-  '#6A0572',
-  '#FF8811',
-  '#41B3A3',
-  '#E27D60',
-  '#C38D9E',
-  '#85CDCA',
-  '#E8A87C',
-  '#8860D0',
-  '#5AB9EA',
-  '#84CEEB',
-  '#5680E9',
-  '#8860D0',
-  '#F67280',
-  '#7DCE82',
-  '#F9C784',
-  '#A0C1B8',
-  '#FFBF69' 
+  '#FF6B6B', '#4ECDC4', '#6A0572', '#FF8811', '#41B3A3',
+  '#E27D60', '#C38D9E', '#85CDCA', '#E8A87C', '#8860D0',
+  '#5AB9EA', '#84CEEB', '#5680E9', '#F67280', '#7DCE82',
+  '#F9C784', '#A0C1B8', '#FFBF69'
 ];
 
 const SHOWN_QUESTIONS_KEY = 'musiquiz_shown_questions';
 
 const Card = ({
   id,
-  token,
   onQuestionLoaded,
   isAnswerCorrect,
   selectedAnswer,
@@ -90,95 +74,93 @@ const Card = ({
     sessionStorage.removeItem(SHOWN_QUESTIONS_KEY);
   };
 
+  // Function to fetch a random question using Supabase
+  const fetchRandomQuestion = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch all questions from Supabase
+      const { data: allQuestions, error } = await supabase
+        .from('questions')
+        .select('*');
+
+      if (error) throw error;
+
+      // If no questions available
+      if (!allQuestions || allQuestions.length === 0) {
+        setError('No questions available');
+        setLoading(false);
+        return;
+      }
+
+      // Get the list of already shown questions
+      const shownQuestions = getShownQuestions();
+
+      // Filter out questions that have already been shown
+      const availableQuestions = allQuestions.filter(q => !shownQuestions.includes(q.id));
+
+      // If all questions have been shown, reset the list
+      if (availableQuestions.length === 0) {
+        resetShownQuestions();
+        console.log('All questions have been shown. Resetting the list.');
+        // Use all questions after reset
+        availableQuestions.push(...allQuestions);
+      }
+
+      // Select a random question from available questions
+      const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+      const randomQuestion = availableQuestions[randomIndex];
+
+      // Parse the choices JSON string into an array
+      const choices = JSON.parse(randomQuestion.choices);
+
+      // Mark this question as shown
+      markQuestionAsShown(randomQuestion.id);
+
+      // Set the question with parsed choices
+      setQuestion({
+        ...randomQuestion,
+        choices: choices.map(choice => choice.S)
+      });
+
+      // Notify parent component about the loaded question, but only once
+      if (onQuestionLoaded && !questionLoadedRef.current) {
+        const questionData = {
+          id: randomQuestion.id,
+          correctAnswerIndex: Number(randomQuestion.correctAnswerIndex),
+          category: randomQuestion.category || 'General'
+        };
+        console.log('Card: Sending question data with category:', questionData.category);
+        onQuestionLoaded(questionData);
+        questionLoadedRef.current = true;
+      }
+    } catch (err) {
+      console.error('Error fetching random question:', err);
+      setError('Could not load question');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectRandomColor = () => {
+    const randomIndex = Math.floor(Math.random() * cardColors.length);
+    setBackgroundColor(cardColors[randomIndex]);
+  };
+
   useEffect(() => {
     // Prevent effect from running more than once per instance
     if (effectHasRunRef.current) {
       return;
     }
     effectHasRunRef.current = true;
-    
+
     // Reset question loaded flag
     questionLoadedRef.current = false;
-    
-    // Function to fetch a random question
-    const fetchRandomQuestion = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch all questions first
-        const response = await fetch(ENDPOINT_QUESTIONS_GET, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch questions');
-        }
-
-        const allQuestions = await response.json();
-
-        // If no questions available
-        if (!allQuestions || allQuestions.length === 0) {
-          setError('No questions available');
-          setLoading(false);
-          return;
-        }
-
-        // Get the list of already shown questions
-        const shownQuestions = getShownQuestions();
-        
-        // Filter out questions that have already been shown
-        const availableQuestions = allQuestions.filter(q => !shownQuestions.includes(q.id));
-        
-        // If all questions have been shown, either reset or show message
-        if (availableQuestions.length === 0) {
-          // Option 1: Reset the shown questions list and use all questions
-          resetShownQuestions();
-          console.log('All questions have been shown. Resetting the list.');
-          
-          // Use all questions after reset
-          availableQuestions.push(...allQuestions);
-        }
-
-        // Select a random question from available questions
-        const randomIndex = Math.floor(Math.random() * availableQuestions.length);
-        const randomQuestion = availableQuestions[randomIndex];
-
-        // Mark this question as shown
-        markQuestionAsShown(randomQuestion.id);
-
-        setQuestion(randomQuestion);
-        
-        // Notify parent component about the loaded question, but only once
-        if (onQuestionLoaded && !questionLoadedRef.current) {
-          // Add the category to the data passed to parent component
-          const questionData = {
-            id: randomQuestion.id,
-            correctAnswerIndex: Number(randomQuestion.correctAnswerIndex),
-            category: randomQuestion.category || 'General'
-          };
-          console.log('Card: Sending question data with category:', questionData.category);
-          onQuestionLoaded(questionData);
-          questionLoadedRef.current = true;
-        }
-      } catch (err) {
-        console.error('Error fetching random question:', err);
-        setError('Could not load question');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const selectRandomColor = () => {
-      const randomIndex = Math.floor(Math.random() * cardColors.length);
-      setBackgroundColor(cardColors[randomIndex]);
-    };
 
     fetchRandomQuestion();
     selectRandomColor();
-  }, [token, id, onQuestionLoaded]);
+  }, [id, onQuestionLoaded]);
 
   return (
     <div className="card-container" style={{ perspective: '1000px' }}>
@@ -217,7 +199,7 @@ const Card = ({
                           showCorrectAnswer && index === question.correctAnswerIndex ? 'correct-answer' : ''
                         } ${
                           // Highlight selected answer
-                          showCorrectAnswer && selectedAnswer === index ? 
+                          showCorrectAnswer && selectedAnswer === index ?
                             (isAnswerCorrect ? 'selected-correct' : 'selected-incorrect') : ''
                         }`}
                       >

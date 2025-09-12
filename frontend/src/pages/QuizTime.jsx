@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useAuth } from "../auth/AuthContext";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import QuizFooter from "../components/QuizFooter";
 import "./QuizTime.css";
-import { ENDPOINT_ROOMS, ENDPOINT_USERS, ENDPOINT_USERS_STATS_UPDATE } from "../endpoints";
+import { supabase } from '../supabaseClient';
 import Card from "../components/Card";
 
 const QuizTime = ({ roomData: propRoomData }) => {
-  const { token, user } = useAuth();
   const navigate = useNavigate();
   const { roomId } = useParams();
+  const [user, setUser] = useState(null);
   
   // Room data state (if not provided via props)
   const [roomData, setRoomData] = useState(propRoomData || null);
@@ -40,37 +39,139 @@ const QuizTime = ({ roomData: propRoomData }) => {
   const [isTimerActive, setIsTimerActive] = useState(true);
   const timerRef = useRef(null);
 
-  // Fetch room data if not provided via props
   useEffect(() => {
-    if (!propRoomData && roomId) {
-      const fetchRoomData = async () => {
-        try {
-          setLoading(true);
-          const response = await fetch(`${ENDPOINT_ROOMS}/${roomId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (!response.ok) {
-            throw new Error('Failed to fetch room data');
-          }
-          
-          const data = await response.json();
-          setRoomData(data);
-          setPlayers(data.players || []);
-          setLoading(false);
-        } catch (err) {
-          console.error("Error fetching room data:", err);
-          setError(err.message || "Could not load game data");
-          setLoading(false);
-        }
-      };
-      
-      fetchRoomData();
-    }
-  }, [roomId, token, propRoomData]);
+  if (!propRoomData && roomId) {
+    const fetchRoomData = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('room_id', roomId)
+          .single();
 
+        if (error) throw error;
+
+        setRoomData(data);
+        setPlayers(data.players || []);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching room data:", err);
+        setError(err.message || "Could not load game data");
+        setLoading(false);
+      }
+    };
+    fetchRoomData();
+  }
+}, [roomId, propRoomData]);
+
+
+  useEffect(() => {
+  const getCurrentUser = async () => {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('Error getting user:', error);
+      navigate('/login');
+      return;
+    }
+    if (user) {
+      setUser(user);
+    } else {
+      navigate('/login');
+    }
+  };
+  getCurrentUser();
+}, [navigate]);
+
+useEffect(() => {
+  if (!roomId) return;
+
+  const fetchGameData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('games')
+        .select('*')
+        .eq('room_id', roomId)
+        .single();
+
+      if (error) throw error;
+      setCurrentTurn(data.current_turn || 0);
+      setCurrentRound(data.current_round || 1);
+      setScores(data.scores || {});
+    } catch (err) {
+      console.error("Error fetching game data:", err);
+    }
+  };
+
+  fetchGameData();
+}, [roomId]);
+
+useEffect(() => {
+  if (!roomId) return;
+
+  const channel = supabase
+    .channel('game_updates', {
+      config: {
+        presence: {
+          key: roomId,
+        },
+      },
+    })
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'games',
+        filter: `room_id=eq.${roomId}`,
+      },
+      (payload) => {
+        setCurrentTurn(payload.new.current_turn || 0);
+        setCurrentRound(payload.new.current_round || 1);
+        setScores(payload.new.scores || {});
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [roomId]);
+
+const resetRoomStatusAfterGame = async () => {
+  try {
+    console.log('DEBUG: Resetting room status after game completion');
+    
+    // Reset the room's game status
+    const { error: roomError } = await supabase
+      .from('rooms')
+      .update({ 
+        game_started: false,
+        started_at: null 
+      })
+      .eq('room_id', roomId);
+
+    if (roomError) {
+      console.error('Error resetting room after game completion:', roomError);
+    } else {
+      console.log('DEBUG: Room status reset after game completion');
+    }
+
+    // Delete the completed game
+    const { error: deleteError } = await supabase
+      .from('games')
+      .delete()
+      .eq('room_id', roomId);
+    
+    if (deleteError) {
+      console.error('Error deleting completed game:', deleteError);
+    } else {
+      console.log('DEBUG: Game record deleted after completion');
+    }
+  } catch (err) {
+    console.error('Error handling game completion cleanup:', err);
+  }
+};
   // Initialize scores when players are loaded
   useEffect(() => {
     if (players.length > 0) {
@@ -101,10 +202,12 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
   // Update user stats when game ends
   useEffect(() => {
-    if (gameEnded && !statsUpdated && user) {
-      updateUserStats();
-    }
-  }, [gameEnded, statsUpdated, user]);
+  if (gameEnded && !statsUpdated && user) {
+    updateUserStats();
+    // IMPORTANT: Reset room status when game ends naturally
+    resetRoomStatusAfterGame();
+  }
+}, [gameEnded, statsUpdated, user]);
 
   // Check if it's the current user's turn
   const isMyTurn = () => {
@@ -138,16 +241,14 @@ const QuizTime = ({ roomData: propRoomData }) => {
     };
 
   const handleQuestionLoaded = (questionInfo) => {
-    // console.log('QuizTime: Question loaded:', questionInfo);
-    if (questionInfo) {
-      // Store the question info with explicit number conversion
-      const updatedInfo = {
-        ...questionInfo,
-        correctAnswerIndex: Number(questionInfo.correctAnswerIndex)
-      };
-      setCurrentQuestionInfo(updatedInfo);
-    }
-  };
+  if (questionInfo) {
+    const updatedInfo = {
+      ...questionInfo,
+      correctAnswerIndex: Number(questionInfo.correctAnswerIndex)
+    };
+    setCurrentQuestionInfo(updatedInfo);
+  }
+};
 
   const handleAnswerSelected = (index) => {
     // Only allow selecting if it's your turn
@@ -159,132 +260,188 @@ const QuizTime = ({ roomData: propRoomData }) => {
     setSelectedAnswer(numericIndex);
   };
 
-  const handleSubmitAnswer = () => {
-    // Stop the timer
-    setIsTimerActive(false);
-    
-    // console.log('QuizTime: Submitting answer:', selectedAnswer);
-    // console.log('QuizTime: Current question info:', currentQuestionInfo);
-    
-    // Determine if answer is correct
-    let isCorrect = false;
-    if (selectedAnswer !== null && currentQuestionInfo && currentQuestionInfo.correctAnswerIndex !== undefined) {
-      const selectedIdx = Number(selectedAnswer);
-      const correctIdx = Number(currentQuestionInfo.correctAnswerIndex);
-      
-      // console.log('QuizTime: Comparing answer index', selectedIdx, 'with correct index', correctIdx);
-      isCorrect = selectedIdx === correctIdx;
-      // console.log('QuizTime: Answer is correct?', isCorrect);
-    }
-    
-    setIsAnswerCorrect(isCorrect);
-    
-    // Track question stats for category analysis
-    if (isMyTurn() && currentQuestionInfo) {
-      setQuestionStats(prev => [
-        ...prev,
-        {
-          category: currentQuestionInfo.category || 'General',
-          isCorrect: isCorrect
-        }
-      ]);
-    }
-    
-    // Update score
-    if (isCorrect) {
-      const currentPlayerEmail = typeof players[currentTurn] === 'object' 
-        ? players[currentTurn].email 
-        : players[currentTurn];
-      
-      setScores(prevScores => ({
-        ...prevScores,
-        [currentPlayerEmail]: (prevScores[currentPlayerEmail] || 0) + 1
-      }));
-    }
-  };
+ const handleSubmitAnswer = async () => {
+  // Check if the turn is locked
+  const { data: game, error: fetchError } = await supabase
+    .from('games')
+    .select('turn_lock')
+    .eq('room_id', roomId)
+    .single();
+  if (fetchError || game.turn_lock) {
+    console.log('Turn is locked or error fetching game data');
+    return;
+  }
+  // Lock the turn
+  const { error: lockError } = await supabase
+    .from('games')
+    .update({ turn_lock: true })
+    .eq('room_id', roomId);
+  if (lockError) {
+    console.error('Error locking turn:', lockError);
+    return;
+  }
+  // Proceed with answer submission
+  setIsTimerActive(false);
+  let isCorrect = false;
+  if (selectedAnswer !== null && currentQuestionInfo) {
+    isCorrect = selectedAnswer === currentQuestionInfo.correctAnswerIndex;
+  }
+  setIsAnswerCorrect(isCorrect);
 
-  const handleNextTurn = () => {
-    // Check if game should end
-    const nextRound = currentTurn + 1 >= players.length ? currentRound + 1 : currentRound;
-    
-    if (nextRound > maxRounds) {
-      setGameEnded(true);
-      return;
-    }
-    
-    // Move to next player
-    const nextTurn = (currentTurn + 1) % players.length;
-    setCurrentTurn(nextTurn);
-    setCurrentRound(nextRound);
-    
-    // Reset question state
-    setCurrentQuestionInfo(null);
-    setSelectedAnswer(null);
-    setIsAnswerCorrect(null);
-    setTimeLeft(TIMER_DURATION);
-    setIsTimerActive(true);
-    
-    // Generate a new card key to force re-mount of the Card component
-    // console.log('QuizTime: Advancing to next turn, creating new card with key:', cardKey + 1);
-    setCardKey(prevKey => prevKey + 1);
-  };
+  // Add question category and correctness to questionStats
+  if (currentQuestionInfo) {
+    setQuestionStats(prevStats => [
+      ...prevStats,
+      {
+        category: currentQuestionInfo.category,
+        isCorrect: isCorrect
+      }
+    ]);
+  }
+
+  // Update scores
+  if (isCorrect) {
+    const currentPlayerEmail = typeof players[currentTurn] === 'object'
+      ? players[currentTurn].email
+      : players[currentTurn];
+    const newScores = { ...scores, [currentPlayerEmail]: (scores[currentPlayerEmail] || 0) + 1 };
+    setScores(newScores);
+    // Update Supabase
+    const { error } = await supabase
+      .from('games')
+      .update({
+        scores: newScores,
+        turn_lock: false,
+      })
+      .eq('room_id', roomId);
+    if (error) console.error('Error updating scores:', error);
+  } else {
+    // Unlock the turn if the answer is incorrect
+    const { error } = await supabase
+      .from('games')
+      .update({ turn_lock: false })
+      .eq('room_id', roomId);
+    if (error) console.error('Error unlocking turn:', error);
+  }
+};
+
+
+  const handleNextTurn = async () => {
+  // Check if the game should end after this turn
+  const nextRound = currentTurn + 1 >= players.length ? currentRound + 1 : currentRound;
+
+  if (nextRound > maxRounds) {
+    setGameEnded(true);
+    return;
+  }
+
+  // Move to next player
+  const nextTurn = (currentTurn + 1) % players.length;
+
+  // Update local state
+  setCurrentTurn(nextTurn);
+  setCurrentRound(nextRound);
+  setCurrentQuestionInfo(null);
+  setSelectedAnswer(null);
+  setIsAnswerCorrect(null);
+  setTimeLeft(TIMER_DURATION);
+  setIsTimerActive(true);
+  setCardKey(prevKey => prevKey + 1);
+
+  // Update Supabase
+  const { error } = await supabase
+    .from('games')
+    .update({
+      current_turn: nextTurn,
+      current_round: nextRound,
+      scores: scores,
+      turn_lock: false,
+    })
+    .eq('room_id', roomId);
+
+  if (error) console.error('Error updating game:', error);
+};
+
+
 
   const updateUserStats = async () => {
-    if (!user || !user.email) return;
+  if (!user || !user.email) return;
 
-    try {
-      // Determine if current user is winner
-      let maxScore = -1;
-      let winners = [];
-      
-      players.forEach(player => {
-        const playerEmail = typeof player === 'object' ? player.email : player;
-        const score = scores[playerEmail] || 0;
-        
-        if (score > maxScore) {
-          maxScore = score;
-          winners = [player];
-        } else if (score === maxScore) {
-          winners.push(player);
-        }
-      });
-      
-      const isWinner = winners.some(winner => {
-        const winnerEmail = typeof winner === 'object' ? winner.email : winner;
-        return winnerEmail === user.email;
-      });
+  try {
+    // Determine if current user is winner
+    let maxScore = -1;
+    let winners = [];
 
-      console.log('Updating stats for user:', user.email, 'Won:', isWinner);
-      console.log('Sending category stats:', questionStats);
-      
-      const response = await fetch(`${ENDPOINT_USERS_STATS_UPDATE}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          email: user.email,
-          gameWon: isWinner,
-          questionStats: questionStats
-        })
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          console.log('Token expired. Cannot update stats.');
-          return;
-        }
-        throw new Error('Failed to update stats');
+    players.forEach(player => {
+      const playerEmail = typeof player === 'object' ? player.email : player;
+      const score = scores[playerEmail] || 0;
+
+      if (score > maxScore) {
+        maxScore = score;
+        winners = [player];
+      } else if (score === maxScore) {
+        winners.push(player);
       }
-      
-      const data = await response.json();
-      console.log('Stats updated successfully:', data);
-      setStatsUpdated(true);
-    } catch (error) {
-      console.error('Error updating game stats:', error);
-    }
-  };
+    });
+
+    const isWinner = winners.some(winner => {
+      const winnerEmail = typeof winner === 'object' ? winner.email : winner;
+      return winnerEmail === user.email;
+    });
+
+    console.log('Updating stats for user:', user.email, 'Won:', isWinner);
+    console.log('Sending category stats:', questionStats);
+
+    // Fetch the current user's stats from the users table
+    const { data: userData, error: fetchError } = await supabase
+      .from('users')
+      .select('stats')
+      .eq('email', user.email)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Initialize or update stats
+    const currentStats = userData.stats || {
+      gamesPlayed: 0,
+      gamesWon: 0,
+      categories: {}
+    };
+
+    // Update stats
+    const updatedStats = {
+      gamesPlayed: currentStats.gamesPlayed + 1,
+      gamesWon: isWinner ? currentStats.gamesWon + 1 : currentStats.gamesWon,
+      categories: { ...currentStats.categories }
+    };
+
+    // Update category stats
+    questionStats.forEach(stat => {
+      const category = stat.category;
+      if (!updatedStats.categories[category]) {
+        updatedStats.categories[category] = { total: 0, correct: 0 };
+      }
+      updatedStats.categories[category].total += 1;
+      if (stat.isCorrect) {
+        updatedStats.categories[category].correct += 1;
+      }
+    });
+
+    // Update the user's stats in the database
+    const { error } = await supabase
+      .from('users')
+      .update({ stats: updatedStats })
+      .eq('email', user.email);
+
+    if (error) throw error;
+
+    console.log('Stats updated successfully');
+    setStatsUpdated(true);
+  } catch (error) {
+    console.error('Error updating game stats:', error);
+  }
+};
+
 
   const handleReturnToRoom = () => {
     // Add confirmation dialog
@@ -301,20 +458,53 @@ const QuizTime = ({ roomData: propRoomData }) => {
     }
   };
 
-  const handleLeaveQuiz = () => {
-    // Add confirmation dialog
-    const confirmLeave = window.confirm("Do you want to return to the room?");
+  const handleLeaveQuiz = async () => {
+  const confirmLeave = window.confirm("Do you want to return to the room?");
+  if (!confirmLeave) return;
+
+  // Clear timers
+  if (timerRef.current) clearTimeout(timerRef.current);
+
+  try {
+    // FIXED: Reset the room's game_started flag when leaving quiz
+    const { error: roomError } = await supabase
+      .from('rooms')
+      .update({ 
+        game_started: false,
+        started_at: null 
+      })
+      .eq('room_id', roomId);
+
+    if (roomError) console.error('Error resetting room game status:', roomError);
+
+    // Delete the game from Supabase
+    const { error: gameError } = await supabase
+      .from('games')
+      .delete()
+      .eq('room_id', roomId);
+
+    if (gameError) console.error('Error deleting game:', gameError);
+  } catch (err) {
+    console.error('Error leaving game:', err);
+  }
+
+  // Navigate back to the room
+  navigate(`/rooms/${roomId}`);
+};
+
+const handleReturnToRoomAfterGameEnd = async () => {
+  try {
+    // Ensure room status is reset
+    await resetRoomStatusAfterGame();
     
-    if (confirmLeave) {
-      // Clear any timers to prevent memory leaks
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-      
-      // Navigate back to the room
-      navigate(`/rooms/${roomId}`);
-    }
-  };
+    // Navigate back to room
+    navigate(`/rooms/${roomId}`);
+  } catch (error) {
+    console.error('Error returning to room:', error);
+    // Navigate anyway
+    navigate(`/rooms/${roomId}`);
+  }
+};
 
   // Loading state
   if (loading) {
@@ -396,7 +586,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
           
           <button 
             className="return-button"
-          onClick={handleLeaveQuiz}
+            onClick={handleReturnToRoomAfterGameEnd} // Use the new handler
           >
             Return to Room
           </button>
@@ -458,7 +648,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
         <Card 
         key={cardKey}
         id="question-card"
-        token={token}
         onQuestionLoaded={handleQuestionLoaded}
         isAnswerCorrect={isAnswerCorrect}
         selectedAnswer={selectedAnswer}
@@ -493,6 +682,8 @@ const QuizTime = ({ roomData: propRoomData }) => {
           {!isMyTurn() && isAnswerCorrect === null && players.length > 1 && (
             <div className="waiting-message">
               <p>Waiting for {getCurrentPlayerName()} to answer...</p>
+              
+              This will be your next question, get ready!
             </div>
           )}
         </div>

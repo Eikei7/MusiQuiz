@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login-Signup.css';
-import { useAuth } from '../auth/AuthContext';
-// Import toast from react-toastify
+import { supabase } from '../supabaseClient';
 import { toast } from 'react-toastify';
 
 function Login() {
@@ -12,7 +11,6 @@ function Login() {
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,43 +22,29 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate form
     if (!formData.email || !formData.password) {
-      // Replace error state with toast notification
       toast.error('Email and password are required');
       return;
     }
-    
     setLoading(true);
-    
     try {
-      // Show loading toast that we'll update based on the result
       const toastId = toast.loading('Logging in...');
-      
-      const result = await login(formData.email, formData.password);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Login failed');
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+      if (authError) throw authError;
+      if (!authData.user) {
+        throw new Error('User not found after login');
       }
-      
-      // Update toast to success
       toast.update(toastId, {
         render: 'Login successful!',
         type: 'success',
         isLoading: false,
         autoClose: 2000
       });
-      
-      // Navigate based on user role
-      if (result.userData.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
-      
+      navigate('/dashboard');
     } catch (error) {
-      // Show error toast instead of setting error state
       toast.error(error.message || 'An error occurred during login');
     } finally {
       setLoading(false);
@@ -75,26 +59,26 @@ function Login() {
       <div className="login-container">
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="input-group">
-            <input 
-              type="email" 
-              id="email" 
+            <input
+              type="email"
+              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Username (email address)" 
-              required 
+              placeholder="Username (email address)"
+              required
               autoComplete="username"
             />
           </div>
           <div className="input-group">
-            <input 
-              type="password" 
-              id="password" 
+            <input
+              type="password"
+              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               placeholder="Password"
-              required 
+              required
               autoComplete="current-password"
             />
           </div>

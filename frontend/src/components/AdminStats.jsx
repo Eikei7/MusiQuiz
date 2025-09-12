@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../auth/AuthContext';
-import { ENDPOINT_USERS_STATS_ALL } from '../endpoints';
+import { supabase } from '../supabaseClient';
 import './AdminStats.css';
 
 const AdminStats = () => {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [usersStats, setUsersStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,11 +12,11 @@ const AdminStats = () => {
 
   const formatLastLogin = (timestamp) => {
     if (!timestamp) return 'Never logged in';
-    
+
     const date = new Date(timestamp);
     const now = new Date();
     const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    
+
     // Return formatted date string based on days difference
     if (diffInDays === 0) {
       return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -26,10 +25,10 @@ const AdminStats = () => {
     } else if (diffInDays < 7) {
       return `${diffInDays} days ago`;
     } else {
-      return date.toLocaleDateString([], { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
+      return date.toLocaleDateString([], {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
       });
     }
   };
@@ -38,21 +37,15 @@ const AdminStats = () => {
     const fetchAllUserStats = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${ENDPOINT_USERS_STATS_ALL}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
 
-        if (!response.ok) {
-          if (response.status === 403) {
-            throw new Error('You do not have permission to view this data');
-          }
-          throw new Error('Failed to fetch user statistics');
-        }
+        // Fetch all users and their stats from Supabase
+        const { data, error } = await supabase
+          .from('users')
+          .select('*');
 
-        const data = await response.json();
-        setUsersStats(data.users || []);
+        if (error) throw error;
+
+        setUsersStats(data || []);
       } catch (err) {
         console.error('Error fetching user stats:', err);
         setError(err.message);
@@ -61,21 +54,19 @@ const AdminStats = () => {
       }
     };
 
-    if (user && user.role === 'admin') {
+    if (user && user.user_metadata?.role === 'admin') {
       fetchAllUserStats();
     } else {
       setError('Admin access required');
       setLoading(false);
     }
-  }, [token, user]);
+  }, [user]);
 
   // Handle sorting
   const handleSort = (field) => {
     if (sortField === field) {
-
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-
       setSortField(field);
       setSortDirection('asc');
     }
@@ -84,18 +75,14 @@ const AdminStats = () => {
   // Sort the users data
   const sortedUsers = [...usersStats].sort((a, b) => {
     let aValue, bValue;
-
     if (sortField.includes('.')) {
-
       const [parent, child] = sortField.split('.');
       aValue = a[parent] ? a[parent][child] : 0;
       bValue = b[parent] ? b[parent][child] : 0;
     } else {
-
       aValue = a[sortField];
       bValue = b[sortField];
     }
-
     // Handle undefined or null values
     if ((aValue === undefined || aValue === null) && (bValue === undefined || bValue === null)) {
       return 0;
@@ -104,19 +91,16 @@ const AdminStats = () => {
     } else if (bValue === undefined || bValue === null) {
       return sortDirection === 'asc' ? -1 : 1;
     }
-
     // Handle numeric values
     if (typeof aValue === 'number' && typeof bValue === 'number') {
       return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
     }
-
     // Handle string values safely
     if (typeof aValue === 'string' && typeof bValue === 'string') {
       return sortDirection === 'asc'
         ? aValue.localeCompare(bValue)
         : bValue.localeCompare(aValue);
     }
-
     // Convert to strings for comparison if types don't match
     const aStr = String(aValue || '');
     const bStr = String(bValue || '');
@@ -142,7 +126,7 @@ const AdminStats = () => {
 
   return (
     <div className="admin-stats-container">
-      
+
       <div className="stats-table-container">
         <table className="stats-table">
           <thead>
@@ -150,8 +134,8 @@ const AdminStats = () => {
               <th onClick={() => handleSort('email')}>
                 Email{renderSortIcon('email')}
               </th>
-              <th onClick={() => handleSort('firstName')}>
-                Name{renderSortIcon('firstName')}
+              <th onClick={() => handleSort('first_name')}>
+                Name{renderSortIcon('first_name')}
               </th>
               <th onClick={() => handleSort('stats.gamesPlayed')}>
                 Games Played{renderSortIcon('stats.gamesPlayed')}
@@ -165,27 +149,26 @@ const AdminStats = () => {
               <th onClick={() => handleSort('stats.winRate')}>
                 Win Rate{renderSortIcon('stats.winRate')}
               </th>
-              <th onClick={() => handleSort('lastLogin')}>
-                Last Login{renderSortIcon('lastLogin')}
-            </th>
+              <th onClick={() => handleSort('last_login')}>
+                Last Login{renderSortIcon('last_login')}
+              </th>
             </tr>
           </thead>
           <tbody>
             {sortedUsers.map((user) => (
               <tr key={user.email}>
                 <td>{user.email}</td>
-                <td>{`${user.firstName || ''} ${user.lastName || ''}`}</td>
+                <td>{`${user.first_name || ''} ${user.last_name || ''}`}</td>
                 <td>{user.stats?.gamesPlayed || 0}</td>
                 <td>{user.stats?.gamesWon || 0}</td>
                 <td>{user.stats?.gamesLost || 0}</td>
                 <td>{user.stats?.winRate || 0}%</td>
-                <td>{formatLastLogin(user.lastLogin)}</td>
+                <td>{formatLastLogin(user.last_login)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
       <div className="stats-summary">
         <h3>Summary Statistics</h3>
         <div className="summary-cards">
@@ -204,7 +187,7 @@ const AdminStats = () => {
           <div className="summary-card">
             <div className="summary-value">
               {Math.round(
-                usersStats.reduce((sum, user) => sum + (user.stats?.winRate || 0), 0) / 
+                usersStats.reduce((sum, user) => sum + (user.stats?.winRate || 0), 0) /
                 (usersStats.filter(user => user.stats?.gamesPlayed > 0).length || 1)
               )}%
             </div>

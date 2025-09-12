@@ -1,87 +1,80 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './auth/AuthContext';
-import ProtectedRoute from './ProtectedRoute';
+import { useEffect, useState } from 'react';
+import { supabase } from './supabaseClient';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import QuizTime from './pages/QuizTime';
-import './App.css';
-import Card from './components/Card';
 import Room from './pages/Room';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import Card from './components/Card';
+import './App.css';
 
 function App() {
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <Router>
-      <AuthProvider>
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={!session ? <Login /> : <Navigate to="/dashboard" replace />} />
+        <Route path="/signup" element={!session ? <Signup /> : <Navigate to="/dashboard" replace />} />
+
+        {/* Protected routes for all authenticated users */}
+        <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/" replace />} />
+        <Route path="/rooms/:roomId" element={session ? <Room /> : <Navigate to="/" replace />} />
+        <Route path="/game/:roomId" element={session ? <QuizTime /> : <Navigate to="/" replace />} />
+
+        {/* Admin-only route */}
+        <Route
+          path="/admin"
+          element={
+            session ? (
+              // Check if the user is admin by querying the users table
+              <AdminDashboard />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
         />
-        
-        <Routes>
-          
-          {/* Public routes */}
-          <Route path="/" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
-          {/* Protected routes for all authenticated users */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/rooms/:roomId" 
-            element={
-              <ProtectedRoute>
-                <Room />
-            </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/game/:roomId" 
-            element={
-            <ProtectedRoute>
-            <QuizTime />
-            </ProtectedRoute>
-            } 
-          />
-          
-          {/* Protected routes for admin users */}
-          <Route 
-            path="/admin" 
-            element={
-              <ProtectedRoute requireAdmin={true}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/card" 
-            element={
-            <ProtectedRoute requireAdmin={true}>
+        <Route
+          path="/card"
+          element={
+            session ? (
+              // Check if the user is admin by querying the users table
               <Card />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate replace to="/" />} />
-
-        </Routes>
-      </AuthProvider>
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route path="*" element={<Navigate replace to="/" />} />
+      </Routes>
     </Router>
   );
 }

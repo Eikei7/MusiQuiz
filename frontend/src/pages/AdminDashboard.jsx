@@ -1,40 +1,25 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../auth/AuthContext';
-import { 
-  ENDPOINT_USERS,
-  ENDPOINT_USERS_DELETE, 
-  ENDPOINT_QUESTIONS_GET, 
-  ENDPOINT_ROOMS_GET,
-  ENDPOINT_ROOMS_DELETE,
-  ENDPOINT_REGISTER 
-} from '../endpoints';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import './AdminDashboard.css';
 import QuestionsManager from '../components/QuestionsManager';
 import AdminStats from '../components/AdminStats';
-import TokenExpirationTimer from '../components/TokenExpirationTimer';
 
 function AdminDashboard() {
-  const { user, logout, token } = useAuth();
+  const [user, setUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
-  
-  // Mobile menu state
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // Room creation state
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
-  
-  // Room deletion state
   const [deletingRoomId, setDeletingRoomId] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-
-  // User creation state
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserData, setNewUserData] = useState({
     email: '',
@@ -46,13 +31,35 @@ function AdminDashboard() {
   });
   const [addUserError, setAddUserError] = useState('');
   const [addingUser, setAddingUser] = useState(false);
-
-  // User deletion state
   const [deletingUserEmail, setDeletingUserEmail] = useState(null);
   const [showDeleteUserConfirmation, setShowDeleteUserConfirmation] = useState(false);
-
-  // User search state
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error('Error getting user:', error);
+        navigate('/');
+        return;
+      }
+      if (user) {
+        setUser(user);
+        const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (profileError || !profileData || profileData.role !== 'admin') {
+          navigate('/dashboard');
+          return;
+        }
+      } else {
+        navigate('/');
+      }
+    };
+    getCurrentUser();
+  }, [navigate]);
 
   useEffect(() => {
     fetchUsers();
@@ -60,30 +67,20 @@ function AdminDashboard() {
     fetchRooms();
   }, []);
 
-  // Close mobile menu when changing tabs
   useEffect(() => {
     if (isMobileMenuOpen) {
       setIsMobileMenuOpen(false);
     }
   }, [activeTab]);
 
-  // Fetch users from API
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(ENDPOINT_USERS, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-
-      const data = await response.json();
-
-      setUsers(Array.isArray(data) ? data : (data.users || []));
+      const { data, error } = await supabase
+        .from('users')
+        .select('*');
+      if (error) throw error;
+      setUsers(data || []);
       setError('');
     } catch (err) {
       setError('Error loading users: ' + err.message);
@@ -92,7 +89,7 @@ function AdminDashboard() {
       setLoading(false);
     }
   };
-  // Handle user input change
+
   const handleUserInputChange = (e) => {
     const { name, value } = e.target;
     setNewUserData({
@@ -100,192 +97,135 @@ function AdminDashboard() {
       [name]: value
     });
   };
-  
-  // Add new user
+
   const handleAddUser = async (e) => {
     e.preventDefault();
     setAddUserError('');
-
-    // Validate form
     if (!newUserData.email || !newUserData.password || !newUserData.confirmPassword) {
       setAddUserError('Email and password are required');
       return;
     }
-    
     if (newUserData.password !== newUserData.confirmPassword) {
       setAddUserError('Passwords do not match');
       return;
     }
-    
     setAddingUser(true);
-    // Send the new user data to the server
     try {
-      const response = await fetch(ENDPOINT_REGISTER, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // Include admin token
-        },
-        body: JSON.stringify({
-          email: newUserData.email,
-          password: newUserData.password,
-          confirmPassword: newUserData.confirmPassword,
-          firstName: newUserData.firstName || '',
-          lastName: newUserData.lastName || '',
-          role: newUserData.role
-        })
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newUserData.email,
+        password: newUserData.password,
+        email_confirm: true,
       });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || data.message || 'Failed to add user');
-      }
-
-      // Refresh the users list
+      if (authError) throw authError;
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authData.user.id,
+            email: newUserData.email,
+            first_name: newUserData.firstName,
+            last_name: newUserData.lastName,
+            role: newUserData.role,
+          },
+        ]);
+      if (insertError) throw insertError;
       fetchUsers();
-      
-      // Reset form and close modal
       setNewUserData({
         email: '',
         password: '',
         confirmPassword: '',
         firstName: '',
         lastName: '',
-        role: 'user'
+        role: 'user',
       });
       setShowAddUserModal(false);
-      
     } catch (error) {
       setAddUserError(error.message || 'An error occurred while adding the user');
     } finally {
       setAddingUser(false);
     }
   };
-  // Delete user
+
   const confirmDeleteUser = (email) => {
     setDeletingUserEmail(email);
     setShowDeleteUserConfirmation(true);
   };
-  // Handle user deletion
+
   const handleDeleteUser = async () => {
     if (!deletingUserEmail) return;
-    
     try {
-      const url = ENDPOINT_USERS_DELETE.replace('{email}', encodeURIComponent(deletingUserEmail));
-      
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete user');
-      }
-      
-      // Remove the deleted user from the state
-      setUsers(users.filter(user => user.email !== deletingUserEmail));
-      
-      // Close the confirmation modal
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('email', deletingUserEmail);
+      if (error) throw error;
+      setUsers(users.filter((user) => user.email !== deletingUserEmail));
       setShowDeleteUserConfirmation(false);
       setDeletingUserEmail(null);
-      
     } catch (err) {
       console.error('Error deleting user:', err.message);
       alert(`Failed to delete user: ${err.message}`);
     }
   };
-  // Filter users based on search query
+
   const filteredUsers = useMemo(() => {
     if (!searchQuery.trim()) return users;
-    
     const query = searchQuery.toLowerCase().trim();
-    return users.filter(user => 
+    return users.filter(user =>
       user.email.toLowerCase().includes(query) ||
-      (user.firstName && user.firstName.toLowerCase().includes(query)) ||
-      (user.lastName && user.lastName.toLowerCase().includes(query)) ||
+      (user.first_name && user.first_name.toLowerCase().includes(query)) ||
+      (user.last_name && user.last_name.toLowerCase().includes(query)) ||
       (user.role && user.role.toLowerCase().includes(query))
     );
   }, [users, searchQuery]);
-  // Fetch questions from API
+
   const fetchQuestions = async () => {
     try {
-      const response = await fetch(ENDPOINT_QUESTIONS_GET, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch questions');
-      }
-
-      const data = await response.json();
-      setQuestions(Array.isArray(data) ? data : (data.questions || []));
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*');
+      if (error) throw error;
+      setQuestions(data || []);
     } catch (err) {
       console.error('Error loading questions:', err.message);
-      // Not setting the main error state to avoid disrupting the UI
     }
   };
-  // Fetch rooms from API
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error logging out:', error);
+    }
+    navigate('/');
+  };
+
   const fetchRooms = async () => {
     try {
-      const response = await fetch(ENDPOINT_ROOMS_GET, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch rooms');
-      }
-
-      const data = await response.json();
-      setRooms(Array.isArray(data) ? data : (data.rooms || []));
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*');
+      if (error) throw error;
+      setRooms(data || []);
     } catch (err) {
       console.error('Error loading rooms:', err.message);
-      // Not setting the main error state to avoid disrupting the UI
     }
   };
-  // Create new room
+
   const handleCreateRoom = async (e) => {
     e.preventDefault();
-    
     if (!newRoomName.trim()) {
-      alert("Please enter a room name");
+      alert('Please enter a room name');
       return;
     }
-    
     try {
       setCreatingRoom(true);
-      
-      const roomData = {
-        name: newRoomName.trim()
-      };
-      
-      const response = await fetch(ENDPOINT_ROOMS_GET, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(roomData)
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create room');
-      }
-      
-      // Refresh the rooms list
+      const { error } = await supabase
+        .from('rooms')
+        .insert([{ name: newRoomName.trim() }]);
+      if (error) throw error;
       fetchRooms();
-      
-      // Reset and close the modal
       setNewRoomName('');
       setShowRoomModal(false);
-      
     } catch (err) {
       console.error('Error creating room:', err.message);
       alert(`Failed to create room: ${err.message}`);
@@ -293,53 +233,41 @@ function AdminDashboard() {
       setCreatingRoom(false);
     }
   };
-  // Delete room
+
   const confirmDeleteRoom = (roomId) => {
     setDeletingRoomId(roomId);
     setShowDeleteConfirmation(true);
   };
-  // Handle room deletion
+
   const handleDeleteRoom = async () => {
     if (!deletingRoomId) return;
-    
     try {
-
-      const response = await fetch(`${ENDPOINT_ROOMS_DELETE}/${deletingRoomId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete room');
-      }
-      
-      // Remove the deleted room from the state
-      setRooms(rooms.filter(room => (room.roomId || room.id) !== deletingRoomId));
-      
-      // Close the confirmation modal
+      const { error } = await supabase
+        .from('rooms')
+        .delete()
+        .eq('id', deletingRoomId);
+      if (error) throw error;
+      setRooms(rooms.filter((room) => room.id !== deletingRoomId));
       setShowDeleteConfirmation(false);
       setDeletingRoomId(null);
-      
     } catch (err) {
       console.error('Error deleting room:', err.message);
       alert(`Failed to delete room: ${err.message}`);
     }
   };
 
-  // Toggle mobile menu
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  if (!user) {
+    return <div className="loading-message">Loading...</div>;
+  }
+
   return (
     <div className="admin-dashboard">
-      {/* Hamburger menu button for mobile */}
-      <button 
-        className={`mobile-menu-toggle ${isMobileMenuOpen ? 'active' : ''}`} 
+      <button
+        className={`mobile-menu-toggle ${isMobileMenuOpen ? 'active' : ''}`}
         onClick={toggleMobileMenu}
         aria-label="Toggle menu"
       >
@@ -347,20 +275,16 @@ function AdminDashboard() {
         <span></span>
         <span></span>
       </button>
-
       <aside className={`admin-sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="admin-logo">
           <h2>MusiQuiz</h2>
         </div>
         <div className="admin-user">
-          <div className="admin-avatar">{user?.firstName?.charAt(0) || user?.email?.charAt(0)}</div>
+          <div className="admin-avatar">{user?.email?.charAt(0)}</div>
           <div className="admin-user-info">
-            <span className="admin-name">{user?.firstName || user?.email?.split('@')[0]}</span>
+            <span className="admin-name">{user?.email?.split('@')[0]}</span>
             <span className="admin-role">Administrator</span>
           </div>
-        </div>
-        <div>
-          <TokenExpirationTimer/>
         </div>
         <nav className="admin-nav">
           <ul>
@@ -390,19 +314,16 @@ function AdminDashboard() {
               </button>
             </li>
             <li>
-              <button onClick={logout} className="admin-logout">
+              <button onClick={handleLogout} className="admin-logout">
                 Logout
               </button>
             </li>
           </ul>
         </nav>
       </aside>
-
-      {/* Overlay for mobile sidebar */}
       {isMobileMenuOpen && (
         <div className="sidebar-overlay" onClick={toggleMobileMenu}></div>
       )}
-
       <main className="admin-main">
         <header className="admin-header">
           <h1>
@@ -413,7 +334,6 @@ function AdminDashboard() {
             {activeTab === 'stats' && 'Game Statistics'}
           </h1>
         </header>
-
         <div className="admin-content">
           {activeTab === 'dashboard' && (
             <div className="admin-overview">
@@ -431,34 +351,30 @@ function AdminDashboard() {
               </div>
             </div>
           )}
-
           {activeTab === 'users' && (
             <div className="admin-users">
               <div className="admin-toolbar">
-                <button 
+                <button
                   className="admin-button"
                   onClick={() => setShowAddUserModal(true)}
                 >
                   Add New User
                 </button>
-                {/* Add User Modal */}
                 {showAddUserModal && (
                   <div className="modal-overlay">
                     <div className="modal-container">
                       <div className="modal-header">
                         <h2>Add New User</h2>
-                        <button 
+                        <button
                           className="modal-close"
                           onClick={() => setShowAddUserModal(false)}
                         >
                           &times;
                         </button>
                       </div>
-                      
                       <form onSubmit={handleAddUser}>
                         <div className="modal-body">
                           {addUserError && <div className="error-message">{addUserError}</div>}
-                          
                           <div className="form-group">
                             <label htmlFor="email">Email (required)</label>
                             <input
@@ -470,7 +386,6 @@ function AdminDashboard() {
                               required
                             />
                           </div>
-                          
                           <div className="form-group">
                             <label htmlFor="password">Password (required)</label>
                             <input
@@ -482,7 +397,6 @@ function AdminDashboard() {
                               required
                             />
                           </div>
-                          
                           <div className="form-group">
                             <label htmlFor="confirmPassword">Confirm Password (required)</label>
                             <input
@@ -494,7 +408,6 @@ function AdminDashboard() {
                               required
                             />
                           </div>
-                          
                           <div className="form-group">
                             <label htmlFor="firstName">First Name</label>
                             <input
@@ -505,7 +418,6 @@ function AdminDashboard() {
                               onChange={handleUserInputChange}
                             />
                           </div>
-                          
                           <div className="form-group">
                             <label htmlFor="lastName">Last Name</label>
                             <input
@@ -516,7 +428,6 @@ function AdminDashboard() {
                               onChange={handleUserInputChange}
                             />
                           </div>
-                          
                           <div className="form-group">
                             <label htmlFor="role">Role</label>
                             <select
@@ -530,18 +441,17 @@ function AdminDashboard() {
                             </select>
                           </div>
                         </div>
-                        
                         <div className="modal-footer">
-                          <button 
-                            type="button" 
+                          <button
+                            type="button"
                             className="btn btn-secondary"
                             onClick={() => setShowAddUserModal(false)}
                             disabled={addingUser}
                           >
                             Cancel
                           </button>
-                          <button 
-                            type="submit" 
+                          <button
+                            type="submit"
                             className="btn btn-primary"
                             disabled={addingUser}
                           >
@@ -553,14 +463,14 @@ function AdminDashboard() {
                   </div>
                 )}
                 <div className="admin-search">
-                  <input 
-                    type="text" 
-                    placeholder="Search users..." 
+                  <input
+                    type="text"
+                    placeholder="Search users..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                   {searchQuery && (
-                    <button 
+                    <button
                       className="search-clear-button"
                       onClick={() => setSearchQuery('')}
                     >
@@ -569,7 +479,6 @@ function AdminDashboard() {
                   )}
                 </div>
               </div>
-
               {loading ? (
                 <div className="admin-loading">Loading users...</div>
               ) : error ? (
@@ -588,11 +497,11 @@ function AdminDashboard() {
                     </thead>
                     <tbody>
                       {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
-                        filteredUsers.map((user) => (
-                          <tr key={user.email}>
+                        filteredUsers.map((user, index) => (
+                          <tr key={user.id || user.email || `user-${index}`}>
                             <td>{user.email}</td>
-                            <td className="hide-on-mobile">{user.firstName || '-'}</td>
-                            <td className="hide-on-mobile">{user.lastName || '-'}</td>
+                            <td className="hide-on-mobile">{user.first_name || '-'}</td>
+                            <td className="hide-on-mobile">{user.last_name || '-'}</td>
                             <td><span className={`role-badge ${user.role}`}>{user.role}</span></td>
                             <td>
                               <button className="action-button delete-button" onClick={() => confirmDeleteUser(user.email)}>Delete</button>
@@ -612,13 +521,11 @@ function AdminDashboard() {
               )}
             </div>
           )}
-
           {activeTab === 'questions' && (
             <div className="admin-placeholder">
               <QuestionsManager/>
             </div>
           )}
-
           {activeTab === 'rooms' && (
             <div className="admin-rooms">
               <div className="admin-toolbar">
@@ -629,7 +536,6 @@ function AdminDashboard() {
                   <input type="text" placeholder="Search rooms..." />
                 </div>
               </div>
-
               {loading ? (
                 <div className="admin-loading">Loading rooms...</div>
               ) : (
@@ -647,36 +553,41 @@ function AdminDashboard() {
                     </thead>
                     <tbody>
                       {Array.isArray(rooms) && rooms.length > 0 ? (
-                        rooms.map((room) => (
-                          <tr key={room.id || room.roomId}>
+                        rooms.map((room, index) => (
+                          <tr key={room.id || room.roomId || `room-${index}`}>
                             <td>{room.id || room.roomId}</td>
                             <td>{room.name || '-'}</td>
                             <td className="hide-on-mobile">
-                              {Array.isArray(room.players) && room.players.length > 0 ? (
-                                <div className="player-list">
-                                  <span className="player-count">{room.players.length}</span>
-                                  <div className="player-tooltip">
-                                    <ul>
-                                      {room.players.map((player, index) => (
-                                        <li key={index}>{player.name || player.email || player}</li>
-                                      ))}
-                                    </ul>
+                                {Array.isArray(room.players) && room.players.length > 0 ? (
+                                  <div className="player-list">
+                                    <span className="player-count">{room.players.length}</span>
+                                    <div className="player-tooltip">
+                                      <ul>
+                                        {room.players.map((player, playerIndex) => (
+                                          <li key={player.id || player.email || `player-${playerIndex}`}>
+                                            {player.name || player.email || player}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
                                   </div>
-                                </div>
-                              ) : (
-                                <span className="no-players">No players</span>
-                              )}
-                            </td>
+                                ) : (
+                                  <span className="no-players">No players</span>
+                                )}
+                              </td>
                             <td className="hide-on-mobile">
                               <span className={`status-badge ${room.status?.toLowerCase() || 'inactive'}`}>
                                 {room.status || 'Inactive'}
                               </span>
                             </td>
                             <td className="hide-on-mobile">
-                              {room.createdAt ? new Date(room.createdAt).toLocaleString() : '-'}
+                              {room.createdAt || room.created_at ?
+                                new Date(room.createdAt || room.created_at).toLocaleString() :
+                                '-'
+                              }
                             </td>
                             <td>
-                              <button 
+                              <button
                                 className="action-button delete-button"
                                 onClick={() => confirmDeleteRoom(room.id || room.roomId)}
                               >
@@ -696,20 +607,17 @@ function AdminDashboard() {
               )}
             </div>
           )}
-
           {activeTab === 'stats' && (
             <AdminStats/>
           )}
         </div>
       </main>
-
-      {/* Delete User Confirmation Modal */}
       {showDeleteUserConfirmation && (
         <div className="modal-overlay">
           <div className="modal-container delete-confirmation">
             <div className="modal-header">
               <h2>Confirm User Deletion</h2>
-              <button 
+              <button
                 className="modal-close"
                 onClick={() => {
                   setShowDeleteUserConfirmation(false);
@@ -726,8 +634,8 @@ function AdminDashboard() {
               </p>
             </div>
             <div className="modal-footer">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-secondary"
                 onClick={() => {
                   setShowDeleteUserConfirmation(false);
@@ -736,8 +644,8 @@ function AdminDashboard() {
               >
                 Cancel
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-danger"
                 onClick={handleDeleteUser}
               >
@@ -747,14 +655,12 @@ function AdminDashboard() {
           </div>
         </div>
       )}
-      
-      {/* Room Creation Modal */}
       {showRoomModal && (
         <div className="modal-overlay">
           <div className="modal-container">
             <div className="modal-header">
               <h2>Create New Room</h2>
-              <button 
+              <button
                 className="modal-close"
                 onClick={() => setShowRoomModal(false)}
               >
@@ -777,16 +683,16 @@ function AdminDashboard() {
                 <p className="help-text">A new room will be created with no players initially.</p>
               </div>
               <div className="modal-footer">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn btn-secondary"
                   onClick={() => setShowRoomModal(false)}
                   disabled={creatingRoom}
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary"
                   disabled={creatingRoom}
                 >
@@ -797,14 +703,12 @@ function AdminDashboard() {
           </div>
         </div>
       )}
-
-      {/* Delete Room Confirmation Modal */}
       {showDeleteConfirmation && (
         <div className="modal-overlay">
           <div className="modal-container delete-confirmation">
             <div className="modal-header">
               <h2>Confirm Deletion</h2>
-              <button 
+              <button
                 className="modal-close"
                 onClick={() => {
                   setShowDeleteConfirmation(false);
@@ -821,8 +725,8 @@ function AdminDashboard() {
               </p>
             </div>
             <div className="modal-footer">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-secondary"
                 onClick={() => {
                   setShowDeleteConfirmation(false);
@@ -831,8 +735,8 @@ function AdminDashboard() {
               >
                 Cancel
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-danger"
                 onClick={handleDeleteRoom}
               >
