@@ -17,7 +17,7 @@ MusiQuiz is an interactive web application that allows users to test their music
 * **Admin Dashboard:** Comprehensive management of users, questions, and rooms
 * **Quiz Rooms:** Users can join existing rooms (created by an admin) to play a quiz by themselves or against others
 * **Chat:** Users who have joined a room can chat while waiting for a game to start.
-* ~~**Turn-Based Gameplay:** Players take turns answering music questions~~ ⬅️ WORK IN PROGRESS
+* **Turn-Based Gameplay:** Players take turns answering music questions
 * **Real-Time Updates:** See other players' actions instantly
 * **Score Tracking:** Track performance across games
 
