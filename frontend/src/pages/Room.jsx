@@ -451,7 +451,7 @@ function Room() {
       </header>
       
       {/* DEBUG SECTION - Remove this in production */}
-      <div style={{ 
+      {/* <div style={{ 
         backgroundColor: '#f0f0f0', 
         padding: '10px',
         color: '#333', 
@@ -472,7 +472,7 @@ function Room() {
             Reset Room Status
           </button>
         </div>
-      </div>
+      </div> */}
       
       <div className="room-content">
         <div className="room-main-area">

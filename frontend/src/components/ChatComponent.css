@@ -109,7 +109,7 @@
   @media (max-width: 768px) {
     .chat-container {
       justify-content: space-between;
-      padding: 10px;
+      /* padding: 10px; */
       height: 40vh;
     }
     
