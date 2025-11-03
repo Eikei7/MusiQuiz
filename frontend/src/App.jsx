@@ -11,6 +11,7 @@ import QuizTime from './pages/QuizTime';
 import Room from './pages/Room';
 import Card from './components/Card';
 import './App.css';
+import ResetPassword from './components/ResetPassword';
 
 const ADMIN_EMAIL = 'erikmatfors@gmail.com';
 
@@ -48,6 +49,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={!session ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
         <Route path="/signup" element={!session ? <Signup /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
+        <Route path="/reset-password" element={!session ? <ResetPassword /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
 
         {/* Protected routes for all authenticated users */}
         <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/" replace />} />

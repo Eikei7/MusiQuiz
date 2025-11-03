@@ -10,6 +10,9 @@ function Login() {
     password: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -67,6 +70,41 @@ function Login() {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotPasswordEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    try {
+      const toastId = toast.loading('Sending reset instructions...');
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.update(toastId, {
+        render: 'Password reset instructions sent to your email!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000
+      });
+
+      // Close modal and reset form
+      setShowForgotPassword(false);
+      setForgotPasswordEmail('');
+      
+    } catch (error) {
+      toast.error(error.message || 'An error occurred while sending reset instructions');
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
   return (
     <div className='container'>
       <div className="sticky-note">
@@ -111,10 +149,80 @@ function Login() {
           </div>
           <div className="login-links">
             <span><a href="/signup">Sign up</a></span>
-            <span><a href="/forgot">Forgot Password?</a></span>
+            <span>
+              <button 
+                type="button" 
+                className="forgot-password-link"
+                onClick={() => setShowForgotPassword(true)}
+              >
+                Forgot Password?
+              </button>
+            </span>
           </div>
         </form>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <h2>Reset Your Password</h2>
+              <button 
+                className="modal-close"
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotPasswordEmail('');
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <p className="forgot-password-description">
+                Enter your email address and we'll send you instructions to reset your password.
+              </p>
+              
+              <form onSubmit={handleForgotPassword}>
+                <div className="input-group">
+                  <input
+                    type="email"
+                    id="forgotPasswordEmail"
+                    name="forgotPasswordEmail"
+                    value={forgotPasswordEmail}
+                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="modal-footer">
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setForgotPasswordEmail('');
+                    }}
+                    disabled={forgotPasswordLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary"
+                    disabled={forgotPasswordLoading}
+                  >
+                    {forgotPasswordLoading ? 'Sending...' : 'Send Instructions'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

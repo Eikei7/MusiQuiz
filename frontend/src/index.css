@@ -29,15 +29,15 @@ body {
   justify-content: center;
   align-items: flex-start;
   background: linear-gradient(135deg,
-    #2c3e50 0%,     /* Midnight blue */
-    #2f4254 12.5%,  /* Added: Dark blue-gray */
-    #34495e 25%,    /* Wet asphalt */
-    #4a5f7a 37.5%,  /* Added: Medium blue-gray */
-    #8e44ad 50%,    /* Wisteria purple */
-    #5d8aa8 62.5%,  /* Added: Blue-purple transition */
-    #3498db 75%,    /* Peter river blue */
-    #2a5d84 87.5%,  /* Added: Deep blue transition */
-    #2c3e50 100%    /* Back to midnight blue */
+    #2c3e50 0%,
+    #2f4254 12.5%,
+    #34495e 25%,
+    #4a5f7a 37.5%,
+    #8e44ad 50%,
+    #5d8aa8 62.5%,
+    #3498db 75%,
+    #2a5d84 87.5%,
+    #2c3e50 100%
   );
   background-size: 200% 200%;
   background-attachment: fixed;
