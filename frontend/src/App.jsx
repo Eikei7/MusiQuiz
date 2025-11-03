@@ -49,11 +49,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={!session ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
         <Route path="/signup" element={!session ? <Signup /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
-        <Route path="/reset-password" element={
-          session?.user?.recovery_session ? <ResetPassword /> : 
-          !session ? <ResetPassword /> : 
-          <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />
-        } />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Protected routes for all authenticated users */}
         <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/" replace />} />

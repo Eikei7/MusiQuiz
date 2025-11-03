@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import '../pages/Login-Signup.css';
+import './Login-Signup.css';
 
 function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -9,20 +9,38 @@ function ResetPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isValidResetContext, setIsValidResetContext] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if we're in a password reset context
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // User is in password recovery mode
-        console.log('Password recovery session detected');
+    // Check if we're in a valid password reset context
+    const checkResetContext = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // If there's no session at all, this isn't a valid reset context
+      if (!session) {
+        setError('Invalid or expired password reset link. Please request a new one.');
+        return;
       }
-    });
-  }, []);
+      
+      // If we have a session but it's a regular authenticated session (not recovery),
+      // redirect to dashboard
+      if (session.user && !session.user.recovery_session) {
+        navigate('/dashboard');
+        return;
+      }
+      
+      // This is a valid password recovery session
+      setIsValidResetContext(true);
+    };
+
+    checkResetContext();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isValidResetContext) return;
+
     setError('');
     setSuccess('');
 
@@ -47,6 +65,9 @@ function ResetPassword() {
 
       setSuccess('Password updated successfully! Redirecting to login...');
       
+      // Sign out to clear the recovery session
+      await supabase.auth.signOut();
+      
       // Redirect to login after successful password reset
       setTimeout(() => {
         navigate('/');
@@ -58,6 +79,22 @@ function ResetPassword() {
       setLoading(false);
     }
   };
+
+  if (!isValidResetContext && error) {
+    return (
+      <div className='container'>
+        <img src="/logo_text_clear.png" alt="MusiQuiz logo" />
+        <div className="login-container">
+          <h2>Password Reset</h2>
+          <div className="error-message">{error}</div>
+          <div className="login-links">
+            <span><a href="/">Back to login</a></span>
+            <span><a href="/forgot-password">Request new reset link</a></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='container'>
@@ -99,7 +136,7 @@ function ResetPassword() {
           </div>
 
           <div className="input-group">
-            <button type="submit" disabled={loading}>
+            <button type="submit" disabled={loading || !isValidResetContext}>
               {loading ? 'Updating...' : 'Update Password'}
             </button>
           </div>
