@@ -70,27 +70,34 @@ function QuestionsManager() {
   };
 
   // Filter questions based on search query and category
-  const filteredQuestions = useMemo(() => {
-    let filtered = questions;
+const filteredQuestions = useMemo(() => {
+  let filtered = questions;
 
-    // Filter by category if selected
-    if (categoryFilter) {
-      filtered = filtered.filter(question =>
-        question.category === categoryFilter
-      );
-    }
+  // Filter by category if selected
+  if (categoryFilter) {
+    filtered = filtered.filter(question =>
+      question.category === categoryFilter
+    );
+  }
 
-    // Filter by search query if provided
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(question =>
+  // Filter by search query if provided
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase().trim();
+    filtered = filtered.filter(question => {
+      // Safely handle choices array
+      const choices = Array.isArray(question.choices) ? question.choices : [];
+      
+      return (
         question.question?.toLowerCase().includes(query) ||
-        question.choices?.some(choice => choice.toLowerCase().includes(query))
+        choices.some(choice => 
+          typeof choice === 'string' && choice.toLowerCase().includes(query)
+        )
       );
-    }
+    });
+  }
 
-    return filtered;
-  }, [questions, searchQuery, categoryFilter]);
+  return filtered;
+}, [questions, searchQuery, categoryFilter]);
 
   const handleQuestionAdded = () => {
     fetchQuestions();
