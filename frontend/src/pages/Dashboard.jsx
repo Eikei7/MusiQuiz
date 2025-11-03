@@ -485,8 +485,15 @@ const updatedPlayers = [
           onSettingsClick={() => setShowUserSettings(true)} 
         />
       </header>
-
       <main className="dashboard-main">
+        {/* Welcome Message Card */}
+  <div className="welcome-card">
+    <div className="welcome-icon">🎵</div>
+    <div className="welcome-text">
+      <h3>Welcome back!</h3>
+      <p>Ready for another round? Pick a room, challenge your friends, and see if you can beat your high score.</p>
+    </div>
+  </div>
         <section className="room-selection">
           <h2>Join a Quiz Room</h2>
           
@@ -588,16 +595,27 @@ const updatedPlayers = [
                         <h4>Categories Breakdown</h4>
                         <div className="category-chart">
                           {Object.entries(stats.categoryStats)
-                            .sort((a, b) => b[1].accuracy - a[1].accuracy)
-                            .map(([category, catStats]) => (
+                            .map(([category, catStats]) => {
+                              const accuracy = catStats.total > 0 
+                                ? Math.round((catStats.correct / catStats.total) * 100)
+                                : 0;
+                              
+                              return {
+                                category,
+                                catStats,
+                                accuracy
+                              };
+                            })
+                            .sort((a, b) => b.accuracy - a.accuracy)
+                            .map(({ category, catStats, accuracy }) => (
                               <div className="category-bar-container" key={category}>
                                 <div className="category-name">{category}</div>
                                 <div className="category-bar-wrapper">
                                   <div 
                                     className="category-bar" 
-                                    style={{ width: `${catStats.accuracy}%` }}
+                                    style={{ width: `${accuracy}%` }}
                                   ></div>
-                                  <span className="category-accuracy">{catStats.accuracy}%</span>
+                                  <span className="category-accuracy">{accuracy}%</span>
                                 </div>
                                 <div className="category-count">{catStats.correct}/{catStats.total}</div>
                               </div>

@@ -69,6 +69,12 @@ function Login() {
 
   return (
     <div className='container'>
+      <div className="sticky-note">
+        <div className="sticky-content">
+          <h3>Are you a music expert?</h3>
+          <p>Take the multiple choice quiz alone or with friends to see if you have what it takes. Let the quiz begin!</p>
+        </div>
+      </div>
       <div className="logo-container">
         <img src="/logo_text_clear.png" alt="MusiQuiz logo" />
       </div>

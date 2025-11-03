@@ -29,17 +29,16 @@ body {
   justify-content: center;
   align-items: flex-start;
   background: linear-gradient(135deg,
-   rgba(255,108,123,1) 0%,
-   rgba(240,115,254,1) 10%,
-   rgba(153,119,255,1) 20%,
-   rgba(128,158,255,1) 30%,
-   rgba(120,194,254,1) 40%,
-   rgba(128,243,255,1) 50%,
-   rgba(130,255,236,1) 60%,
-   rgba(130,252,175,1) 70%,
-   rgba(131,255,120,1) 80%,
-   rgba(255,228,123,1) 90%,
-   rgba(252,122,122,1) 100%);
+    #2c3e50 0%,     /* Midnight blue */
+    #2f4254 12.5%,  /* Added: Dark blue-gray */
+    #34495e 25%,    /* Wet asphalt */
+    #4a5f7a 37.5%,  /* Added: Medium blue-gray */
+    #8e44ad 50%,    /* Wisteria purple */
+    #5d8aa8 62.5%,  /* Added: Blue-purple transition */
+    #3498db 75%,    /* Peter river blue */
+    #2a5d84 87.5%,  /* Added: Deep blue transition */
+    #2c3e50 100%    /* Back to midnight blue */
+  );
   background-size: 200% 200%;
   background-attachment: fixed;
   animation: gradient 25s ease infinite;
