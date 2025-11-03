@@ -51,13 +51,11 @@ MusiQuiz is an interactive web application that allows users to test their music
 * Leaderboards for tracking top players
 
 ## Screenshots
-![screenshot_5](https://github.com/user-attachments/assets/00c39c50-6956-4b54-9a25-a195b459e23f)
-![screenshot_1](https://github.com/user-attachments/assets/7115ec0c-dee2-4ffa-8f8b-86075339b89a)
-![screenshot_2](https://github.com/user-attachments/assets/e4896ec0-eb1d-4305-90a3-d62158d5098c)
-![screenshot_3](https://github.com/user-attachments/assets/ef4cbcd7-da0a-4334-9510-9ba41f21eef4)
-![screenshot_4](https://github.com/user-attachments/assets/bf9f32c6-e045-4c60-a9b8-21ca01e7e365)
-![screenshot_6](https://github.com/user-attachments/assets/70a3768b-6ddf-4b8a-baeb-39ee0fa34548)
-![screenshot_7](https://github.com/user-attachments/assets/05dd8f82-2259-4723-9949-e196319b1bd2)
-
-
+![screenshot_5](https://github.com/user-attachments/assets/c79aa2c3-48b4-4eb2-aabe-394201c55131)
+![screenshot_1](https://github.com/user-attachments/assets/2cc24c3d-91e7-405a-b686-37f4f07ad2c0)
+![screenshot_2](https://github.com/user-attachments/assets/3e2a3c29-9d0b-48be-a59e-82d4c3d5377c)
+![screenshot_3](https://github.com/user-attachments/assets/446258bf-b4cb-415c-891a-32db043bf796)
+![screenshot_4](https://github.com/user-attachments/assets/a2ebcb81-4d6b-4d83-b6d2-cb0e1f16a958)
+![screenshot_6](https://github.com/user-attachments/assets/0f6ca5eb-3dac-4b99-9a58-3225cdb3f3ea)
+![screenshot_7](https://github.com/user-attachments/assets/34a5a67d-b05a-467b-a146-8416978637b2)
 
