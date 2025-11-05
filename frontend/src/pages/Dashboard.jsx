@@ -208,15 +208,20 @@ function Dashboard() {
 
       // Transform the data to include player count
       const roomsWithPlayerCount = roomsData.map((room) => {
-        const players = Array.isArray(room.players) ? room.players : [];
-        const activePlayers = players.filter(p => p.is_active);
-        return {
-          ...room,
-          roomId: room.room_id,
-          playerCount: activePlayers.length,
-          players: activePlayers, // Optionally include the active players array
-        };
-      });
+      const players = Array.isArray(room.players) ? room.players : [];
+      const activePlayers = players.filter(p => 
+        p.is_active && 
+        p.last_active && 
+        new Date(p.last_active) > new Date(Date.now() - 30 * 60 * 1000) // 30 minutes
+      );
+      
+      return {
+        ...room,
+        roomId: room.room_id,
+        playerCount: activePlayers.length,
+        players: activePlayers,
+      };
+    });
 
       setRooms(roomsWithPlayerCount || []);
     } catch (err) {
@@ -260,71 +265,103 @@ function Dashboard() {
 
   // Handle joining room with Supabase
   const handleJoinRoom = async () => {
-    if (!selectedRoom) {
-      toast.warning('Please select a room to join.', {
-        closeButton: true
-      });
-      return;
-    }
+  if (!selectedRoom) {
+    toast.warning('Please select a room to join.', {
+      closeButton: true
+    });
+    return;
+  }
 
-    setJoiningRoom(true);
+  setJoiningRoom(true);
 
-    try {
-      const roomId = selectedRoom.roomId;
+  try {
+    const roomId = selectedRoom.roomId;
 
-      // Fetch the current room data
-      const { data: room, error: fetchError } = await supabase
-        .from('rooms')
-        .select('players')
-        .eq('room_id', roomId)
-        .single();
+    // Fetch the current room data
+    const { data: room, error: fetchError } = await supabase
+      .from('rooms')
+      .select('players')
+      .eq('room_id', roomId)
+      .single();
 
-      if (fetchError) throw fetchError;
+    if (fetchError) throw fetchError;
 
-      // Ensure currentPlayers is always an array
-      const currentPlayers = Array.isArray(room.players) ? room.players : [];
+    // Ensure currentPlayers is always an array
+    const currentPlayers = Array.isArray(room.players) ? room.players : [];
 
-      const playerExists = currentPlayers.some(p => p.user_id === user.id);
+    // Check if user already exists and is active
+    const existingPlayer = currentPlayers.find(p => p.user_id === user.id);
+    if (existingPlayer) {
+      // If player exists but is inactive, update their activity status
+      if (!existingPlayer.is_active || 
+          !existingPlayer.last_active || 
+          new Date(existingPlayer.last_active) < new Date(Date.now() - 30 * 60 * 1000)) {
+        
+        const updatedPlayers = currentPlayers.map(player =>
+          player.user_id === user.id
+            ? {
+                ...player,
+                is_active: true,
+                last_active: new Date().toISOString(),
+                rejoined_at: new Date().toISOString() // Optional: track rejoins
+              }
+            : player
+        );
 
-      if (playerExists) {
+        const { error: updateError } = await supabase
+          .from('rooms')
+          .update({ players: updatedPlayers })
+          .eq('room_id', roomId);
+
+        if (updateError) throw updateError;
+
+        toast.success('Welcome back to the room!');
+        navigate(`/rooms/${roomId}`);
+        return;
+      } else {
         toast.info('You are already in this room!');
         return;
       }
-      const { data: profile } = await supabase
-  .from('users')
-  .select('first_name, last_name')
-  .eq('id', user.id)
-  .single();
-
-const updatedPlayers = [
-  ...currentPlayers,
-  {
-    user_id: user.id,
-    joined_at: new Date().toISOString(),
-    is_active: true,
-    first_name: profile?.first_name || userSettings.firstName || '',
-    last_name: profile?.last_name || userSettings.lastName || '',
-    email: user.email
-  }
-];
-
-      // Update the room with the new players array
-      const { error } = await supabase
-        .from('rooms')
-        .update({ players: updatedPlayers })
-        .eq('room_id', roomId);
-
-      if (error) throw error;
-
-      toast.success('Successfully joined the room!');
-      navigate(`/rooms/${roomId}`);
-    } catch (error) {
-      console.error('Error joining room:', error);
-      toast.error('Failed to join room: ' + error.message);
-    } finally {
-      setJoiningRoom(false);
     }
-  };
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('first_name, last_name')
+      .eq('id', user.id)
+      .single();
+
+    const updatedPlayers = [
+      ...currentPlayers,
+      {
+        user_id: user.id,
+        email: user.email,
+        first_name: profile?.first_name || userSettings.firstName || '',
+        last_name: profile?.last_name || userSettings.lastName || '',
+        joined_at: new Date().toISOString(),
+        last_active: new Date().toISOString(), // Add activity tracking
+        is_active: true, // Add activity status
+        // Optional: add display_name for easier rendering
+        display_name: profile?.first_name || userSettings.firstName || user.email.split('@')[0]
+      }
+    ];
+
+    // Update the room with the new players array
+    const { error } = await supabase
+      .from('rooms')
+      .update({ players: updatedPlayers })
+      .eq('room_id', roomId);
+
+    if (error) throw error;
+
+    toast.success('Successfully joined the room!');
+    navigate(`/rooms/${roomId}`);
+  } catch (error) {
+    console.error('Error joining room:', error);
+    toast.error('Failed to join room: ' + error.message);
+  } finally {
+    setJoiningRoom(false);
+  }
+};
 
   // Handle navigation to room
   const handleGoToRoom = () => {
@@ -721,6 +758,11 @@ const updatedPlayers = [
 
       <footer className="dashboard-footer">
         <p>&copy; 2025 MusiQuiz. All rights reserved.</p>
+        <p>5/11/2025 - Version 1.1.0 changelog:</p>
+        <ul>
+          <li> - Players in rooms are now displayed with their status (active/inactive)</li>
+          <li> - Host has a fancy crown icon next to their name</li>
+        </ul>
       </footer>
 
       {showRoomWarning && (

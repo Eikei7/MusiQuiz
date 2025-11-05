@@ -23,6 +23,18 @@ function HamburgerMenu({ user, logout, onSettingsClick }) {
     };
   }, []);
 
+  // Get the user's first name from metadata
+  const getUserName = () => {
+    if (user?.user_metadata?.first_name) {
+      return user.user_metadata.first_name;
+    }
+    if (user?.raw_user_meta_data?.first_name) {
+      return user.raw_user_meta_data.first_name;
+    }
+    // Fallback to email username
+    return user?.email?.split('@')[0] || 'User';
+  };
+
   return (
     <div className="hamburger-menu-container" ref={menuRef}>
       <button className="hamburger-button" onClick={toggleMenu}>
@@ -42,7 +54,7 @@ function HamburgerMenu({ user, logout, onSettingsClick }) {
         </div>
 
         <div className="menu-user-info">
-          <p>Welcome, {user?.firstName || user?.email?.split('@')[0]}!</p>
+          <p>Welcome, {getUserName()}!</p>
         </div>
 
         <nav className="menu-nav">

@@ -14,6 +14,7 @@ function Room() {
   const [error, setError] = useState('');
   const [quizStarted, setQuizStarted] = useState(false);
   const [players, setPlayers] = useState([]);
+  const [lastActivityUpdate, setLastActivityUpdate] = useState(Date.now());
   
   // Add transition states
   const [isExiting, setIsExiting] = useState(false);
@@ -42,7 +43,7 @@ function Room() {
 
   useEffect(() => {
     if (user) {
-      document.title = `Room - MusiQuiz`;
+      document.title = `MusiQuiz - Room`;
       console.log('DEBUG: About to fetch room data for roomId:', roomId);
       fetchRoomData();
     }
@@ -56,7 +57,7 @@ function Room() {
     return isHost;
   };
 
-  // Set up real-time subscription - moved to separate useEffect
+  // SEPARATE useEffect for real-time subscription
   useEffect(() => {
     if (!user || !roomId) return;
     
@@ -65,37 +66,25 @@ function Room() {
       const roomSubscription = supabase
         .channel(`room_${roomId}`)
         .on('postgres_changes', {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'rooms',
           filter: `room_id=eq.${roomId}`,
         }, (payload) => {
           console.log('DEBUG: Room change detected:', payload);
-          console.log('DEBUG: Event type:', payload.eventType);
-          console.log('DEBUG: Old game_started:', payload.old?.game_started);
-          console.log('DEBUG: New game_started:', payload.new?.game_started);
           
           if (payload.eventType === 'UPDATE') {
-            // Update the entire room state
             setRoom(payload.new);
             
-            // Update players if the players array changed
             if (JSON.stringify(payload.new.players) !== JSON.stringify(payload.old?.players)) {
               console.log('DEBUG: Players updated:', payload.new.players);
               setPlayers(payload.new.players || []);
             }
 
-            // FIXED: Only navigate non-host players to game when game_started changes from false to true
-            // and only if the current user is not the host
             const gameJustStarted = payload.new.game_started && !payload.old?.game_started;
             const isHost = amIFirstPlayer();
             
-            console.log('DEBUG: Game just started?', gameJustStarted);
-            console.log('DEBUG: Is user host?', isHost);
-            console.log('DEBUG: Should redirect?', gameJustStarted && !isHost);
-            
             if (gameJustStarted && !isHost) {
-              console.log('DEBUG: Game started by host, navigating non-host player to the game...');
               setQuizStarted(true);
               setIsExiting(true);
               setTimeout(() => {
@@ -115,178 +104,223 @@ function Room() {
       console.log('DEBUG: Cleaning up room subscription');
       supabase.removeChannel(subscription);
     };
-  }, [user, roomId, navigate, amIFirstPlayer]); // Added amIFirstPlayer to dependencies
+  }, [user, roomId, navigate, amIFirstPlayer]);
 
-  const fetchRoomData = async () => {
-  try {
-    setLoading(true);
-    setError('');
+  // SEPARATE useEffect for activity tracking and cleanup
+  useEffect(() => {
+    if (!user || !roomId) return;
 
-    console.log('DEBUG: Fetching room data for:', roomId);
+    // Function to remove current user from room
+    const removeCurrentUserFromRoom = async () => {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) return;
 
-    // Fetch the room data
-    const { data: roomData, error: roomError } = await supabase
-      .from('rooms')
-      .select('*')
-      .eq('room_id', roomId)
-      .single();
-
-    if (roomError) {
-      if (roomError.code === 'PGRST116') {
-        throw new Error('Room not found');
-      }
-      throw roomError;
-    }
-
-    console.log('DEBUG: Room data fetched:', roomData);
-    console.log('DEBUG: Room game_started status:', roomData.game_started);
-
-    // SAFETY CHECK: If game_started is true, verify there's actually a game running
-    if (roomData.game_started) {
-      console.log('DEBUG: Room says game is started, checking if game actually exists...');
-      
-      const { data: gameData, error: gameError } = await supabase
-        .from('games')
-        .select('*')
-        .eq('room_id', roomId)
-        .single();
-
-      // If no game exists but room says game is started, reset the room
-      if (gameError && gameError.code === 'PGRST116') {
-        console.log('DEBUG: No game found but room says game started - resetting room status');
-        
-        const { error: resetError } = await supabase
+        const { data: room, error } = await supabase
           .from('rooms')
-          .update({ 
-            game_started: false,
-            started_at: null 
-          })
+          .select('players')
+          .eq('room_id', roomId)
+          .single();
+
+        if (error || !room) return;
+
+        const updatedPlayers = (room.players || []).filter(player => 
+          player.user_id !== currentUser.id
+        );
+
+        await supabase
+          .from('rooms')
+          .update({ players: updatedPlayers })
           .eq('room_id', roomId);
 
-        if (resetError) {
-          console.error('DEBUG: Error resetting orphaned room status:', resetError);
-        } else {
-          console.log('DEBUG: Orphaned room status reset successfully');
-          // Update local room data
-          roomData.game_started = false;
-          roomData.started_at = null;
+      } catch (error) {
+        console.error('Error removing user from room:', error);
+      }
+    };
+
+    // Function to update player activity
+    const updatePlayerActivity = async () => {
+      try {
+        const { data: room, error } = await supabase
+          .from('rooms')
+          .select('players')
+          .eq('room_id', roomId)
+          .single();
+
+        if (error || !room) return;
+
+        const updatedPlayers = (room.players || []).map(player => 
+          player.user_id === user.id 
+            ? { 
+                ...player, 
+                last_active: new Date().toISOString(),
+                is_active: true 
+              }
+            : player
+        );
+
+        await supabase
+          .from('rooms')
+          .update({ players: updatedPlayers })
+          .eq('room_id', roomId);
+
+        setLastActivityUpdate(Date.now());
+      } catch (error) {
+        console.error('Error updating player activity:', error);
+      }
+    };
+
+    // Function to remove inactive players
+    const removeInactivePlayers = async () => {
+      try {
+        const { data: room, error } = await supabase
+          .from('rooms')
+          .select('players')
+          .eq('room_id', roomId)
+          .single();
+
+        if (error || !room) return;
+
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        const activePlayers = (room.players || []).filter(player => 
+          player.last_active && new Date(player.last_active) > new Date(thirtyMinutesAgo)
+        );
+
+        // Only update if there are inactive players to remove
+        if (activePlayers.length !== room.players.length) {
+          await supabase
+            .from('rooms')
+            .update({ players: activePlayers })
+            .eq('room_id', roomId);
         }
-      } else if (gameData) {
-        console.log('DEBUG: Game exists, proceeding to game...');
+      } catch (error) {
+        console.error('Error removing inactive players:', error);
       }
-    }
+    };
 
-    // Rest of your existing fetchRoomData logic...
-    const players = roomData.players || [];
-    console.log('DEBUG: Players in room:', players);
-    console.log('DEBUG: Current user ID:', user.id);
-    
-    const userInRoom = players.some(p => {
-      console.log('DEBUG: Checking player:', p, 'is_active:', p.is_active);
-      return p.user_id === user.id && p.is_active;
-    });
+    // Update activity immediately and set up interval
+    updatePlayerActivity();
+    const activityInterval = setInterval(updatePlayerActivity, 30000); // Every 30 seconds
 
-    if (!userInRoom) {
-      console.log('DEBUG: User not found in room, redirecting to dashboard');
-      navigate('/dashboard');
-      return;
-    }
+    // Check for inactive players every minute
+    const cleanupInterval = setInterval(removeInactivePlayers, 60000);
 
-    setRoom(roomData);
-    setPlayers(players);
-    console.log('DEBUG: Players state set to:', players);
+    // Handle page unload (browser/tab close)
+    const handleBeforeUnload = () => {
+      // Note: async operations in beforeunload are unreliable
+      // Consider using navigator.sendBeacon for more reliable cleanup
+      removeCurrentUserFromRoom();
+    };
 
-    // Now check if game should start (this will be false if we reset it above)
-    if (roomData.game_started) {
-      console.log('DEBUG: Game already started, redirecting to game...');
-      setQuizStarted(true);
-      navigate(`/game/${roomId}`);
-      return;
-    } else {
-      console.log('DEBUG: Game not started, staying in room');
-    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
-    setLoading(false);
+    return () => {
+      clearInterval(activityInterval);
+      clearInterval(cleanupInterval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // Remove user when component unmounts normally
+      removeCurrentUserFromRoom();
+    };
+  }, [user, roomId]);
 
-  } catch (err) {
-    console.error('DEBUG: Error fetching room:', err);
-    setError(err.message || 'Error accessing this room');
-    setLoading(false);
-  }
-};
-
-  // Add a function to check room status (debugging helper)
-  const checkRoomStatus = async () => {
+  const fetchRoomData = async () => {
     try {
-      const { data: room, error } = await supabase
+      setLoading(true);
+      setError('');
+
+      console.log('DEBUG: Fetching room data for:', roomId);
+
+      // Fetch the room data
+      const { data: roomData, error: roomError } = await supabase
         .from('rooms')
         .select('*')
         .eq('room_id', roomId)
         .single();
 
-      if (error) throw error;
-
-      console.log('DEBUG: Current room status check:');
-      console.log('  - game_started:', room.game_started);
-      console.log('  - started_at:', room.started_at);
-      console.log('  - players:', room.players);
-      
-      // Also check games table
-      const { data: game, error: gameError } = await supabase
-        .from('games')
-        .select('*')
-        .eq('room_id', roomId)
-        .single();
-        
-      if (gameError && gameError.code !== 'PGRST116') {
-        console.log('DEBUG: Error fetching game:', gameError);
-      } else if (gameError && gameError.code === 'PGRST116') {
-        console.log('DEBUG: No game record found (this is normal)');
-      } else {
-        console.log('DEBUG: Game record found:', game);
+      if (roomError) {
+        if (roomError.code === 'PGRST116') {
+          throw new Error('Room not found');
+        }
+        throw roomError;
       }
+
+      console.log('DEBUG: Room data fetched:', roomData);
+      console.log('DEBUG: Room game_started status:', roomData.game_started);
+
+      // SAFETY CHECK: If game_started is true, verify there's actually a game running
+      if (roomData.game_started) {
+        console.log('DEBUG: Room says game is started, checking if game actually exists...');
+        
+        const { data: gameData, error: gameError } = await supabase
+          .from('games')
+          .select('*')
+          .eq('room_id', roomId)
+          .single();
+
+        // If no game exists but room says game is started, reset the room
+        if (gameError && gameError.code === 'PGRST116') {
+          console.log('DEBUG: No game found but room says game started - resetting room status');
+          
+          const { error: resetError } = await supabase
+            .from('rooms')
+            .update({ 
+              game_started: false,
+              started_at: null 
+            })
+            .eq('room_id', roomId);
+
+          if (resetError) {
+            console.error('DEBUG: Error resetting orphaned room status:', resetError);
+          } else {
+            console.log('DEBUG: Orphaned room status reset successfully');
+            // Update local room data
+            roomData.game_started = false;
+            roomData.started_at = null;
+          }
+        } else if (gameData) {
+          console.log('DEBUG: Game exists, proceeding to game...');
+        }
+      }
+
+      // Check if user is in this room's players array
+      const players = roomData.players || [];
+      console.log('DEBUG: Players in room:', players);
+      console.log('DEBUG: Current user ID:', user.id);
       
-    } catch (error) {
-      console.error('DEBUG: Error checking room status:', error);
+      const userInRoom = players.some(p => {
+        console.log('DEBUG: Checking player:', p, 'is_active:', p.is_active);
+        return p.user_id === user.id && p.is_active;
+      });
+
+      if (!userInRoom) {
+        console.log('DEBUG: User not found in room, redirecting to dashboard');
+        navigate('/dashboard');
+        return;
+      }
+
+      setRoom(roomData);
+      setPlayers(players);
+      console.log('DEBUG: Players state set to:', players);
+
+      // Now check if game should start (this will be false if we reset it above)
+      if (roomData.game_started) {
+        console.log('DEBUG: Game already started, redirecting to game...');
+        setQuizStarted(true);
+        navigate(`/game/${roomId}`);
+        return;
+      } else {
+        console.log('DEBUG: Game not started, staying in room');
+      }
+
+      setLoading(false);
+
+    } catch (err) {
+      console.error('DEBUG: Error fetching room:', err);
+      setError(err.message || 'Error accessing this room');
+      setLoading(false);
     }
   };
 
-  // Add a function to manually reset room status (debugging helper)
-  const resetRoomStatus = async () => {
-    try {
-      const { error } = await supabase
-        .from('rooms')
-        .update({ 
-          game_started: false,
-          started_at: null 
-        })
-        .eq('room_id', roomId);
-
-      if (error) throw error;
-      
-      console.log('DEBUG: Room status reset');
-      
-      // Also delete any game records
-      const { error: deleteError } = await supabase
-        .from('games')
-        .delete()
-        .eq('room_id', roomId);
-        
-      if (deleteError) {
-        console.log('DEBUG: Error deleting games (might be normal):', deleteError);
-      } else {
-        console.log('DEBUG: Game records deleted');
-      }
-      
-      // Refresh room data
-      fetchRoomData();
-      
-    } catch (error) {
-      console.error('DEBUG: Error resetting room status:', error);
-    }
-  };
-
-  // Rest of your component code stays the same...
   const handleLeaveRoom = async () => {
     try {
       const { data: room, error: fetchError } = await supabase
@@ -450,30 +484,6 @@ function Room() {
         </button>
       </header>
       
-      {/* DEBUG SECTION - Remove this in production */}
-      {/* <div style={{ 
-        backgroundColor: '#f0f0f0', 
-        padding: '10px',
-        color: '#333', 
-        margin: '10px', 
-        border: '1px solid #ccc',
-        fontSize: '12px'
-      }}>
-        <h4>DEBUG INFO (Remove in production)</h4>
-        <p>Room game_started: {String(room?.game_started)}</p>
-        <p>User ID: {user?.id}</p>
-        <p>Players count: {players.length}</p>
-        <p>Am I host: {String(amIFirstPlayer())}</p>
-        <div>
-          <button onClick={checkRoomStatus} style={{ marginRight: '10px', fontSize: '11px' }}>
-            Check Room Status
-          </button>
-          <button onClick={resetRoomStatus} style={{ fontSize: '11px', backgroundColor: '#ffcccc' }}>
-            Reset Room Status
-          </button>
-        </div>
-      </div> */}
-      
       <div className="room-content">
         <div className="room-main-area">
           <div className="quiz-placeholder">
@@ -521,6 +531,8 @@ function Room() {
             {players.length > 0 ? (
               players.map((player, index) => {
                 const isCurrentUser = player.user_id === user?.id;
+                const isActive = player.last_active && 
+                  new Date(player.last_active) > new Date(Date.now() - 5 * 60 * 1000); // 5 minutes
                 
                 // Create display name from available data
                 let displayName = '';
@@ -533,7 +545,6 @@ function Room() {
                 } else if (player.name) {
                   displayName = player.name;
                 } else if (player.email) {
-                  // Use email without domain as fallback
                   displayName = player.email.split('@')[0];
                 } else {
                   displayName = 'Unknown Player';
@@ -542,16 +553,22 @@ function Room() {
                 return (
                   <li 
                     key={player.user_id || index} 
-                    className={`player-item ${isCurrentUser ? 'current-user' : ''}`}
+                    className={`player-item ${isCurrentUser ? 'current-user' : ''} ${!isActive ? 'inactive' : ''}`}
+                    title={!isActive && player.last_active ? 'Last seen: ' + new Date(player.last_active).toLocaleTimeString() : 'Online'}
                   >
-                    {displayName}
-                    {isCurrentUser && ' (You)'}
-                    {index === 0 && ' (Host)'}
+                    <span className="player-name">
+                      {displayName}
+                      {isCurrentUser && ' (You)'}
+                      {index === 0 && ' 👑'}
+                    </span>
+                    <span className={`player-status ${isActive ? 'online' : 'offline'}`}>
+                      {isActive ? '●' : '○'}
+                    </span>
                   </li>
                 );
               })
             ) : (
-              <li className="no-players">No players found in room...</li>
+              <li className="no-players">No players in room...</li>
             )}
           </ul>
         </div>

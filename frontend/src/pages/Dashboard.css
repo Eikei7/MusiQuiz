@@ -701,9 +701,9 @@
     box-shadow: 0 0 0 2px #4a90e2, 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   
-  .rooms-grid {
+  /* .rooms-grid {
     grid-template-columns: 1fr;
-  }
+  } */
   
   .room-content {
     grid-template-columns: 1fr;
@@ -814,7 +814,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.3);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;

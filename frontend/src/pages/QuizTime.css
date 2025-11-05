@@ -161,7 +161,7 @@
 }
 
 .player-name {
-  color: #fff;
+  /* color: #fff; */
   margin-bottom: 5px;
   font-size: 0.95rem;
   text-align: center;
@@ -780,4 +780,42 @@
   .game-result {
     font-size: 1.1rem;
   }
+}
+
+.player-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 5px 0;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #28a745;
+}
+
+.player-item.inactive {
+  border-left-color: #6c757d;
+  opacity: 0.7;
+}
+
+.player-item.current-user {
+  background: #e3f2fd;
+  border-left-color: #2196f3;
+}
+
+.player-status {
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.player-status.online {
+  color: #28a745;
+}
+
+.player-status.offline {
+  color: #6c757d;
+}
+
+.player-name {
+  flex: 1;
 }
