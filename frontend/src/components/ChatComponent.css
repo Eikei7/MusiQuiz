@@ -1,144 +1,143 @@
+.chat {
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 8px;
+  overflow-y: auto;
+}
+
 .chat-container {
-    display: flex;
-    flex-direction: column;
-    height: 28vh;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    padding: 15px;
-    position: relative;
-  }
-  
-  .status-text {
-    text-align: right;
-    font-size: 0.85rem;
-    font-weight: 500;
-    flex-shrink: 0;
-  }
-  
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 28vh;
+  padding: 15px;
+  position: relative;
+}
+
+.empty-chat-message {
+  color: #555;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.input-send {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.message {
+  background-color: #ffffff;
+  border-radius: 12px;
+  color: black;
+  font-size: 0.9rem;
+  padding: 0 12px;
+  width: fit-content;
+  word-break: break-word;
+}
+
+.message strong {
+  color: #555;
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.message-input {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  outline: none;
+  padding: 10px;
+  width: 70%;
+}
+
+.message-input:focus {
+  border-color: #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.send-button {
+  background-color: #4285f4;
+  border: none;
+  border-radius: 20px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: background-color 0.2s;
+  width: 200px;
+}
+
+.send-button:hover {
+  background-color: #3367d6;
+}
+
+.status-text {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+.system-message {
+  color: #6c757d;
+  margin: 8px 0;
+  text-align: center;
+}
+
+.system-message .timestamp {
+  font-size: 0.8em;
+  margin-left: 6px;
+  opacity: 0.7;
+}
+
+.system-message-content {
+  background-color: #f8f9fa;
+  border-radius: 16px;
+  display: inline-block;
+  font-size: 0.9em;
+  padding: 4px 12px;
+}
+
+@media (max-width: 768px) {
   .chat {
-    flex: 1;
-    overflow-y: auto;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    max-height: calc(40vh - 105px);
   }
-  
-  .empty-chat-message {
-    font-size: 0.9rem;
-    color: #555;
-    text-align: left;
+
+  .chat-container {
+    height: 40vh;
+    justify-content: space-between;
   }
 
   .message {
-    font-size: 0.9rem;
-    padding: 0 12px;
-    border-radius: 12px;
-    background-color: #ffffff;
-    width: fit-content;
-    word-break: break-word;
-    color: black;
+    max-width: 100%;
   }
-  
-  .message strong {
-    display: block;
-    margin-bottom: 4px;
-    font-size: 0.85rem;
-    color: #555;
+}
+
+@media (max-width: 576px) {
+  .chat {
+    max-height: calc(50vh - 105px);
   }
-  
-  .message-input {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    outline: none;
-    width: 70%;
-  }
-  
-  .message-input:focus {
-    border-color: #4285f4;
-    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+
+  .chat-container {
+    height: 50vh;
   }
 
   .input-send {
-    margin-top: 10px;
+    align-items: flex-end;
     display: flex;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  
-  .send-button {
-    width: 200px;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 20px;
-    background-color: #4285f4;
-    color: white;
-    font-weight: 500;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .send-button:hover {
-    background-color: #3367d6;
-  }
-  
-  .system-message {
-    text-align: center;
-    margin: 8px 0;
-    color: #6c757d;
-  }
-  
-  .system-message-content {
-    display: inline-block;
-    background-color: #f8f9fa;
-    border-radius: 16px;
-    padding: 4px 12px;
-    font-size: 0.9em;
-  }
-  
-  .system-message .timestamp {
-    font-size: 0.8em;
-    margin-left: 6px;
-    opacity: 0.7;
-  }
-  
-  @media (max-width: 768px) {
-    .chat-container {
-      justify-content: space-between;
-      /* padding: 10px; */
-      height: 40vh;
-    }
-    
-    .chat {
-      max-height: calc(40vh - 105px);
-    }
-    
-    .message {
-      max-width: 100%;
-    }
+    flex-direction: column;
+    justify-content: center;
   }
 
-  @media (max-width: 576px) {
-    .chat-container {
-      height: 50vh;
-    }
-    
-    .chat {
-      max-height: calc(50vh - 105px);
-    }
-
-    .input-send {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: flex-end;
-    }
-
-    .message-input {
-      width: 95%;
-    }
+  .message-input {
+    width: 95%;
   }
+}

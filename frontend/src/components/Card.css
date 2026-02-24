@@ -1,93 +1,20 @@
 @import url(https://fonts.googleapis.com/css?family=Roboto+Slab:100,200,300,regular,500,600);
 
 .card {
-  width: 280px;
-  height: 400px;
-  position: relative;
-  cursor: pointer;
-  font-family: "Roboto Slab", sans-serif;
-  transition: transform 0.1s;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.card-front {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 10px;
-  box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: left;
-  color: white;
-}
-
-.card-header {
-  width: 100%;
-  display: flex;
-  justify-content: flex-start;
-  padding: 10px 15px 0;
-}
-
-.category-badge {
-  background-color: rgba(255, 255, 255, 0.25);
-  color: white;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(3px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.question-text {
-  font-size: 18px;
-  font-weight: 400;
-  text-align: left;
-  padding-left: 20px;
-  padding-right: 20px;
+  cursor: pointer;
+  font-family: "Roboto Slab", sans-serif;
+  height: 400px;
+  position: relative;
+  transition: transform 0.1s;
+  width: 280px;
 }
 
 .card-choice-item {
+  display: flex;
   padding: 0.2rem 0.75rem;
-  display: flex;
   position: relative;
-}
-
-.loading-text,
-.error-text {
-  margin-top: 20px;
-}
-
-.choices-container {
-  padding: 10px 20px;
-}
-
-.choice-marker {
-  font-weight: bold;
-  margin-right: 8px;
-}
-
-.choice-text {
-  flex: 1;
-}
-
-.card-content {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding-bottom: 50px;
-}
-
-.correct {
-  background-color: rgba(255, 255, 255, 0.2);
 }
 
 .card-choice-item.correct-answer {
@@ -105,18 +32,91 @@
   border: 2px solid #FF5722;
 }
 
+.card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+  padding-bottom: 50px;
+  width: 100%;
+}
+
+.card-front {
+  align-items: center;
+  border-radius: 10px;
+  box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: absolute;
+  text-align: left;
+  width: 100%;
+}
+
+.card-header {
+  display: flex;
+  justify-content: flex-start;
+  padding: 10px 15px 0;
+  width: 100%;
+}
+
+.category-badge {
+  backdrop-filter: blur(3px);
+  background-color: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  text-transform: uppercase;
+}
+
+.choice-marker {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.choice-text {
+  flex: 1;
+}
+
+.choices-container {
+  padding: 10px 20px;
+}
+
+.correct {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
 .correct-badge {
+  color: #4CAF50;
+  font-size: 18px;
+  font-weight: bold;
   position: absolute;
   right: 10px;
-  color: #4CAF50;
-  font-weight: bold;
+}
+
+.loading-text,
+.error-text {
+  margin-top: 20px;
+}
+
+.question-text {
   font-size: 18px;
+  font-weight: 400;
+  padding-left: 20px;
+  padding-right: 20px;
+  text-align: left;
 }
 
 @media (max-width: 768px) {
   .card {
-    width: 200px;
     height: 300px;
+    width: 200px;
   }
 
   .category-badge {
@@ -124,19 +124,20 @@
     padding: 2px 8px;
   }
   
-  .question-text {
+  .choice-marker {
     font-size: 0.8rem;
+    margin-right: 8px;
   }
 
   .choice-text {
     font-size: 0.8rem;
   }
 
-  .choice-marker {
-    font-size: 0.8rem;
-    margin-right: 8px;
-  }
   .choices-container {
     padding: 0 10px;
+  }
+
+  .question-text {
+    font-size: 0.8rem;
   }
 }

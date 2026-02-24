@@ -1,71 +1,71 @@
-.questions-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.questions-table .question-text {
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: black;
-}
-
-.question-count {
-  color: #ffffff;
-  font-size: 1rem;
-  flex: 1; /* Allow to grow */
-  text-align: center;
-  margin: 0 1rem;
-}
-
-.questions-table .correct-answer {
-  font-weight: bold;
-  color: #4caf50;
-}
-
-.question-search {
-  position: relative;
-  flex: 0 0 300px;
-  margin-left: auto;
-  width: 300px;
-}
-
-.question-search input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: white;
-}
-
-.search-clear-button {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: #999;
-}
-
-.search-clear-button:hover {
-  color: #666;
-}
-
 .edit-delete-btns {
+  align-items: center;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   justify-content: center;
-  align-items: center;
+}
+
+.question-count {
+  color: #ffffff;
+  flex: 1;
+  font-size: 1rem;
+  margin: 0 1rem;
+  text-align: center;
+}
+
+.question-search {
+  flex: 0 0 300px;
+  margin-left: auto;
+  position: relative;
+  width: 300px;
+}
+
+.question-search input {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+.questions-table {
+  background-color: white;
+  border-collapse: collapse;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.questions-table .correct-answer {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.questions-table .question-text {
+  color: black;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-clear-button {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 18px;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.search-clear-button:hover {
+  color: #666;
 }
 
 @media (max-width: 768px) {

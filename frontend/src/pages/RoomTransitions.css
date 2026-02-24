@@ -1,114 +1,105 @@
+.leave-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.player-item {
+  position: relative;
+  transition: background-color 0.5s ease, transform 0.5s ease;
+}
+
+.player-item.new-player {
+  animation: slideInFromRight 0.5s ease-out forwards;
+  background-color: rgba(74, 144, 226, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+.player-item.new-player::after {
+  animation: glow 1.5s ease-in-out;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  bottom: 0;
+  content: '';
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transform: translateX(-100%);
+}
+
+.room-container {
+  animation: fadeIn 0.5s ease-out;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  will-change: opacity, transform;
+}
+
+.room-container.fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.room-container.fade-out {
+  animation: fadeOut 0.8s ease-in forwards;
+  pointer-events: none;
+}
+
+.start-quiz-button:disabled {
+  animation: pulse 1.5s infinite;
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+/* Animations */
+
 @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: scale(0.98) translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(10px);
   }
-  
-  @keyframes fadeOut {
-    from {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-    to {
-      opacity: 0;
-      transform: scale(1.02) translateY(-20px);
-    }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
-  
-  /* Transition classes */
-  .room-container {
-    transition: opacity 0.8s ease, transform 0.8s ease;
-    will-change: opacity, transform;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
-  
-  .room-container.fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
+  to {
+    opacity: 0;
+    transform: scale(1.02) translateY(-20px);
   }
-  
-  .room-container.fade-out {
-    animation: fadeOut 0.8s ease-in forwards;
-    pointer-events: none; /* Disable interactions during transition */
-  }
-  
-  /* Pulsing effect for the "Starting..." button state */
-  @keyframes pulse {
-    0% {
-      opacity: 0.8;
-    }
-    50% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0.8;
-    }
-  }
-  
-  .start-quiz-button:disabled {
-    animation: pulse 1.5s infinite;
-    opacity: 0.9;
-    cursor: not-allowed;
-  }
-  
-  /* Slide-in for player items */
-  @keyframes slideInFromRight {
-    from {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-  
-  /* Animation for new players */
-  .player-item.new-player {
-    animation: slideInFromRight 0.5s ease-out forwards;
-    background-color: rgba(74, 144, 226, 0.1);
-    position: relative;
-    overflow: hidden;
-  }
-  
-  /* Glow effect for new players */
-  .player-item.new-player::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+@keyframes glow {
+  0% {
     transform: translateX(-100%);
-    animation: glow 1.5s ease-in-out;
   }
-  
-  @keyframes glow {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
+  100% {
+    transform: translateX(100%);
   }
-  
-  /* Ensure transitions are smooth */
-  .player-item {
-    transition: background-color 0.5s ease, transform 0.5s ease;
-    position: relative;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.8;
   }
-  
-  /* Optional: Make the leave button fade when disabled */
-  .leave-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+  50% {
+    opacity: 1;
   }
-  
-  /* Optional: Add a subtle entry animation for the whole room container */
-  .room-container {
-    animation: fadeIn 0.5s ease-out;
+  100% {
+    opacity: 0.8;
   }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
