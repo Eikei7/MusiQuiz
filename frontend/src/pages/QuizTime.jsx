@@ -3,12 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import QuizFooter from "../components/QuizFooter";
 import "./QuizTime.css";
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
 import Card from "../components/Card";
 
 const QuizTime = ({ roomData: propRoomData }) => {
   const navigate = useNavigate();
   const { roomId } = useParams();
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   
   // Room data state (if not provided via props)
   const [roomData, setRoomData] = useState(propRoomData || null);
@@ -46,12 +47,14 @@ const QuizTime = ({ roomData: propRoomData }) => {
           setLoading(true);
           const { data, error } = await supabase
             .from('rooms')
-            .select('*')
+            .select('room_id, name, players, game_started')
             .eq('room_id', roomId)
             .single();
 
           if (error) throw error;
 
+          console.log('[QuizTime] fetchRoomData result:', data);
+          console.log('[QuizTime] players from DB:', data.players);
           setRoomData(data);
           setPlayers(data.players || []);
           setLoading(false);
@@ -66,30 +69,13 @@ const QuizTime = ({ roomData: propRoomData }) => {
   }, [roomId, propRoomData]);
 
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Error getting user:', error);
-        navigate('/login');
-        return;
-      }
-      if (user) {
-        setUser(user);
-      } else {
-        navigate('/login');
-      }
-    };
-    getCurrentUser();
-  }, [navigate]);
-
-  useEffect(() => {
     if (!roomId) return;
 
     const fetchGameData = async () => {
       try {
         const { data, error } = await supabase
           .from('games')
-          .select('*')
+          .select('current_turn, current_round, scores, game_ended')
           .eq('room_id', roomId)
           .single();
 
@@ -136,7 +122,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          console.log('Game update received:', payload.new);
           setCurrentTurn(payload.new.current_turn || 0);
           setCurrentRound(payload.new.current_round || 1);
           setScores(payload.new.scores || {});
@@ -177,7 +162,8 @@ const QuizTime = ({ roomData: propRoomData }) => {
   // DEFINE HELPER FUNCTIONS BEFORE THEY'RE USED IN EFFECTS
 
   // Check if it's the current user's turn
-  const isMyTurn = () => {
+  const isMyTurn = useCallback(() => {
+    console.log('[QuizTime] isMyTurn check — players:', players, '| currentTurn:', currentTurn, '| user.email:', user?.email);
     // In single-player mode, it's always your turn
     if (players.length === 1) {
       return true;
@@ -189,7 +175,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
     const currentPlayer = players[currentTurn];
     const playerEmail = typeof currentPlayer === 'object' ? currentPlayer.email : currentPlayer;
     return playerEmail === user?.email;
-  };
+  }, [players, currentTurn, user]);
 
   const getCurrentPlayerName = () => {
     // In single-player mode, use the user's name
@@ -211,6 +197,7 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
   // Reset timer when turn changes
   useEffect(() => {
+    console.log('[QuizTime] Timer reset effect — isMyTurn:', isMyTurn(), '| players.length:', players.length, '| currentTurn:', currentTurn, '| isTimerActive:', isTimerActive, '| timeLeft:', timeLeft);
     // Reset timer when it becomes your turn
     if (isMyTurn()) {
       setTimeLeft(TIMER_DURATION);
@@ -250,8 +237,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
   const resetRoomStatusAfterGame = async () => {
     try {
-      console.log('DEBUG: Resetting room status after game completion');
-      
       // Reset the room's game status
       const { error: roomError } = await supabase
         .from('rooms')
@@ -263,8 +248,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
       if (roomError) {
         console.error('Error resetting room after game completion:', roomError);
-      } else {
-        console.log('DEBUG: Room status reset after game completion');
       }
 
       // Delete the completed game
@@ -275,8 +258,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
       
       if (deleteError) {
         console.error('Error deleting completed game:', deleteError);
-      } else {
-        console.log('DEBUG: Game record deleted after completion');
       }
     } catch (err) {
       console.error('Error handling game completion cleanup:', err);
@@ -310,7 +291,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
       .eq('room_id', roomId)
       .single();
     if (fetchError || game.turn_lock) {
-      console.log('Turn is locked or error fetching game data');
       return;
     }
     // Lock the turn
@@ -440,9 +420,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
         return winnerEmail === user.email;
       });
 
-      console.log('Updating stats for user:', user.email, 'Won:', isWinner);
-      console.log('Sending category stats:', questionStats);
-
       // Fetch the current user's stats from the users table
       const { data: userData, error: fetchError } = await supabase
         .from('users')
@@ -486,7 +463,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
       if (error) throw error;
 
-      console.log('Stats updated successfully');
       setStatsUpdated(true);
     } catch (error) {
       console.error('Error updating game stats:', error);
@@ -603,36 +579,37 @@ const QuizTime = ({ roomData: propRoomData }) => {
             })}
           </div>
           
-          <div className="game-result">
-            {(() => {
-              // Determine winner
-              let maxScore = -1;
-              let winners = [];
-              
-              players.forEach(player => {
-                const playerEmail = typeof player === 'object' ? player.email : player;
-                const score = scores[playerEmail] || 0;
-                
-                if (score > maxScore) {
-                  maxScore = score;
-                  winners = [player];
-                } else if (score === maxScore) {
-                  winners.push(player);
+          {players.length > 1 && (
+            <div className="game-result">
+              {(() => {
+                let maxScore = -1;
+                let winners = [];
+
+                players.forEach(player => {
+                  const playerEmail = typeof player === 'object' ? player.email : player;
+                  const score = scores[playerEmail] || 0;
+
+                  if (score > maxScore) {
+                    maxScore = score;
+                    winners = [player];
+                  } else if (score === maxScore) {
+                    winners.push(player);
+                  }
+                });
+
+                if (winners.length === 1) {
+                  const winner = winners[0];
+                  const winnerEmail = typeof winner === 'object' ? winner.email : winner;
+                  const winnerName = typeof winner === 'object' ? (winner.firstName || winnerEmail.split('@')[0]) : winnerEmail.split('@')[0];
+                  const isCurrentUser = winnerEmail === user.email;
+
+                  return <h3>{isCurrentUser ? 'You won!' : `${winnerName} won!`}</h3>;
+                } else {
+                  return <h3>It's a tie!</h3>;
                 }
-              });
-              
-              if (winners.length === 1) {
-                const winner = winners[0];
-                const winnerEmail = typeof winner === 'object' ? winner.email : winner;
-                const winnerName = typeof winner === 'object' ? (winner.firstName || winnerEmail.split('@')[0]) : winnerEmail.split('@')[0];
-                const isCurrentUser = winnerEmail === user.email;
-                
-                return <h3>{isCurrentUser ? 'You won!' : `${winnerName} won!`}</h3>;
-              } else {
-                return <h3>It's a tie!</h3>;
-              }
-            })()}
-          </div>
+              })()}
+            </div>
+          )}
           
           <button 
             className="return-button"

@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
-import './AdminDashboard.css';
+import { supabase } from '../supabaseClient';import { useAuth } from '../contexts/AuthContext';import './AdminDashboard.css';
 import QuestionsManager from '../components/QuestionsManager';
 import AdminStats from '../components/AdminStats';
 
@@ -61,11 +60,24 @@ function AdminDashboard() {
     getCurrentUser();
   }, [navigate]);
 
+  const fetchedData = useRef({ users: false, questions: false, rooms: false });
+
   useEffect(() => {
-    fetchUsers();
-    fetchQuestions();
-    fetchRooms();
-  }, []);
+    if (activeTab === 'dashboard') {
+      if (!fetchedData.current.users) { fetchedData.current.users = true; fetchUsers(); }
+      if (!fetchedData.current.questions) { fetchedData.current.questions = true; fetchQuestions(); }
+      if (!fetchedData.current.rooms) { fetchedData.current.rooms = true; fetchRooms(); }
+    } else if (activeTab === 'users' && !fetchedData.current.users) {
+      fetchedData.current.users = true;
+      fetchUsers();
+    } else if (activeTab === 'questions' && !fetchedData.current.questions) {
+      fetchedData.current.questions = true;
+      fetchQuestions();
+    } else if (activeTab === 'rooms' && !fetchedData.current.rooms) {
+      fetchedData.current.rooms = true;
+      fetchRooms();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -78,7 +90,7 @@ function AdminDashboard() {
       setLoading(true);
       const { data, error } = await supabase
         .from('users')
-        .select('*');
+        .select('id, email, first_name, last_name, role, created_at, last_login');
       if (error) throw error;
       setUsers(data || []);
       setError('');
@@ -203,7 +215,7 @@ function AdminDashboard() {
     try {
       const { data, error } = await supabase
         .from('rooms')
-        .select('*');
+        .select('id, room_id, name, created_at, game_started, players');
       if (error) throw error;
       setRooms(data || []);
     } catch (err) {

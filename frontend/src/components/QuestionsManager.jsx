@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
 import QuestionForm from './QuestionForm';
 import './QuestionsManager.css';
 
@@ -30,6 +31,7 @@ const MUSIC_CATEGORIES = [
 ];
 
 function QuestionsManager() {
+  const { user: currentUser } = useAuth();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,16 +39,8 @@ function QuestionsManager() {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    // Get current user from Supabase
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-    };
-    
-    getCurrentUser();
     fetchQuestions();
   }, []);
 
@@ -56,7 +50,7 @@ function QuestionsManager() {
       setLoading(true);
       const { data, error } = await supabase
         .from('questions')
-        .select('*');
+        .select('id, question, choices, correctAnswerIndex, category');
 
       if (error) throw error;
       setQuestions(data || []);

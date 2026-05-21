@@ -80,59 +80,52 @@ const Card = ({
       setLoading(true);
       setError(null);
 
-      // Fetch all questions from Supabase
-      const { data: allQuestions, error } = await supabase
+      // Step 1: Fetch only question IDs (lightweight query)
+      const { data: allIds, error: idsError } = await supabase
         .from('questions')
-        .select('*');
+        .select('id');
 
-      if (error) throw error;
+      if (idsError) throw idsError;
 
-      // If no questions available
-      if (!allQuestions || allQuestions.length === 0) {
+      if (!allIds || allIds.length === 0) {
         setError('No questions available');
-        setLoading(false);
         return;
       }
 
-      // Get the list of already shown questions
+      // Step 2: Filter out already shown questions
       const shownQuestions = getShownQuestions();
+      let availableIds = allIds.map(q => q.id).filter(id => !shownQuestions.includes(id));
 
-      // Filter out questions that have already been shown
-      const availableQuestions = allQuestions.filter(q => !shownQuestions.includes(q.id));
-
-      // If all questions have been shown, reset the list
-      if (availableQuestions.length === 0) {
+      // Step 3: Reset if all have been shown
+      if (availableIds.length === 0) {
         resetShownQuestions();
-        console.log('All questions have been shown. Resetting the list.');
-        // Use all questions after reset
-        availableQuestions.push(...allQuestions);
+        availableIds = allIds.map(q => q.id);
       }
 
-      // Select a random question from available questions
-      const randomIndex = Math.floor(Math.random() * availableQuestions.length);
-      const randomQuestion = availableQuestions[randomIndex];
+      // Step 4: Pick a random ID and fetch just that one question
+      const randomId = availableIds[Math.floor(Math.random() * availableIds.length)];
+      const { data: questionData, error: questionError } = await supabase
+        .from('questions')
+        .select('id, question, choices, correctAnswerIndex, category')
+        .eq('id', randomId)
+        .single();
 
-      // Parse the choices JSON string into an array
-      const choices = JSON.parse(randomQuestion.choices);
+      if (questionError) throw questionError;
 
-      // Mark this question as shown
-      markQuestionAsShown(randomQuestion.id);
+      const choices = JSON.parse(questionData.choices);
+      markQuestionAsShown(questionData.id);
 
-      // Set the question with parsed choices
       setQuestion({
-        ...randomQuestion,
+        ...questionData,
         choices: choices.map(choice => choice.S)
       });
 
-      // Notify parent component about the loaded question, but only once
       if (onQuestionLoaded && !questionLoadedRef.current) {
-        const questionData = {
-          id: randomQuestion.id,
-          correctAnswerIndex: Number(randomQuestion.correctAnswerIndex),
-          category: randomQuestion.category || 'General'
-        };
-        console.log('Card: Sending question data with category:', questionData.category);
-        onQuestionLoaded(questionData);
+        onQuestionLoaded({
+          id: questionData.id,
+          correctAnswerIndex: Number(questionData.correctAnswerIndex),
+          category: questionData.category || 'General'
+        });
         questionLoadedRef.current = true;
       }
     } catch (err) {

@@ -1,36 +1,27 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { supabase } from './supabaseClient';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import QuizTime from './pages/QuizTime';
-import Room from './pages/Room';
 import Card from './components/Card';
-import './App.css';
 import ResetPassword from './components/ResetPassword';
+import './App.css';
+
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const QuizTime = lazy(() => import('./pages/QuizTime'));
+const Room = lazy(() => import('./pages/Room'));
 
 const ADMIN_EMAIL = 'erikmatfors@gmail.com';
 
 function App() {
-  const [session, setSession] = useState(null);
+  const { session, user, loading } = useAuth();
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+  if (loading) return null;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const isAdmin = session?.user?.email === ADMIN_EMAIL;
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   return (
     <Router>
@@ -45,7 +36,8 @@ function App() {
         draggable
         pauseOnHover
       />
-      <Routes>
+      <Suspense fallback={null}>
+        <Routes>
         {/* Public routes */}
         <Route path="/" element={!session ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
         <Route path="/signup" element={!session ? <Signup /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />} />
@@ -78,7 +70,8 @@ function App() {
           }
         />
         <Route path="*" element={<Navigate replace to="/" />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </Router>
   );
 }

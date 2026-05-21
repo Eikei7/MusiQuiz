@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { useAuth } from '../contexts/AuthContext';
 import './Dashboard.css';
 import HamburgerMenu from '../components/HamburgerMenu';
 import { toast } from 'react-toastify';
@@ -8,7 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 function Dashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [stats, setStats] = useState({
@@ -35,38 +36,18 @@ function Dashboard() {
   });
   const [updating, setUpdating] = useState(false);
 
-  // Get current user on component mount
+  // Initialise user settings from metadata
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) {
-        console.error('Error getting user:', error);
-        navigate('/login');
-        return;
-      }
-      
-      if (user) {
-        setUser(user);
-        // Get user profile data from metadata or users table
-        setUserSettings(prev => ({
-          ...prev,
-          firstName: user.user_metadata?.first_name || user.raw_user_meta_data?.first_name || '',
-          lastName: user.user_metadata?.last_name || user.raw_user_meta_data?.last_name || ''
-        }));
-      } else {
-        navigate('/login');
-      }
-    };
+    if (user) {
+      setUserSettings(prev => ({
+        ...prev,
+        firstName: user.user_metadata?.first_name || user.raw_user_meta_data?.first_name || '',
+        lastName: user.user_metadata?.last_name || user.raw_user_meta_data?.last_name || ''
+      }));
+    }
+  }, [user]);
 
-    getCurrentUser();
-  }, [navigate]);
 
-  // Add cleanup effect for toasts when component unmounts
-  useEffect(() => {
-    return () => {
-      toast.dismiss();
-    };
-  }, []);
 
   // Handle user settings change
   const handleSettingsChange = (e) => {
@@ -165,7 +146,6 @@ function Dashboard() {
           table: 'rooms',
         },
         (payload) => {
-          console.log('Room update received:', payload);
           setRooms(prevRooms => {
             const updatedRooms = [...prevRooms];
             const updatedRoomIndex = updatedRooms.findIndex(room => room.room_id === payload.new.room_id);
@@ -184,13 +164,10 @@ function Dashboard() {
           });
         }
       )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
-      });
+      .subscribe();
 
     // Cleanup function to properly unsubscribe when component unmounts or user changes
     return () => {
-      console.log('Cleaning up room subscription');
       supabase.removeChannel(roomSubscription);
     };
   }, [user]);
@@ -231,29 +208,24 @@ function Dashboard() {
     }
   };
 
-  // Check if user is in any room using Supabase - FIXED VERSION
   const checkUserInRoom = async () => {
     if (!user) return;
 
     try {
-      // Fetch all rooms and check if the user is in any room's players array
       const { data: roomsData, error } = await supabase
         .from('rooms')
-        .select('room_id, name, players');
+        .select('room_id, name, players')
+        .filter('players', 'cs', JSON.stringify([{ user_id: user.id }]));
 
       if (error) throw error;
 
-      // Iterate through rooms to find if the user is in any room
-      const userRoom = roomsData.find(room => {
+      const userRoom = roomsData?.find(room => {
         const players = Array.isArray(room.players) ? room.players : [];
         return players.some(player => player.user_id === user.id && player.is_active);
       });
 
       if (userRoom) {
-        setActiveRoom({
-          roomId: userRoom.room_id,
-          name: userRoom.name
-        });
+        setActiveRoom({ roomId: userRoom.room_id, name: userRoom.name });
         setShowRoomWarning(true);
       }
     } catch (error) {
@@ -328,7 +300,7 @@ function Dashboard() {
       .from('users')
       .select('first_name, last_name')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     const updatedPlayers = [
       ...currentPlayers,
@@ -375,113 +347,88 @@ function Dashboard() {
     setShowRoomWarning(false);
   };
 
-  // Fetch user stats using Supabase
   const fetchUserStats = async () => {
-  if (!user?.id) {
-    console.error("User email is missing.");
-    return;
-  }
+    if (!user?.id) return;
 
-  try {
-    console.log("Fetching stats for user ID:", user.id);
+    try {
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('stats')
+        .eq('email', user.email)
+        .maybeSingle();
 
-    const { data: userData, error } = await supabase
-      .from('users')
-      .select('stats')
-      .eq('email', user.email)
-      .maybeSingle();
+      if (error) throw error;
 
-    if (error) throw error;
-
-    console.log("User data from Supabase:", userData);
-
-    if (!userData) {
-      console.warn("No user data found for email:", user.email);
-      setStats({
-        gamesPlayed: 0,
-        gamesWon: 0,
-        gamesLost: 0,
-        winRate: 0,
-        bestCategory: null,
-        bestCategoryAccuracy: 0,
-        categoryStats: {}
-      });
-      return;
-    }
-
-    const stats = userData.stats || {
-      gamesPlayed: 0,
-      gamesWon: 0,
-      categories: {}
-    };
-
-    console.log("Extracted stats:", stats);
-
-    if (!stats || Object.keys(stats).length === 0) {
-      console.warn("No stats found for user:", user.id);
-      setStats({
-        gamesPlayed: 0,
-        gamesWon: 0,
-        gamesLost: 0,
-        winRate: 0,
-        bestCategory: null,
-        bestCategoryAccuracy: 0,
-        categoryStats: {}
-      });
-      return;
-    }
-
-    // Calculate derived values
-    const gamesPlayed = stats.gamesPlayed || 0;
-    const gamesWon = stats.gamesWon || 0;
-    const gamesLost = gamesPlayed - gamesWon;
-    const winRate = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
-
-    // Find the best category (highest accuracy)
-    let bestCategory = null;
-    let bestCategoryAccuracy = 0;
-
-    Object.keys(stats.categories || {}).forEach(category => {
-      const categoryData = stats.categories[category];
-      const accuracy = categoryData.total > 0
-        ? Math.round((categoryData.correct / categoryData.total) * 100)
-        : 0;
-
-      if (accuracy > bestCategoryAccuracy) {
-        bestCategoryAccuracy = accuracy;
-        bestCategory = category;
+      if (!userData) {
+        setStats({
+          gamesPlayed: 0,
+          gamesWon: 0,
+          gamesLost: 0,
+          winRate: 0,
+          bestCategory: null,
+          bestCategoryAccuracy: 0,
+          categoryStats: {}
+        });
+        return;
       }
-    });
 
-    console.log("Calculated stats:", {
-      gamesPlayed,
-      gamesWon,
-      gamesLost,
-      winRate,
-      bestCategory,
-      bestCategoryAccuracy,
-      categoryStats: stats.categories || {}
-    });
+      const stats = userData.stats || {
+        gamesPlayed: 0,
+        gamesWon: 0,
+        categories: {}
+      };
 
-    // Set local state for UI
-    setStats({
-      gamesPlayed,
-      gamesWon,
-      gamesLost,
-      winRate,
-      bestCategory,
-      bestCategoryAccuracy,
-      categoryStats: stats.categories || {}
-    });
+      if (!stats || Object.keys(stats).length === 0) {
+        setStats({
+          gamesPlayed: 0,
+          gamesWon: 0,
+          gamesLost: 0,
+          winRate: 0,
+          bestCategory: null,
+          bestCategoryAccuracy: 0,
+          categoryStats: {}
+        });
+        return;
+      }
 
-  } catch (error) {
-    console.error('Error fetching stats:', error);
-    toast.error('Unable to load your stats. Please try again later.', {
-      closeButton: true,
-      autoClose: 5000
-    });
-  }
-};
+      // Calculate derived values
+      const gamesPlayed = stats.gamesPlayed || 0;
+      const gamesWon = stats.gamesWon || 0;
+      const gamesLost = gamesPlayed - gamesWon;
+      const winRate = gamesPlayed > 0 ? Math.round((gamesWon / gamesPlayed) * 100) : 0;
+
+      let bestCategory = null;
+      let bestCategoryAccuracy = 0;
+
+      Object.keys(stats.categories || {}).forEach(category => {
+        const categoryData = stats.categories[category];
+        const accuracy = categoryData.total > 0
+          ? Math.round((categoryData.correct / categoryData.total) * 100)
+          : 0;
+        if (accuracy > bestCategoryAccuracy) {
+          bestCategoryAccuracy = accuracy;
+          bestCategory = category;
+        }
+      });
+
+      setStats({
+        gamesPlayed,
+        gamesWon,
+        gamesLost,
+        winRate,
+        bestCategory,
+        bestCategoryAccuracy,
+        categoryStats: stats.categories || {}
+      });
+
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      toast.error('Unable to load your stats. Please try again later.', {
+        closeButton: true,
+        autoClose: 5000
+      });
+    }
+  };
 
   // Handle logout with Supabase
   const handleLogout = async () => {
@@ -579,16 +526,6 @@ function Dashboard() {
                     <p>No rooms available. Try again later or ask an admin to create a room.</p>
                   </div>
                 )}
-              </div>
-              
-              <div className="room-actions">
-                <button 
-                  className="join-room-button"
-                  onClick={handleJoinRoom}
-                  disabled={!selectedRoom || joiningRoom}
-                >
-                  {joiningRoom ? 'Joining...' : 'Join Room'}
-                </button>
               </div>
 
               {/* User Stats Section */}
@@ -757,7 +694,13 @@ function Dashboard() {
       </main>
 
       <footer className="dashboard-footer">
-        <p>&copy; 2025 MusiQuiz. All rights reserved.</p>
+        <p>&copy; 2026 MusiQuiz. All rights reserved.</p>
+        <p>21/5/2026 - Version 1.2.0 changelog:</p>
+        <ul>
+          <li> - Notiser (t.ex. "Du har gått med i rummet") stannar nu kvar längre på skärmen</li>
+          <li> - Appen laddar snabbare tack vare optimeringar i bakgrunden</li>
+          <li> - Join Room-knappen syns nu bara inne i varje rum, inte som en extra knapp under listan</li>
+        </ul>
         <p>5/11/2025 - Version 1.1.0 changelog:</p>
         <ul>
           <li> - Players in rooms are now displayed with their status (active/inactive)</li>
