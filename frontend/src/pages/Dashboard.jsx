@@ -697,9 +697,9 @@ function Dashboard() {
         <p>&copy; 2026 MusiQuiz. All rights reserved.</p>
         <p>21/5/2026 - Version 1.2.0 changelog:</p>
         <ul>
-          <li> - Notiser (t.ex. "Du har gått med i rummet") stannar nu kvar längre på skärmen</li>
-          <li> - Appen laddar snabbare tack vare optimeringar i bakgrunden</li>
-          <li> - Join Room-knappen syns nu bara inne i varje rum, inte som en extra knapp under listan</li>
+          <li> - Notifications (e.g., &quot;You have joined the room&quot;) now stay on screen longer</li>
+          <li> - The app loads faster thanks to background optimizations</li>
+          <li> - The Join Room button is now only visible inside each room, not as an extra button below the list</li>
         </ul>
         <p>5/11/2025 - Version 1.1.0 changelog:</p>
         <ul>
