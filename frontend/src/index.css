@@ -73,3 +73,9 @@ li {
     background-position: 0% 50%;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
+}

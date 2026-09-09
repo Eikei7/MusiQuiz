@@ -9,14 +9,16 @@ const ChatComponent = ({ roomId, user }) => {
   const [currentUser, setCurrentUser] = useState(user || null);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
+  const userNameCache = useRef({});
 
   useEffect(() => {
     if (user) {
-
-      setCurrentUser({
+      const userObj = {
         id: user.id,
         name: user.email?.split('@')[0] || 'Anonymous'
-      });
+      };
+      setCurrentUser(userObj);
+      userNameCache.current[user.id] = userObj.name;
       setLoading(false);
     } else {
       getCurrentUser();
@@ -32,28 +34,24 @@ const ChatComponent = ({ roomId, user }) => {
       .channel(`room-chat-${roomId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
         async (payload) => {
-          if (payload.new.room_id !== roomId) return;
-
-          const { data: profile } = await supabase
-            .from('users')
-            .select('first_name')
-            .eq('id', payload.new.user_id)
-            .single();
-
-          const newMessage = {
-            ...payload.new,
-            user_name: profile?.first_name || 'Anonymous'
-          };
-          setMessages(prev => [...prev, newMessage]);
+          const senderId = payload.new.user_id;
+          if (!userNameCache.current[senderId]) {
+            const { data: profile } = await supabase
+              .from('users')
+              .select('first_name')
+              .eq('id', senderId)
+              .single();
+            userNameCache.current[senderId] = profile?.first_name || 'Anonymous';
+          }
+          setMessages(prev => [...prev, { ...payload.new, user_name: userNameCache.current[senderId] }]);
         }
       )
       .on(
         'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'messages' },
+        { event: 'DELETE', schema: 'public', table: 'messages', filter: `room_id=eq.${roomId}` },
         (payload) => {
-          if (payload.old.room_id !== roomId) return;
           setMessages(prev => prev.filter(msg => msg.id !== payload.old.id));
         }
       )
@@ -96,19 +94,31 @@ const ChatComponent = ({ roomId, user }) => {
 
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
-        .eq('room_id', roomId) 
+        .select('id, content, user_id, room_id, created_at')
+        .eq('room_id', roomId)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      const messagesWithUserNames = data.map(message => ({
-        ...message,
-        user_name: message.user_id === currentUser.id ? currentUser.name : 'Anonymous'
+      // Build name cache for all unique senders in one query
+      const senderIds = [...new Set(data.map(m => m.user_id))];
+      if (senderIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('users')
+          .select('id, first_name')
+          .in('id', senderIds);
+        profiles?.forEach(p => {
+          userNameCache.current[p.id] = p.first_name || 'Anonymous';
+        });
+      }
+
+      const messagesWithNames = data.map(m => ({
+        ...m,
+        user_name: userNameCache.current[m.user_id] || (m.user_id === currentUser.id ? currentUser.name : 'Anonymous'),
       }));
 
-      setMessages(messagesWithUserNames || []);
+      setMessages(messagesWithNames);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
