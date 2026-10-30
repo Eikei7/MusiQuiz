@@ -53,8 +53,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
           if (error) throw error;
 
-          console.log('[QuizTime] fetchRoomData result:', data);
-          console.log('[QuizTime] players from DB:', data.players);
           setRoomData(data);
           setPlayers(data.players || []);
           setLoading(false);
@@ -163,7 +161,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
   // Check if it's the current user's turn
   const isMyTurn = useCallback(() => {
-    console.log('[QuizTime] isMyTurn check — players:', players, '| currentTurn:', currentTurn, '| user.email:', user?.email);
     // In single-player mode, it's always your turn
     if (players.length === 1) {
       return true;
@@ -197,7 +194,6 @@ const QuizTime = ({ roomData: propRoomData }) => {
 
   // Reset timer when turn changes
   useEffect(() => {
-    console.log('[QuizTime] Timer reset effect — isMyTurn:', isMyTurn(), '| players.length:', players.length, '| currentTurn:', currentTurn, '| isTimerActive:', isTimerActive, '| timeLeft:', timeLeft);
     // Reset timer when it becomes your turn
     if (isMyTurn()) {
       setTimeLeft(TIMER_DURATION);

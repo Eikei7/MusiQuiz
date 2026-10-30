@@ -280,12 +280,16 @@ function Dashboard() {
             : player
         );
 
-        const { error: updateError } = await supabase
+        const { data: updatedRows, error: updateError } = await supabase
           .from('rooms')
           .update({ players: updatedPlayers })
-          .eq('room_id', roomId);
+          .eq('room_id', roomId)
+          .select('room_id');
 
         if (updateError) throw updateError;
+        if (!updatedRows?.length) {
+          throw new Error('Not allowed to update this room (check the RLS UPDATE policy on "rooms")');
+        }
 
         toast.success('Welcome back to the room!');
         navigate(`/rooms/${roomId}`);
@@ -318,12 +322,17 @@ function Dashboard() {
     ];
 
     // Update the room with the new players array
-    const { error } = await supabase
+    const { data: updatedRows, error } = await supabase
       .from('rooms')
       .update({ players: updatedPlayers })
-      .eq('room_id', roomId);
+      .eq('room_id', roomId)
+      .select('room_id');
 
     if (error) throw error;
+    // RLS blocks updates silently by returning zero rows
+    if (!updatedRows?.length) {
+      throw new Error('Not allowed to update this room (check the RLS UPDATE policy on "rooms")');
+    }
 
     toast.success('Successfully joined the room!');
     navigate(`/rooms/${roomId}`);
